@@ -152,6 +152,14 @@
                   </div>
                 </b-tab-item>
 
+                <b-tab-item label="Description">
+                  <div class="block-tab-content block">
+                    <b-message>
+                      {{ item.synopsis }}
+                    </b-message>
+                  </div>
+                </b-tab-item>
+
               </b-tabs>
             </div>
 
@@ -198,7 +206,9 @@
     computed: {
       item() {
         const item = this.$store.state.overlay.details.scene;
-        item.tags.sort((a,b) => a.name < b.name ? -1 : 1);
+        if (this.$store.state.optionsWeb.web.tagSort === 'alphabetically') {
+          item.tags.sort((a, b) => a.name < b.name ? -1 : 1);
+        }
         return item;
       },
       // Properties for gallery

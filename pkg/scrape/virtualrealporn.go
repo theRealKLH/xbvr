@@ -1,13 +1,15 @@
 package scrape
 
 import (
+	"encoding/json"
+	"fmt"
+	"html"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/gocolly/colly"
 	"github.com/mozillazg/go-slugify"
-	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
 	"github.com/tidwall/gjson"
 	"github.com/xbapps/xbvr/pkg/models"
@@ -18,9 +20,9 @@ func VirtualRealPornSite(wg *sync.WaitGroup, updateSite bool, knownScenes []stri
 	defer wg.Done()
 	logScrapeStart(scraperID, siteID)
 
-	sceneCollector := createCollector("virtualrealporn.com", "virtualrealtrans.com", "virtualrealpassion.com", "virtualrealamateurporn.com")
-	siteCollector := createCollector("virtualrealporn.com", "virtualrealtrans.com", "virtualrealpassion.com", "virtualrealamateurporn.com")
-	castCollector := createCollector("virtualrealporn.com", "virtualrealtrans.com", "virtualrealpassion.com", "virtualrealamateurporn.com")
+	sceneCollector := createCollector("virtualrealporn.com", "virtualrealtrans.com", "virtualrealgay.com", "virtualrealpassion.com", "virtualrealamateurporn.com")
+	siteCollector := createCollector("virtualrealporn.com", "virtualrealtrans.com", "virtualrealgay.com", "virtualrealpassion.com", "virtualrealamateurporn.com")
+	castCollector := createCollector("virtualrealporn.com", "virtualrealtrans.com", "virtualrealgay.com", "virtualrealpassion.com", "virtualrealamateurporn.com")
 	castCollector.AllowURLRevisit = true
 
 	sceneCollector.OnHTML(`html`, func(e *colly.HTMLElement) {
@@ -42,10 +44,7 @@ func VirtualRealPornSite(wg *sync.WaitGroup, updateSite bool, knownScenes []stri
 		e.ForEach(`title`, func(id int, e *colly.HTMLElement) {
 			sc.Title = e.Text
 			sc.Title = strings.TrimSpace(strings.Replace(sc.Title, "▷ ", "", -1))
-			sc.Title = strings.TrimSpace(strings.Replace(sc.Title, " - VirtualRealPorn.com", "", -1))
-			sc.Title = strings.TrimSpace(strings.Replace(sc.Title, " - VirtualRealTrans.com", "", -1))
-			sc.Title = strings.TrimSpace(strings.Replace(sc.Title, " - VirtualRealPassion.com", "", -1))
-			sc.Title = strings.TrimSpace(strings.Replace(sc.Title, " - VirtualRealAmateurPorn.com", "", -1))
+			sc.Title = strings.TrimSpace(strings.Replace(sc.Title, fmt.Sprintf(" - %v.com", sc.Site), "", -1))
 		})
 
 		// Cover URLs
@@ -64,37 +63,26 @@ func VirtualRealPornSite(wg *sync.WaitGroup, updateSite bool, knownScenes []stri
 		e.ForEach(`a[href*="/tag/"]`, func(id int, e *colly.HTMLElement) {
 			sc.Tags = append(sc.Tags, strings.TrimSpace(e.Text))
 		})
+		if scraperID == "virtualrealgay" {
+			sc.Tags = append(sc.Tags, "Gay")
+		}
 
 		// Duration / Release date / Synopsis
 		e.ForEach(`script[type='application/ld+json'][class!='yoast-schema-graph']`, func(id int, e *colly.HTMLElement) {
-			vm := otto.New()
+			var jsonResult map[string]interface{}
+			json.Unmarshal([]byte(e.Text), &jsonResult)
 
-			script := "sin = " + e.Text
-			script = script + ";\nduration = sin['duration']; datePublished = sin['datePublished']; desc = sin['description'];"
-			script = script + "cast = []; sin['actors'].map(function(o){cast.push(o.url)});"
-
-			vm.Run(script)
-
-			out1, _ := vm.Get("duration")
-			duration, _ := out1.ToString()
+			duration := jsonResult["duration"].(string)
 			sc.Duration, _ = strconv.Atoi(strings.Split(duration, ":")[0])
 
-			out2, _ := vm.Get("datePublished")
-			relDate, _ := out2.ToString()
-			sc.Released = relDate
+			sc.Released = jsonResult["datePublished"].(string)
 
-			out3, _ := vm.Get("desc")
-			desc, _ := out3.ToString()
-			sc.Synopsis = desc
+			sc.Synopsis = html.UnescapeString(jsonResult["description"].(string))
 
-			out4, _ := vm.Get("cast")
-			cast, _ := out4.Export()
-			castx, ok := cast.([]string)
-
-			if ok {
-				for i := range castx {
-					tmpCast = append(tmpCast, castx[i])
-				}
+			cast := jsonResult["actors"].([]interface{})
+			for _, v := range cast {
+				m := v.(map[string]interface{})
+				tmpCast = append(tmpCast, m["url"].(string))
 			}
 		})
 
@@ -112,11 +100,14 @@ func VirtualRealPornSite(wg *sync.WaitGroup, updateSite bool, knownScenes []stri
 					if siteID == "VirtualRealTrans" {
 						siteIDAcronym = "VRT"
 					}
-					if siteID == "VirtualRealPassion" {
-						siteIDAcronym = "VRPA"
-					}
 					if siteID == "VirtualRealAmateur" {
 						siteIDAcronym = "VRAM"
+					}
+					if siteID == "VirtualRealGay" {
+						siteIDAcronym = "VRG"
+					}
+					if siteID == "VirtualRealPassion" {
+						siteIDAcronym = "VRPA"
 					}
 
 					var outFilenames []string
@@ -187,6 +178,8 @@ func VirtualRealPornSite(wg *sync.WaitGroup, updateSite bool, knownScenes []stri
 
 		if gender == "Female" || gender == "Transgender" {
 			sc.Cast = append(sc.Cast, name)
+		} else if sc.SiteID == "VirtualRealGay" || sc.SiteID == "VirtualRealPassion" {
+			sc.Cast = append(sc.Cast, name)
 		}
 	})
 
@@ -241,16 +234,20 @@ func VirtualRealPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, 
 func VirtualRealTrans(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene) error {
 	return VirtualRealPornSite(wg, updateSite, knownScenes, out, "virtualrealtrans", "VirtualRealTrans", "https://virtualrealtrans.com/")
 }
-func VirtualRealPassion(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene) error {
-	return VirtualRealPornSite(wg, updateSite, knownScenes, out, "virtualrealpassion", "VirtualRealPassion", "https://virtualrealpassion.com/")
-}
 func VirtualRealAmateur(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene) error {
 	return VirtualRealPornSite(wg, updateSite, knownScenes, out, "virtualrealamateur", "VirtualRealAmateur", "https://virtualrealamateurporn.com/")
 }
+func VirtualRealGay(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene) error {
+	return VirtualRealPornSite(wg, updateSite, knownScenes, out, "virtualrealgay", "VirtualRealGay", "https://virtualrealgay.com/")
+}
+func VirtualRealPassion(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene) error {
+	return VirtualRealPornSite(wg, updateSite, knownScenes, out, "virtualrealpassion", "VirtualRealPassion", "https://virtualrealpassion.com/")
+}
 
 func init() {
-	registerScraper("virtualrealporn", "VirtualRealPorn", "https://mcdn.vrporn.com/files/20170705184927/virtualrealporn-icon-vr-porn-studio-vrporn.com-virtual-reality.png", VirtualRealPorn)
-	registerScraper("virtualrealtrans", "VirtualRealTrans", "https://mcdn.vrporn.com/files/20171027095544/Virtualrealtrans-studio-square-banner-vr-porn-studio-vrporn.com-virtual-reality.png", VirtualRealTrans)
-	registerScraper("virtualrealpassion", "VirtualRealPassion", "https://mcdn.vrporn.com/files/20170806171518/virtualrealpassion-icon-vr-porn-studio-vrporn.com-virtual-reality.png", VirtualRealPassion)
+	registerScraper("virtualrealporn", "VirtualRealPorn", "https://twivatar.glitch.me/virtualrealporn", VirtualRealPorn)
+	registerScraper("virtualrealtrans", "VirtualRealTrans", "https://twivatar.glitch.me/virtualrealporn", VirtualRealTrans)
+	registerScraper("virtualrealgay", "VirtualRealGay", "https://twivatar.glitch.me/virtualrealgay", VirtualRealGay)
+	registerScraper("virtualrealpassion", "VirtualRealPassion", "https://twivatar.glitch.me/vrpassion", VirtualRealPassion)
 	registerScraper("virtualrealamateur", "VirtualRealAmateur", "https://mcdn.vrporn.com/files/20170718094205/virtualrealameteur-vr-porn-studio-vrporn.com-virtual-reality.png", VirtualRealAmateur)
 }
