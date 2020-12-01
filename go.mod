@@ -28,7 +28,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/emicklei/go-restful v2.15.0+incompatible
 	github.com/emicklei/go-restful-openapi v1.4.1
-	github.com/gammazero/nexus/v3 v3.0.1
+	github.com/gammazero/nexus/v3 v3.0.3
 	github.com/getlantern/golog v0.0.0-20201105130739-9586b8bde3a9 // indirect
 	github.com/getlantern/systray v0.0.0-20190727060347-6f0e5a3c556c
 	github.com/go-openapi/spec v0.19.14
