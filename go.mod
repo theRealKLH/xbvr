@@ -30,7 +30,7 @@ require (
 	github.com/gammazero/nexus/v3 v3.0.3
 	github.com/getlantern/golog v0.0.0-20201105130739-9586b8bde3a9 // indirect
 	github.com/getlantern/systray v0.0.0-20190727060347-6f0e5a3c556c
-	github.com/go-openapi/spec v0.19.15
+	github.com/go-openapi/spec v0.20.0
 	github.com/go-test/deep v1.0.7
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly v1.2.0
