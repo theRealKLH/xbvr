@@ -71,7 +71,7 @@ require (
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222 // indirect
 	github.com/temoto/robotstxt v0.0.0-20180810133444-97ee4a9ee6ea // indirect
 	github.com/thoas/go-funk v0.7.0
-	github.com/tidwall/gjson v1.6.3
+	github.com/tidwall/gjson v1.6.4
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xo/dburl v0.0.0-20200910011426-652e0d5720a3
