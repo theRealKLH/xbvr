@@ -29,7 +29,7 @@ require (
 	github.com/gammazero/nexus/v3 v3.0.3
 	github.com/getlantern/golog v0.0.0-20201105130739-9586b8bde3a9 // indirect
 	github.com/getlantern/systray v0.0.0-20190727060347-6f0e5a3c556c
-	github.com/go-openapi/spec v0.19.15
+	github.com/go-openapi/spec v0.20.2
 	github.com/go-test/deep v1.0.7
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocolly/colly v1.2.0
@@ -76,7 +76,7 @@ require (
 	github.com/xo/dburl v0.0.0-20200910011426-652e0d5720a3
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c
-	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
+	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 	golang.org/x/oauth2 v0.0.0-20201203001011-0b49973bad19
 	golang.org/x/sys v0.0.0-20201204225414-ed752295db88
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
