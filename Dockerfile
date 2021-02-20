@@ -1,6 +1,6 @@
 FROM node:12.20.1-buster as build-env
 
-### Install Go ###
+### Install Go 1.13.15 ###
 ENV GO_VERSION=1.13.15 \
     GOPATH=$HOME/go-packages \
     GOROOT=$HOME/go
