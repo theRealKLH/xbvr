@@ -60,7 +60,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/posthog/posthog-go v0.0.0-20200525173953-e46dc8e6b89b
-	github.com/prometheus/common v0.9.1
+	github.com/prometheus/common v0.18.0
 	github.com/putdotio/go-putio/putio v0.0.0-20200123120452-16d982cac2b8
 	github.com/robertkrimen/otto v0.0.0-20200922221731-ef014fd054ac
 	github.com/robfig/cron/v3 v3.0.1
