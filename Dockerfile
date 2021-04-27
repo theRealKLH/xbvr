@@ -6,8 +6,8 @@ ENV GO_VERSION=1.13.15 \
     GOROOT=$HOME/go
 ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 RUN curl -fsSL https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz | tar -xzv \
-    && go get -u -v \
-        env GO111MODULE=on github.com/acroca/go-symbols \
+    && env GO111MODULE=on go get -u -v \
+        github.com/acroca/go-symbols \
         github.com/cweill/gotests/... \
         github.com/davidrjenni/reftools/cmd/fillstruct \
         github.com/fatih/gomodifytags \
