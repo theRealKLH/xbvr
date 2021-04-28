@@ -1,0 +1,26 @@
+version: 2
+updates:
+- package-ecosystem: gomod
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  target-branch: theRealKLH-patch-1
+  ignore:
+  - dependency-name: github.com/prometheus/common
+    versions:
+    - 0.18.0
+  - dependency-name: github.com/sirupsen/logrus
+    versions:
+    - 1.7.1
+    - 1.8.0
+  - dependency-name: github.com/tidwall/gjson
+    versions:
+    - 1.6.7
+    - 1.6.8
+  - dependency-name: github.com/go-openapi/spec
+    versions:
+    - 0.20.2
+  - dependency-name: github.com/blevesearch/bleve
+    versions:
+    - 1.0.14
