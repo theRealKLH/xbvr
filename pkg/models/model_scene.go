@@ -256,6 +256,10 @@ func (o *Scene) UpdateStatus() {
 
 			if files[j].Type == "script" {
 				scripts = scripts + 1
+
+				if files[j].Exists() && (files[j].CreatedTime.After(newestFileDate) || newestFileDate.IsZero()) {
+					newestFileDate = files[j].CreatedTime
+				}
 			}
 
 			if files[j].Type == "video" {
