@@ -51,6 +51,7 @@ func GeneratePreviews() {
 		}
 	}
 
+	log.Infof("Previews generated")
 	models.RemoveLock("previews")
 }
 
