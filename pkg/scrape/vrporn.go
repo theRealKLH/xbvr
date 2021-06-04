@@ -23,7 +23,6 @@ func VRPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 	// RegEx Patterns
 	sceneIDRegEx := regexp.MustCompile(`^post-(\d+)`)
 	dateRegEx := regexp.MustCompile(`(?i)^VideoPosted on (?:Premium on )?(.+)$`)
-	//	timeRegEx := regexp.MustCompile(`(?i)^var timeAfter=\"?(.+)\"\;$`)
 
 	sceneCollector.OnHTML(`html`, func(e *colly.HTMLElement) {
 		if !dateRegEx.MatchString(e.ChildText(`div.content-box.posted-by-box.posted-by-box-sub span.footer-titles`)) {
@@ -91,32 +90,30 @@ func VRPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 		}
 
 		// Duration
-		//e.ForEach(`script`, func(id int, e *colly.HTMLElement) {
-		//	if !strings.Contains(e.Text, "var timeAfter") {
-		//		return
-		//	}
+		e.ForEach(`script`, func(id int, e *colly.HTMLElement) {
+			if !strings.Contains(e.Text, "var time=") {
+				return
+			}
 
-		var dur string
-		var duration int
-		if e.DOM.Find(`.lenghvideoAfter.premium-post`) != nil {
-			dur = e.DOM.Find(`.lenghvideoAfter.premium-post`).Text()
-		} else {
-			dur = e.DOM.Find(`.lenghvideoBefore.no-premium`).Text()
-		}
-		tmpParts := strings.Split(dur, ":")
-		if len(tmpParts) > 2 {
-			if h, err := strconv.Atoi(tmpParts[0]); err == nil {
-				if m, err := strconv.Atoi(tmpParts[1]); err == nil {
-					duration = h*60 + m
+			var duration int
+			dur := strings.Split(strings.Split(e.Text, "var time=")[1], "\"")[1]
+			if strings.Contains(e.Text, "var timeAfter=") {
+				dur = strings.Split(strings.Split(e.Text, "var timeAfter=")[1], "\"")[1]
+			}
+			tmpParts := strings.Split(dur, ":")
+			if len(tmpParts) > 2 {
+				if h, err := strconv.Atoi(tmpParts[0]); err == nil {
+					if m, err := strconv.Atoi(tmpParts[1]); err == nil {
+						duration = h*60 + m
+					}
+				}
+			} else {
+				if m, err := strconv.Atoi(tmpParts[0]); err == nil {
+					duration = m
 				}
 			}
-		} else {
-			if m, err := strconv.Atoi(tmpParts[0]); err == nil {
-				duration = m
-			}
-		}
-		sc.Duration = duration
-
+			sc.Duration = duration
+		})
 		out <- sc
 	})
 
