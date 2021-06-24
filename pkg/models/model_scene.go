@@ -316,6 +316,11 @@ func (o *Scene) UpdateStatus() {
 			o.IsAvailable = false
 			changed = true
 		}
+
+		if o.IsScripted == true {
+			o.IsScripted = false
+			changed = true
+		}
 	}
 
 	if o.HasVideoPreview && !o.PreviewExists() {
