@@ -1,4 +1,4 @@
-name: build our image
+name: building theRealKLH-patch-1
 
 on:
   push:
@@ -21,4 +21,4 @@ jobs:
         run: |
           docker buildx build --push \
           --tag iamklh/xbvr:fuckyeah \
-          --platform linux/amd64,linux/arm/v7,linux/arm64 .
+          --platform linux/amd64 .
