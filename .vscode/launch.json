@@ -12,7 +12,14 @@
             "program": "${workspaceFolder}\\main.go",
             "buildFlags": "-tags='json1'",
             "env": {},
-            "args": []
+            "args": [],
+            "dlvLoadConfig": {
+                "followPointers": true,
+                "maxVariableRecurse": 1,
+                "maxStringLen": 300,
+                "maxArrayValues": 300,
+                "maxStructFields": -1
+            },
         }
     ]
 }
