@@ -3,3 +3,8 @@ rules:
   - base: master
     upstream: xbapps:master    # change `wei` to the owner of upstream repo
     mergeMethod: hardreset
+  - base: multi-docker
+    upstream: master        # Required. Can be a branch in the same forked repo.
+    mergeMethod: merge
+    mergeUnstable: false    # Optional, merge pull request even when the mergeable_state is not clean. Default: false
+
