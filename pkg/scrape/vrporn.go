@@ -23,6 +23,7 @@ func VRPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 	// RegEx Patterns
 	sceneIDRegEx := regexp.MustCompile(`^post-(\d+)`)
 	dateRegEx := regexp.MustCompile(`(?i)^VideoPosted on (?:Premium on )?(.+)$`)
+	durationRegEx := regexp.MustCompile(`var timeAfter="(?:(\d+):)?(\d+):(\d+)";`)
 
 	sceneCollector.OnHTML(`html`, func(e *colly.HTMLElement) {
 		if !dateRegEx.MatchString(e.ChildText(`div.content-box.posted-by-box.posted-by-box-sub span.footer-titles`)) {
@@ -53,7 +54,7 @@ func VRPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 		}
 
 		// Gallery
-		e.ForEach(`.vrp-gallery a`, func(id int, e *colly.HTMLElement) {
+		e.ForEach(`.vrp-gallery-pro a`, func(id int, e *colly.HTMLElement) {
 			sc.Gallery = append(sc.Gallery, e.Request.AbsoluteURL(e.Attr("href")))
 		})
 
@@ -78,7 +79,7 @@ func VRPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 		})
 
 		// Cast
-		e.ForEach(`.name_pornstar a[href*="/pornstars/"]`, func(id int, e *colly.HTMLElement) {
+		e.ForEach(`.name_pornstar`, func(id int, e *colly.HTMLElement) {
 			sc.Cast = append(sc.Cast, strings.TrimSpace(e.Text))
 		})
 
@@ -90,30 +91,18 @@ func VRPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 		}
 
 		// Duration
-		e.ForEach(`script`, func(id int, e *colly.HTMLElement) {
-			if !strings.Contains(e.Text, "var time=") {
-				return
-			}
-
+		e.ForEachWithBreak(`script`, func(id int, e *colly.HTMLElement) bool {
 			var duration int
-			dur := strings.Split(strings.Split(e.Text, "var time=")[1], "\"")[1]
-			if strings.Contains(e.Text, "var timeAfter=") {
-				dur = strings.Split(strings.Split(e.Text, "var timeAfter=")[1], "\"")[1]
-			}
-			tmpParts := strings.Split(dur, ":")
-			if len(tmpParts) > 2 {
-				if h, err := strconv.Atoi(tmpParts[0]); err == nil {
-					if m, err := strconv.Atoi(tmpParts[1]); err == nil {
-						duration = h*60 + m
-					}
-				}
-			} else {
-				if m, err := strconv.Atoi(tmpParts[0]); err == nil {
-					duration = m
-				}
+			m := durationRegEx.FindStringSubmatch(e.Text)
+			if len(m) == 4 {
+				hours, _ := strconv.Atoi("0" + m[1])
+				minutes, _ := strconv.Atoi(m[2])
+				duration = hours*60 + minutes
 			}
 			sc.Duration = duration
+			return duration == 0
 		})
+
 		out <- sc
 	})
 
@@ -122,7 +111,7 @@ func VRPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 		siteCollector.Visit(pageURL)
 	})
 
-	siteCollector.OnHTML(`div.sectionWrapper.tube-newest article.post div.tube-post a`, func(e *colly.HTMLElement) {
+	siteCollector.OnHTML(`article.post div.tube-post a`, func(e *colly.HTMLElement) {
 		sceneURL := e.Request.AbsoluteURL(e.Attr("href"))
 		// If scene exists in database, there's no need to scrape
 		if !funk.ContainsString(knownScenes, sceneURL) {
