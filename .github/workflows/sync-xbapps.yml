@@ -14,17 +14,17 @@ jobs:
       # Step 1: run a standard checkout action, provided by github
       - name: Checkout master
         uses: actions/checkout@v2
-  #      with:
-  #        ref: master
+        with:
+          ref: master
 
       # Step 2: run this sync action - specify the upstream repo, upstream branch to sync with, and target sync branch
       - name: Pull (Fast-Forward) upstream changes
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.0
         with:
-          upstream_repository: xbapps/xbvr
-          upstream_branch: master
-          target_branch: master
+          upstream_sync_repo: xbapps/xbvr
+          upstream_sync_branch: master
+          target_sync_branch: master
           git_pull_args: --ff-only
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
 
