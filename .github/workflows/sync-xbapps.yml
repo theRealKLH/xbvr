@@ -25,7 +25,6 @@ jobs:
           upstream_sync_repo: xbapps/xbvr
           upstream_sync_branch: master
           target_sync_branch: master
-          git_pull_args: --ff-only
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 3: Display a sample message based on the sync output var 'has_new_commits'
