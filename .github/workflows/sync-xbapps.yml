@@ -27,6 +27,7 @@ jobs:
           target_sync_branch: master
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
           target_branch_push_args: '--tags'
+          upstream_pull_args: '--tags'
           
 
        # Set test_mode true to run tests instead of the true action!!
