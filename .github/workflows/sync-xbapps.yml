@@ -26,7 +26,7 @@ jobs:
           upstream_sync_branch: master
           target_sync_branch: master
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
-          upstream_pull_args: '--ff-only --tags'
+          upstream_pull_args: '--ff --tags'
 
        # Set test_mode true to run tests instead of the true action!!
           test_mode: false
