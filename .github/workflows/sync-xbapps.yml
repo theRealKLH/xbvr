@@ -1,4 +1,4 @@
-name: Sync upstream
+name: Sync upstream & build NotOfficial
 
 on:
   schedule:
