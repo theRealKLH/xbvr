@@ -44,3 +44,20 @@ jobs:
       
 #      - name: Show value of 'has_new_commits'
 #        run: echo ${{ steps.sync.outputs.has_new_commits }}
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+      - name: install buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+      - name: login to docker hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - name: build the image
+        run: |
+          docker buildx build --push \
+          --tag iamklh/xbvr:notofficial \
+          --platform linux/amd64,linux/arm/v7,linux/arm64 .
