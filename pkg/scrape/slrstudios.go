@@ -39,14 +39,21 @@ func SexLikeReal(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 		sc.SceneID = slugify.Slugify(scraperID) + "-" + sc.SiteID
 
 		// Cover
-		coverURL := coverRegEx.FindStringSubmatch(strings.TrimSpace(e.ChildAttr(`.splash-screen`, "style")))[1]
+		coverURL := e.ChildAttr(`.splash-screen > img`, "src")
 		if len(coverURL) > 0 {
 			sc.Covers = append(sc.Covers, coverURL)
+		} else {
+			m := coverRegEx.FindStringSubmatch(strings.TrimSpace(e.ChildAttr(`.splash-screen`, "style")))
+			if len(m) > 0 && len(m[1]) > 0 {
+				sc.Covers = append(sc.Covers, m[1])
+			}
 		}
 
 		// Gallery
-		e.ForEach(`div#tabs-photos figure a`, func(id int, e *colly.HTMLElement) {
-			sc.Gallery = append(sc.Gallery, e.Request.AbsoluteURL(e.Attr("href")))
+		e.ForEach(`meta[name^="twitter:image"]`, func(id int, e *colly.HTMLElement) {
+			if e.Attr("name") != "twitter:image" { // we need image1, image2...
+				sc.Gallery = append(sc.Gallery, e.Request.AbsoluteURL(e.Attr("content")))
+			}
 		})
 
 		// Synopsis
@@ -209,6 +216,7 @@ func addSLRScraper(id string, name string, company string, avatarURL string) {
 
 func init() {
 	addSLRScraper("slr-originals", "SLR Originals", "SexLikeReal", "https://www.sexlikereal.com/s/refactor/images/favicons/android-icon-192x192.png")
+	addSLRScraper("slr-originals-bts", "SLR Originals BTS", "SexLikeReal", "https://www.sexlikereal.com/s/refactor/images/favicons/android-icon-192x192.png")
 
 	addSLRScraper("ad4x", "AD4X", "AD4X", "https://ad4x.com/ypp_theme_ad4x/images/logo.png")
 	addSLRScraper("altporn4u-vr", "AltPorn4uVR", "AltPorn4uVR", "https://www.altporn4u.com/favicon.ico")
