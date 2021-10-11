@@ -61,4 +61,4 @@ jobs:
         run: |
           docker buildx build --push \
           --tag iamklh/xbvr:notofficial \
-          --platform linux/amd64,linux/i386 .
+          --platform linux/amd64 .
