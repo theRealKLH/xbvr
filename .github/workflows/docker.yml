@@ -15,7 +15,7 @@ jobs:
           fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
       - name: 'Get Previous tag'
         id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+#        uses: "WyriHaximus/github-action-get-previous-tag@v1"
         run: git describe --abbrev=0 --tags >> ${{ env.prevtag }}
   build:
     runs-on: ubuntu-latest
