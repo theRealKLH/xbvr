@@ -7,6 +7,7 @@ on:
 
 jobs:
   find-latest:
+    env: prevtag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -15,6 +16,7 @@ jobs:
       - name: 'Get Previous tag'
         id: previoustag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        run: git describe --abbrev=0 --tags >> ${{ env.prevtag }}
   build:
     runs-on: ubuntu-latest
     needs: find-latest
@@ -22,7 +24,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v2
         with:
-           ref: refs/tags/${{ needs.find-latest.steps.previoustag.outputs.tag }}
+           ref: refs/tags/${{ env.prevtag }}
       - name: install buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1
