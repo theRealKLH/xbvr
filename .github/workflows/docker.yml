@@ -22,7 +22,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v2
         with:
-           ref: refs/tags/${{ find-latest.steps.previoustag.outputs.tag }}
+           ref: refs/tags/${{ needs.find-latest.steps.previoustag.outputs.tag }}
       - name: install buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1
