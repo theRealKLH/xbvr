@@ -2,14 +2,26 @@ name: Build Multi-Arch Dockers
 
 on:
   push:
-    branches: master
+    branches: multi-docker
 
 jobs:
+  find-latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
+      - name: 'Get Previous tag'
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
   build:
     runs-on: ubuntu-latest
+    needs: find-latest
     steps:
       - name: checkout code
         uses: actions/checkout@v2
+        with:
+           ref: refs/tags/${{ find.latest.steps.previoustag.outputs.tag }}
       - name: install buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1
@@ -20,5 +32,5 @@ jobs:
       - name: build the image
         run: |
           docker buildx build --push \
-          --tag iamklh/xbvr:notofficial \
+          --tag iamklh/xbvr:latest \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
