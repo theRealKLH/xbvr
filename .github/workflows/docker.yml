@@ -1,6 +1,7 @@
 name: Build Multi-Arch Dockers 
 
 on:
+  workflow_dispatch:
   push:
     branches: multi-docker
 
