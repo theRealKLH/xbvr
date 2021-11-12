@@ -12,7 +12,9 @@
           <small>
             <span class="pathDetails">{{ file.path }}</span>
             <br/>
-            {{ prettyBytes(file.size) }}, {{ file.video_width }}x{{ file.video_height }},
+            {{ prettyBytes(file.size) }},
+            <span v-if="file.type == 'video'">{{ file.video_width }}x{{ file.video_height }}, </span>
+            <span v-if="file.duration > 0">{{ Math.floor(file.duration / 60) }} min,</span>
             {{ format(parseISO(file.created_time), "yyyy-MM-dd") }}
           </small>
           <b-field :label="$t('Search')">
@@ -30,6 +32,10 @@
             </b-table-column>
             <b-table-column field="site" :label="$t('Site')" sortable v-slot="props">
               <a :href="props.row.scene_url" target="_blank" rel="noreferrer">{{ props.row.site }}</a><br>
+              <b-tag type="is-info is-light" v-if="props.row.duration">
+                <b-icon pack="mdi" icon="clock" size="is-small" style="margin-right:0.1em"/>
+                {{props.row.duration}}
+              </b-tag>&nbsp;
               <b-tag type="is-info is-light" v-if="videoFilesCount(props.row)">
                 <b-icon pack="mdi" icon="file" size="is-small" style="margin-right:0.1em"/>
                 {{videoFilesCount(props.row)}}
