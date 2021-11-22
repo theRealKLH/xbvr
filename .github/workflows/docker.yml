@@ -32,6 +32,8 @@ jobs:
         run: |
           echo 'Output from Find Tag: ${{steps.tagger.outputs.tag}}'
           echo 'prevtag=${{steps.tagger.outputs.tag}}' >> $GITHUB_ENV
+          echo 'Output from copy Tag: ${{env.prvtag}}'
+
   build:
     runs-on: ubuntu-latest
     needs: find-latest
