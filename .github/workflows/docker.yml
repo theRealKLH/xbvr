@@ -24,7 +24,7 @@ jobs:
         id: tagger
         uses: jimschubert/query-tag-action@v1
         with:
-        exclude: '*beta*'
+          exclude: '*beta*'
         # if you unshallow in a separate step, use the following option:
           skip-unshallow: 'true'
       - name: Show Tag
