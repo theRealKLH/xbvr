@@ -9,7 +9,6 @@ jobs:
       with:
         repository: theRealKLH/xbvr  # The repository to scan.
         releases-only: false  # We know that all relevant tags have a GitHub release for them.
-        prefix: '0.3.1'
       id: xbvr  # The step ID to refer to later.
 
     - run: echo "XBVR is at version ${{ steps.xbvr.outputs.tag }}"
