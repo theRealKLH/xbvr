@@ -25,6 +25,7 @@ jobs:
         uses: jimschubert/query-tag-action@v2
         with:
           exclude: '*beta*'
+          include: '0.3*'
           commit-ish: 'HEAD~'
         # if you unshallow in a separate step, use the following option:
           skip-unshallow: 'true'
