@@ -18,7 +18,7 @@ jobs:
         id: previoustag
 #        uses: "WyriHaximus/github-action-get-previous-tag@v1"
         run: |
-          git describe --abbrev=0 --tags >> ${{ env.prevtag }}
+          git describe --abbrev=0 --tags >> ${ env.prevtag }
           echo "${env.prevtag}"
   build:
     runs-on: ubuntu-latest
