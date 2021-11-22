@@ -1,9 +1,8 @@
 name: Testing Tags
-
 on:
   workflow_dispatch:
-  jobs:
-    get-latest-releases:
+jobs:
+  get-latest-releases:
     runs-on: ubuntu-20.04
     steps:
     - uses: oprypin/find-latest-tag@v1
