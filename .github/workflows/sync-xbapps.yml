@@ -46,6 +46,7 @@ jobs:
 #        run: echo ${{ steps.sync.outputs.has_new_commits }}
 
   build-latest:
+    needs: sync_with_upstream
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
