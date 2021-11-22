@@ -3,7 +3,7 @@ name: Build latest Multi-Arch Dockers
 on:
   workflow_dispatch:
   push:
-    branches: master
+    branches: multi-docker
 
 jobs:
   find-latest:
