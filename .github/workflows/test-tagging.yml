@@ -8,18 +8,10 @@ jobs:
     - uses: oprypin/find-latest-tag@v1
       with:
         repository: theRealKLH/xbvr  # The repository to scan.
-        releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        releases-only: false  # We know that all relevant tags have a GitHub release for them.
       id: xbvr  # The step ID to refer to later.
 
     - run: echo "XBVR is at version ${{ steps.xbvr.outputs.tag }}"
-
-    - uses: oprypin/find-latest-tag@v1
-      with:
-        repository: theRealKLH/xbvr  # The repository to scan.
-        releases-only: false  # We know that all relevant tags have a GitHub release for them.
-      id: xbvr2  # The step ID to refer to later.
-
-    - run: echo "XBVR is at version ${{ steps.xbvr2.outputs.tag }}"
 
  # - uses: actions/checkout@v2
  #   with:
