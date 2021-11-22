@@ -24,6 +24,7 @@ jobs:
         id: tagger
         uses: jimschubert/query-tag-action@v1
         with:
+        exclude: '*beta*'
         # if you unshallow in a separate step, use the following option:
           skip-unshallow: 'true'
       - name: Show Tag
@@ -37,7 +38,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v2
         with:
-           ref: refs/tags/${{ env.prevtag }}
+           ref: refs/tags/${{steps.tagger.outputs.tag}}
 # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
