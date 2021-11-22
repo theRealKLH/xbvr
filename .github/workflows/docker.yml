@@ -40,6 +40,8 @@ jobs:
         uses: actions/checkout@v2
         with:
            ref: refs/tags/${{ env.prevtag }}
+      - name: checkit     
+        run: echo "tag = ${{ env.prevtag }}"
 # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
