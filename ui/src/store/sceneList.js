@@ -92,6 +92,9 @@ const mutations = {
         if (payload.list === "versions") {
           obj.versions = !obj.versions;
         }
+        if (payload.list === 'needs_update') {
+          obj.needs_update = !obj.needs_update
+        }
       }
       return obj
     })
