@@ -15,6 +15,7 @@ ADD . /app
 RUN cd /app && \
     yarn install && \
     yarn build && \
+    go mod download && \
     go generate && \
     go build -tags='json1' -ldflags '-w' -o xbvr main.go
 
