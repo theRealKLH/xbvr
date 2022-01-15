@@ -1,0 +1,25 @@
+name: build our image
+
+on:
+  push:
+    branches: docker
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v2
+# https://github.com/docker/setup-qemu-action
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+# https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login -u USERNAME --password-stdin
+      - name: build the image
+        run: |
+          docker buildx build --push \
+          --tag ghcr.io/${{ github.repository }}:almostofficial \
+          --platform linux/amd64,linux/arm/v7,linux/arm64 .
