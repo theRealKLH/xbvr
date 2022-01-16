@@ -1,0 +1,44 @@
+name: Publish nightly packages
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  publish-nightly:
+    runs-on: ubuntu-latest
+    name: Publish nightly package from master branch
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.19.x
+      - name: Check out XBVR repo
+        uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: Install dependencies
+        run: echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list && sudo apt-get update && sudo apt-get install -y gcc-mingw-w64 goreleaser zip
+      - name: Building front end
+        run: cd ui && yarn && yarn build
+      - name: Patch nightly version # We change v0.0.0-next version to CURRENT to avoid update prompt
+        run: sed -i 's/{{ \.Tag }}-next/CURRENT/g' .goreleaser.yml
+      - name: Release nightly package
+        run: PATH=$PATH:$HOME/go/bin goreleaser build --id xbvr-windows --snapshot --rm-dist
+      - name: Archive binary
+        run: cd dist/xbvr-windows_windows_amd64_v1 && zip -r xbvr-windows.zip xbvr.exe
+      - name: Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: Nightly Build
+          files: |
+            dist/xbvr-windows_windows_amd64_v1/xbvr-windows.zip
