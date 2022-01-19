@@ -13,7 +13,8 @@
             "buildFlags": "-tags='json1'",
             "env": {},
             "args": [],
-            "dlvLoadConfig": {
+            "debugAdapter":"legacy",
+			"dlvLoadConfig": {
                 "followPointers": true,
                 "maxVariableRecurse": 1,
                 "maxStringLen": 300,
