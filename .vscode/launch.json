@@ -14,7 +14,7 @@
             "env": {},
             "args": [],
             "debugAdapter":"legacy",
-            "dlvLoadConfig": {
+			"dlvLoadConfig": {
                 "followPointers": true,
                 "maxVariableRecurse": 1,
                 "maxStringLen": 300,

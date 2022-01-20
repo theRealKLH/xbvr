@@ -59,10 +59,11 @@ require (
 	golang.org/x/sys v0.0.0-20220110181412-a018aaa089fe
 	golang.org/x/text v0.3.7
 	gopkg.in/gormigrate.v1 v1.6.0
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/resty.v1 v1.12.0
 	willnorris.com/go/imageproxy v0.11.2
 )
+
+require github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
 
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
