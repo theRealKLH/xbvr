@@ -577,8 +577,30 @@ func Migrate() {
 			},
 		},
 		{
+			// SLR/RealJam Titles containing ":" & "?" creates invalid filenames breaks automatching. fix filenames changing to _
+			ID: "0029-fix-slr-rj-filenames",
+			Migrate: func(tx *gorm.DB) error {
+				filenameRegEx := regexp.MustCompile(`[:?]|( & )|( \\u0026 )`)
+				var scenes []models.Scene
+				err := tx.Where("filenames_arr LIKE ?", "%:%").Or("filenames_arr LIKE ?", "%?%").Or("filenames_arr LIKE ?", "%\\u0026%").Find(&scenes).Error
+				if err != nil {
+					return err
+				}
+
+				for _, scene := range scenes {
+					scene.FilenamesArr = filenameRegEx.ReplaceAllString(scene.FilenamesArr, "_")
+					err = tx.Save(&scene).Error
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
+		{
 			// VRConk is now using VRBangers code. renumbering scenes
-			ID: "0028-fix-vrconk-ids",
+			ID: "0030-fix-vrconk-ids",
 			Migrate: func(tx *gorm.DB) error {
 				// old slug -> new slug
 				slugMapping := map[string]string{
@@ -586,7 +608,6 @@ func Migrate() {
 				}
 
 				// site -> slug -> id
-				re := regexp.MustCompile(`(.*)-\d+$`)
 				newScenes := map[string]map[string]string{}
 				newSceneId := func(site string, slug string) (string, error) {
 					mapping, ok := newScenes[site]
@@ -622,10 +643,9 @@ func Migrate() {
 				for _, scene := range scenes {
 					trimmedURL := strings.TrimRight(scene.SceneURL, "/")
 					dir, base := path.Split(trimmedURL)
-					matches := re.FindStringSubmatch(base)
-					slug, ok := slugMapping[matches[1]]
+					slug, ok := slugMapping[base]
 					if !ok {
-						slug = slugify.Slugify(matches[1])
+						slug = slugify.Slugify(base)
 					}
 
 					sceneID, err := newSceneId(scene.Site, slug)
@@ -660,31 +680,8 @@ func Migrate() {
 			},
 		},
 		{
-			// SLR/RealJam Titles containing ":" & "?" creates invalid filenames breaks automatching. fix filenames changing to _
-			ID: "0029-fix-slr-rj-filenames",
-			Migrate: func(tx *gorm.DB) error {
-				filenameRegEx := regexp.MustCompile(`[:?]|( & )|( \\u0026 )`)
-				var scenes []models.Scene
-				err := tx.Where("filenames_arr LIKE ?", "%:%").Or("filenames_arr LIKE ?", "%?%").Or("filenames_arr LIKE ?", "%\\u0026%").Find(&scenes).Error
-				if err != nil {
-					return err
-				}
-
-				for _, scene := range scenes {
-					scene.FilenamesArr = filenameRegEx.ReplaceAllString(scene.FilenamesArr, "_")
-					err = tx.Save(&scene).Error
-					if err != nil {
-						return err
-					}
-				}
-
-				return nil
-
-			},
-		},
-		{
 			// Moving VRPFilms to SLR
-			ID: "0030-vrpfilms-to-slr",
+			ID: "0031-vrpfilms-to-slr",
 			Migrate: func(tx *gorm.DB) error {
 				var scenes []models.Scene
 				db.Where("site = ?", "VRP Films").Find(&scenes)

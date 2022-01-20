@@ -2,12 +2,10 @@
 .DS_Store
 .vscode/
 
-go.sum
 test.db
 /test_cache
 
 /dist/
-/pkg/assets/
 
 node_modules/
 /ui/dist/
@@ -19,3 +17,6 @@ XBVR.app/Contents/MacOS/XBVR
 XBVR.app/Contents/Resources/XBVR.icns
 docker-compose.yml
 __debug_bin
+
+.release-env
+.docker-creds

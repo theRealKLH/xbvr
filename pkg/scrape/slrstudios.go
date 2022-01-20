@@ -59,7 +59,7 @@ func SexLikeReal(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 
 		// Synopsis
 		sc.Synopsis = strings.TrimSpace(
-			e.DOM.Find(`div#tabs-about > div.u-mt--three > div.u-mb--four`).First().Text())
+			e.DOM.Find(`div#tabs-about > div > div.u-px--four > div.u-wh`).First().Text())
 
 		// Skipping some very generic and useless tags
 		skiptags := map[string]bool{
@@ -235,6 +235,7 @@ func init() {
 	addSLRScraper("burningangelvr", "BurningAngelVR", "BurningAngelVR", "https://mcdn.vrporn.com/files/20170830191746/burningangel-icon-vr-porn-studio-vrporn.com-virtual-reality.png")
 	addSLRScraper("cumtoon", "Cumtoon", "Cumtoon", "https://www.sexlikereal.com/s/images/content/sexlikereal.png")
 	addSLRScraper("covert-japan", "CovertJapan", "CovertJapan", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/221/logo_crop_1607605022.png")
+	addSLRScraper("ddfnetworkvr", "DDFNetworkVR", "DDFNetworkVR", "http://pbs.twimg.com/profile_images/1083417183722434560/Ur5xIhqG_200x200.jpg")
 	addSLRScraper("deepinsex", "DeepInSex", "DeepInSex", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/266/logo_crop_1610126420.png")
 	addSLRScraper("emilybloom", "EmilyBloom", "Emily Bloom", "https://i.imgur.com/LxYzAQX.png")
 	addSLRScraper("ellielouisevr", "EllieLouiseVR", "EllieLouiseVR", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/265/logo_crop_1607603680.png")
@@ -258,6 +259,7 @@ func init() {
 	addSLRScraper("only3xvr", "Only3xVR", "Only3xVR", "https://mcdn.vrporn.com/files/20190821140339/only3xvr-profile-pic.jpg")
 	addSLRScraper("onlytease", "OnlyTease", "OT Publishing Ltd", "https://www.onlytease.com/assets/img/favicons/ot/apple-touch-icon.png")
 	addSLRScraper("pervrt", "perVRt", "Terrible", "https://mcdn.vrporn.com/files/20181218151630/pervrt-logo.jpg")
+	addSLRScraper("pip-vr", "PIP VR", "PIP VR", "https://www.sexlikereal.com/s/images/content/sexlikereal.png")
 	addSLRScraper("pornbcn", "Pornbcn", "Pornbcn", "https://mcdn.vrporn.com/files/20190923110340/CHANNEL-LOGO-2.jpg")
 	addSLRScraper("povcentralvr", "POVcentralVR", "POV Central", "https://mcdn.vrporn.com/files/20191125091909/POVCentralLogo.jpg")
 	addSLRScraper("ps-porn", "PS-Porn", "Paula Shy", "https://mcdn.vrporn.com/files/20201221090642/PS-Porn-400x400.jpg")
@@ -283,6 +285,7 @@ func init() {
 	addSLRScraper("vrpussyvision", "VRpussyVision", "VRpussyVision", "https://mcdn.vrporn.com/files/20180313160830/vrpussyvision-square-banner.png")
 	addSLRScraper("vrsexperts", "VRSexperts", "VRSexperts", "https://mcdn.vrporn.com/files/20190812141431/vrsexpertslogo2.jpg")
 	addSLRScraper("vrsolos", "VRSolos", "VRSolos", "https://mcdn.vrporn.com/files/20191226092954/VRSolos_Logo.jpg")
+	addSLRScraper("vrvids", "VRVids", "VRVids", "https://www.sexlikereal.com/s/images/content/sexlikereal.png")
 	addSLRScraper("waapvr", "WAAPVR", "WAAPVR", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/117/logo_crop_1606868278.png")
 	addSLRScraper("xvirtual", "xVirtual", "xVirtual", "https://mcdn.vrporn.com/files/20181116133947/xvirtuallogo.jpg")
 }
