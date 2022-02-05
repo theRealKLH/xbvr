@@ -17,7 +17,7 @@ RUN cd /app && \
     go build -tags='json1' -ldflags '-w' -o xbvr main.go
 
 FROM gcr.io/distroless/base
-COPY --from=build-env /app/xbvr /
+COPY --from=build-env /app/xbvr /usr/bin/xbvr
 
 EXPOSE 9998-9999
 VOLUME /root/.config/
