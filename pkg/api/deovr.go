@@ -45,6 +45,7 @@ type DeoScene struct {
 	ID               uint                 `json:"id"`
 	Title            string               `json:"title"`
 	Authorized       uint                 `json:"authorized"`
+	Date             int64                `json:"date"`
 	Description      string               `json:"description"`
 	Paysite          DeoScenePaysite      `json:"paysite"`
 	IsFavorite       bool                 `json:"isFavorite"`
@@ -244,6 +245,7 @@ func (i DeoVRResource) getDeoFile(req *restful.Request, resp *restful.Response) 
 	deoScene := DeoScene{
 		ID:           999900000 + file.ID,
 		Authorized:   1,
+		Date:         file.CreatedTime.Unix(),
 		Description:  file.Filename,
 		Title:        file.Filename,
 		IsFavorite:   false,
@@ -399,6 +401,7 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 		ID:               scene.ID,
 		Authorized:       1,
 		Title:            title,
+		Date:             scene.ReleaseDate.Unix(),
 		Description:      scene.Synopsis,
 		Actors:           actors,
 		Paysite:          DeoScenePaysite{ID: 1, Name: scene.Site, Is3rdParty: true},
