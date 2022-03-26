@@ -24,6 +24,10 @@
               <b-icon pack="mdi" icon="star" size="is-small"/>
               {{item.star_rating}}
             </b-tag>
+            <b-tag type="is-info" v-if="item.duration > 0">
+              <b-icon pack="mdi" icon="clock" size="is-small"/>
+              {{item.duration}}m
+            </b-tag>
           </div>
         </div>
       </div>
