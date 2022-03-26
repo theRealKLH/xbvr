@@ -50,6 +50,7 @@ func onReady() {
 
 	mOpenUI := systray.AddMenuItem("Open UI", "Open UI")
 	mOpenConfig := systray.AddMenuItem("Open config folder", "Open config folder")
+	mOpenLog := systray.AddMenuItem("Open log file", "Open log file")
 
 	systray.AddSeparator()
 
@@ -61,6 +62,8 @@ func onReady() {
 			go open.Run(fmt.Sprintf("http://localhost:%v", config.Config.Server.Port))
 		case <-mOpenConfig.ClickedCh:
 			go open.Run(appdir.New("xbvr").UserConfig())
+		case <-mOpenLog.ClickedCh:
+			go open.Run(appdir.New("xbvr").UserConfig() + "/xbvr.log")
 		case <-mQuit.ClickedCh:
 			systray.Quit()
 			return

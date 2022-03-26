@@ -173,7 +173,6 @@ func SexLikeReal(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 					sc.Filenames = append(sc.Filenames, baseName+"_original_"+sc.SiteID+"_TB_360"+FB360)
 				}
 			}
-
 		})
 
 		out <- sc
@@ -232,12 +231,14 @@ func init() {
 	addSLRScraper("amateurcouplesvr", "AmateurCouplesVR", "AmateurCouplesVR", "https://www.sexlikereal.com/s/images/content/sexlikereal.png")
 	addSLRScraper("amateurvr3d", "AmateurVR3D", "AmateurVR3D", "http://amateurvr3d.com/assets/images/Nx50xlogo.png.pagespeed.ic.mr8RC-ybPl.webp")
 	addSLRScraper("anal-delight", "Anal Delight", "AnalDelight", "https://mcdn.vrporn.com/files/20200907184611/AnalDelight_Logo.jpg")
+	addSLRScraper("babykxtten", "Babykxtten", "Babykxtten", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/321/logo_crop_1624979737.png")
 	addSLRScraper("bravomodelsmedia", "BravoModelsMedia", "Bravo Models", "https://mcdn.vrporn.com/files/20181015142403/ohNFa81Q_400x400.png")
 	addSLRScraper("burningangelvr", "BurningAngelVR", "BurningAngelVR", "https://mcdn.vrporn.com/files/20170830191746/burningangel-icon-vr-porn-studio-vrporn.com-virtual-reality.png")
 	addSLRScraper("cumtoon", "Cumtoon", "Cumtoon", "https://www.sexlikereal.com/s/images/content/sexlikereal.png")
 	addSLRScraper("covert-japan", "CovertJapan", "CovertJapan", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/221/logo_crop_1607605022.png")
 	addSLRScraper("ddfnetworkvr", "DDFNetworkVR", "DDFNetworkVR", "http://pbs.twimg.com/profile_images/1083417183722434560/Ur5xIhqG_200x200.jpg")
 	addSLRScraper("deepinsex", "DeepInSex", "DeepInSex", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/266/logo_crop_1610126420.png")
+	addSLRScraper("dezyred", "Dezyred", "Dezyred", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/356/logo_crop_1636053912.png")
 	addSLRScraper("emilybloom", "EmilyBloom", "Emily Bloom", "https://i.imgur.com/LxYzAQX.png")
 	addSLRScraper("ellielouisevr", "EllieLouiseVR", "EllieLouiseVR", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/265/logo_crop_1607603680.png")
 	addSLRScraper("fuckpassvr", "FuckPassVR", "FuckPassVR", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/352/logo_crop_1635153994.png")
@@ -260,7 +261,7 @@ func init() {
 	addSLRScraper("no2studiovr", "No2StudioVR", "No2StudioVR", "https://mcdn.vrporn.com/files/20201021145654/No2StudioVR_400x400-1.jpg")
 	addSLRScraper("only3xvr", "Only3xVR", "Only3xVR", "https://mcdn.vrporn.com/files/20190821140339/only3xvr-profile-pic.jpg")
 	addSLRScraper("onlytease", "OnlyTease", "OT Publishing Ltd", "https://www.onlytease.com/assets/img/favicons/ot/apple-touch-icon.png")
-	addSLRScraper("pervrt", "perVRt/Terrible", "Terrible", "https://mcdn.vrporn.com/files/20181218151630/pervrt-logo.jpg")
+	addSLRScraper("pervrt", "perVRt", "Terrible", "https://mcdn.vrporn.com/files/20181218151630/pervrt-logo.jpg")
 	addSLRScraper("pip-vr", "PIP VR", "PIP VR", "https://www.sexlikereal.com/s/images/content/sexlikereal.png")
 	addSLRScraper("pornbcn", "Pornbcn", "Pornbcn", "https://mcdn.vrporn.com/files/20190923110340/CHANNEL-LOGO-2.jpg")
 	addSLRScraper("povcentralvr", "POVcentralVR", "POV Central", "https://mcdn.vrporn.com/files/20191125091909/POVCentralLogo.jpg")

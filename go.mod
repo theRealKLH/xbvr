@@ -64,6 +64,8 @@ require (
 	willnorris.com/go/imageproxy v0.11.2
 )
 
+require github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
+
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect

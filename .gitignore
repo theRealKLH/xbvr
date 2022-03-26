@@ -1,6 +1,6 @@
 /.idea
 .DS_Store
-.vscode/settings.json
+.vscode/
 
 test.db
 /test_cache
@@ -12,6 +12,11 @@ node_modules/
 /ui/public/static/bundle.*
 npm-debug.log
 yarn-error.log
+*.plist
+XBVR.app/Contents/MacOS/XBVR
+XBVR.app/Contents/Resources/XBVR.icns
+docker-compose.yml
+__debug_bin
 
 .release-env
 .docker-creds

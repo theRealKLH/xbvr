@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/emicklei/go-restful"
@@ -57,6 +58,7 @@ type RequestSaveOptionsDeoVR struct {
 	Username       string `json:"username"`
 	Password       string `json:"password"`
 	RemoteEnabled  bool   `json:"remote_enabled"`
+	TrackWatchTime bool   `json:"track_watch_time"`
 	RenderHeatmaps bool   `json:"render_heatmaps"`
 }
 
@@ -247,6 +249,7 @@ func (i ConfigResource) saveOptionsDeoVR(req *restful.Request, resp *restful.Res
 	config.Config.Interfaces.DeoVR.AuthEnabled = r.AuthEnabled
 	config.Config.Interfaces.DeoVR.RenderHeatmaps = r.RenderHeatmaps
 	config.Config.Interfaces.DeoVR.RemoteEnabled = r.RemoteEnabled
+	config.Config.Interfaces.DeoVR.TrackWatchTime = r.TrackWatchTime
 	config.Config.Interfaces.DeoVR.Username = r.Username
 	if r.Password != config.Config.Interfaces.DeoVR.Password && r.Password != "" {
 		hash, _ := bcrypt.GenerateFromPassword([]byte(r.Password), bcrypt.DefaultCost)
@@ -377,10 +380,15 @@ func (i ConfigResource) forceSiteUpdate(req *restful.Request, resp *restful.Resp
 		SiteName string `json:"site_name"`
 	}
 
+	SNSuffix := strings.NewReplacer(" (SLR)", "", " (VRPorn)", "", " (POVR)", "", " (all sites)", "")
+
 	if err := req.ReadEntity(&r); err != nil {
 		APIError(req, resp, http.StatusInternalServerError, err)
 		return
 	}
+
+	NoSuffix := SNSuffix.Replace(r.SiteName)
+	r.SiteName = NoSuffix
 
 	db, _ := models.GetDB()
 	defer db.Close()
@@ -393,10 +401,15 @@ func (i ConfigResource) deleteScenes(req *restful.Request, resp *restful.Respons
 		SiteName string `json:"site_name"`
 	}
 
+	SNSuffix := strings.NewReplacer(" (SLR)", "", " (VRPorn)", "", " (POVR)", "", " (all sites)", "")
+
 	if err := req.ReadEntity(&r); err != nil {
 		APIError(req, resp, http.StatusInternalServerError, err)
 		return
 	}
+
+	NoSuffix := SNSuffix.Replace(r.SiteName)
+	r.SiteName = NoSuffix
 
 	db, _ := models.GetDB()
 	defer db.Close()

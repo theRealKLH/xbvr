@@ -1,10 +1,23 @@
-FROM ubuntu:20.04
+FROM node:12 as build-env
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+#### Install Go ####
+ENV GO_VERSION=1.17.5 \
+    GOPATH=$HOME/go-packages \
+    GOROOT=$HOME/go
+ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
-COPY xbvr /usr/bin/xbvr
+RUN curl -fsSL https://storage.googleapis.com/golang/go$GO_VERSION.linux-amd64.tar.gz | tar -xzv 
+        
+WORKDIR /app
+ADD . /app
+RUN cd /app && \
+    yarn install && \
+    yarn build && \
+    go generate && \
+    go build -tags='json1' -ldflags '-w' -o xbvr main.go
+
+FROM gcr.io/distroless/base
+COPY --from=build-env /app/xbvr /usr/bin/xbvr
 
 EXPOSE 9998-9999
 VOLUME /root/.config/
