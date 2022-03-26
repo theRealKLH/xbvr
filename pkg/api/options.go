@@ -58,6 +58,7 @@ type RequestSaveOptionsDeoVR struct {
 	Username       string `json:"username"`
 	Password       string `json:"password"`
 	RemoteEnabled  bool   `json:"remote_enabled"`
+	TrackWatchTime bool   `json:"track_watch_time"`
 	RenderHeatmaps bool   `json:"render_heatmaps"`
 }
 
@@ -248,6 +249,7 @@ func (i ConfigResource) saveOptionsDeoVR(req *restful.Request, resp *restful.Res
 	config.Config.Interfaces.DeoVR.AuthEnabled = r.AuthEnabled
 	config.Config.Interfaces.DeoVR.RenderHeatmaps = r.RenderHeatmaps
 	config.Config.Interfaces.DeoVR.RemoteEnabled = r.RemoteEnabled
+	config.Config.Interfaces.DeoVR.TrackWatchTime = r.TrackWatchTime
 	config.Config.Interfaces.DeoVR.Username = r.Username
 	if r.Password != config.Config.Interfaces.DeoVR.Password && r.Password != "" {
 		hash, _ := bcrypt.GenerateFromPassword([]byte(r.Password), bcrypt.DefaultCost)
