@@ -31,7 +31,7 @@ type DeoListScenes struct {
 
 type DeoListItem struct {
 	Title        string `json:"title"`
-	VideoLength  int    `json:"fullVideoLength"`
+	VideoLength  int    `json:"videoLength"`
 	ThumbnailURL string `json:"thumbnailUrl"`
 	VideoURL     string `json:"video_url"`
 }
@@ -56,7 +56,7 @@ type DeoScene struct {
 	RatingAvg        float64              `json:"rating_avg"`
 	ScreenType       string               `json:"screenType"`
 	StereoMode       string               `json:"stereoMode"`
-	VideoLength      int                  `json:"fullVideoLength"`
+	VideoLength      int                  `json:"videoLength"`
 	VideoThumbnail   string               `json:"videoThumbnail"`
 	VideoPreview     string               `json:"videoPreview,omitempty"`
 	Encodings        []DeoSceneEncoding   `json:"encodings"`
@@ -315,7 +315,7 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 		})
 	}
 
-	var fullVideoLength float64
+	var videoLength float64
 
 	var sources []DeoSceneEncoding
 	var sourcesSpatial []DeoSceneEncoding
@@ -347,7 +347,7 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 			sourcesSpatial = append(sourcesSpatial, source)
 		}
 
-		fullVideoLength = file.VideoDuration
+		videoLength = file.VideoDuration
 	}
 
 	var deoScriptFiles []DeoSceneScriptFile
@@ -440,7 +440,7 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 		ScreenType:       screenType,
 		Encodings:        sources,
 		EncodingsSpatial: sourcesSpatial,
-		VideoLength:      int(fullVideoLength),
+		VideoLength:      int(videoLength),
 		Timestamps:       cuepoints,
 		Categories:       categories,
 		Fleshlight:       deoScriptFiles,
