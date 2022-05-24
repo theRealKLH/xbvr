@@ -294,8 +294,8 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 		return
 	}
 
-	var stereoMode string
-	var screenType string
+	var stereoMode string = ""
+	var screenType string = ""
 
 	var actors []DeoSceneActor
 	for i := range scene.Cast {
@@ -326,6 +326,8 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 		return
 	}
 
+	var sceneMultiProjection bool = true
+
 	for i, file := range videoFiles {
 		var height = file.VideoHeight
 		var width = file.VideoWidth
@@ -348,6 +350,11 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 		}
 
 		videoLength = file.VideoDuration
+
+		// Test scene w/multiple videos for different projection types
+		if (i > 0) && (file.VideoProjection != videoFiles[i-1].VideoProjection) {
+			sceneMultiProjection = false
+		}
 	}
 
 	var deoScriptFiles []DeoSceneScriptFile
@@ -391,7 +398,8 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 		return cuepoints[i].TS < cuepoints[j].TS
 	})
 
-	if len(videoFiles) == 1 {
+	// Set Scene projection IF either single video or all videos have same projection type
+	if sceneMultiProjection {
 		if videoFiles[0].VideoProjection == "mkx200" ||
 			videoFiles[0].VideoProjection == "mkx220" ||
 			videoFiles[0].VideoProjection == "vrca220" {
