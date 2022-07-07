@@ -771,6 +771,13 @@ func Migrate() {
 							if err != nil {
 								return err
 							}
+							if scene.SceneID == sceneID && !(scene.IsAccessible || scene.IsAvailable) {
+								err = tx.Delete(&scene).Where("scene_id = ?", sceneID).Error
+								if err != nil {
+									return err
+								}
+								continue
+							}
 							scene.SceneID = sceneID
 							// update the scene itself
 							err = tx.Save(&scene).Error
@@ -789,8 +796,22 @@ func Migrate() {
 			},
 		},
 		{
+			// rebuild search indexes with new fields
+			ID: "034-rebuild-new-indexes",
+			Migrate: func(d *gorm.DB) error {
+				os.RemoveAll(common.IndexDirV2)
+				os.MkdirAll(common.IndexDirV2, os.ModePerm)
+				// rebuild asynchronously, no need to hold up startup, blocking the UI
+				go func() {
+					tasks.SearchIndex()
+					tasks.CalculateCacheSizes()
+				}()
+				return nil
+			},
+		},
+		{
 			// some site, vrbangers & vrconk have blank covers, & vrbangers gallery images will not render due to double slashes ie .com//
-			ID: "0034-fix-vrbangers-images",
+			ID: "0035-fix-vrbangers-images",
 			Migrate: func(tx *gorm.DB) error {
 				var scenes []models.Scene
 				err := tx.Where("studio  LIKE ?", "VRBangers").Or("images LIKE ?", "%{\"url\":\"\",\"type\":\"gallery\",\"orientation\":\"\"}%").Find(&scenes).Error
@@ -809,6 +830,36 @@ func Migrate() {
 					if scene.Studio == "VRBangers" && strings.Contains(scene.Images, ".com//") {
 						scene.Images = strings.ReplaceAll(scene.Images, ".com//", ".com/")
 						changed = true
+					}
+					if changed {
+						err = tx.Save(&scene).Error
+						if err != nil {
+							return err
+						}
+					}
+				}
+				return nil
+			},
+		},
+		{
+			ID: "0036-fix-missing-cover-urls",
+			Migrate: func(tx *gorm.DB) error {
+				var scenes []models.Scene
+				err := tx.Where("cover_url=''").Find(&scenes).Error
+				if err != nil {
+					return err
+				}
+
+				var images []models.Image
+				for _, scene := range scenes {
+					changed := false
+					if err := json.Unmarshal([]byte(scene.Images), &images); err == nil {
+						for _, image := range images {
+							if scene.CoverURL == "" && image.Type == "cover" {
+								scene.CoverURL = image.URL
+								changed = true
+							}
+						}
 					}
 					if changed {
 						err = tx.Save(&scene).Error
