@@ -1,7 +1,6 @@
 package scrape
 
 import (
-	"html"
 	"strconv"
 	"strings"
 	"sync"
@@ -9,7 +8,6 @@ import (
 	"github.com/gocolly/colly"
 	"github.com/mozillazg/go-slugify"
 	"github.com/nleeper/goment"
-	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
 	"github.com/xbapps/xbvr/pkg/models"
 )
@@ -126,22 +124,28 @@ func NaughtyAmericaVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string,
 			sc.Tags = append(sc.Tags, e.Text)
 		})
 
-		// Cast (extract from JavaScript)
-		e.ForEach(`script`, func(id int, e *colly.HTMLElement) {
-			if strings.Contains(e.Text, "femaleStar") {
-				vm := otto.New()
+		/*
+			// Cast (extract from JavaScript)
+			e.ForEach(`script`, func(id int, e *colly.HTMLElement) {
+				if strings.Contains(e.Text, "femaleStar") {
+					vm := otto.New()
 
-				script := e.Text
-				script = strings.Replace(script, "window.dataLayer", "dataLayer", -1)
-				script = strings.Replace(script, "dataLayer = dataLayer || []", "dataLayer = []", -1)
-				script = script + "\nout = []; dataLayer.forEach(function(v) { if (v.femaleStar) { out.push(v.femaleStar); } });"
-				vm.Run(script)
+					script := e.Text
+					script = strings.Replace(script, "window.dataLayer", "dataLayer", -1)
+					script = strings.Replace(script, "dataLayer = dataLayer || []", "dataLayer = []", -1)
+					script = script + "\nout = []; dataLayer.forEach(function(v) { if (v.femaleStar) { out.push(v.femaleStar); } });"
+					vm.Run(script)
 
-				out, _ := vm.Get("out")
-				outs, _ := out.ToString()
+					out, _ := vm.Get("out")
+					outs, _ := out.ToString()
 
-				sc.Cast = strings.Split(html.UnescapeString(outs), ",")
-			}
+					sc.Cast = strings.Split(html.UnescapeString(outs), ",")
+				}
+			})
+		*/
+		// Cast
+		e.ForEach(`div.performer-list a`, func(id int, e *colly.HTMLElement) {
+			sc.Cast = append(sc.Cast, strings.TrimSpace(e.Text))
 		})
 
 		out <- sc

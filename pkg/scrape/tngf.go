@@ -125,8 +125,9 @@ func TNGFVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 		})
 
 		// Cast
-		e.ForEach(`p.grey-performers a`, func(id int, e *colly.HTMLElement) {
-			sc.Cast = append(sc.Cast, strings.TrimSpace(e.Text))
+		e.ForEach(`p.grey-performers`, func(id int, e *colly.HTMLElement) {
+			sc.Cast = strings.Split(strings.TrimSpace(e.Text), ",")
+			//			sc.Cast = append(sc.Cast, strings.Split(strings.TrimSpace(e.Text), ","))
 		})
 
 		out <- sc

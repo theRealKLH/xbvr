@@ -111,16 +111,20 @@ func VRHush(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 			name = strings.TrimSpace(reDoubleWhitespace.ReplaceAllString(e.Text, " "))
 		})
 
-		var gender string
-		e.ForEach(`ul.model-attributes li`, func(id int, e *colly.HTMLElement) {
-			if strings.Split(e.Text, " ")[0] == "Gender" {
-				gender = strings.Split(e.Text, " ")[1]
-			}
-		})
+		/*
+			var gender string
+			e.ForEach(`ul.model-attributes li`, func(id int, e *colly.HTMLElement) {
+				if strings.Split(e.Text, " ")[0] == "Gender" {
+					gender = strings.Split(e.Text, " ")[1]
+				}
+			})
 
-		if gender == "Female" {
-			sc.Cast = append(sc.Cast, name)
-		}
+			if gender == "Female" {
+				sc.Cast = append(sc.Cast, name)
+			}
+		*/
+		sc.Cast = append(sc.Cast, name)
+
 	})
 
 	siteCollector.OnHTML(`ul.pagination a`, func(e *colly.HTMLElement) {
