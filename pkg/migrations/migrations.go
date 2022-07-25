@@ -3,6 +3,7 @@ package migrations
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,6 +17,7 @@ import (
 	"github.com/mozillazg/go-slugify"
 	"github.com/tidwall/gjson"
 	"github.com/xbapps/xbvr/pkg/common"
+	"github.com/xbapps/xbvr/pkg/config"
 	"github.com/xbapps/xbvr/pkg/models"
 	"github.com/xbapps/xbvr/pkg/scrape"
 	"github.com/xbapps/xbvr/pkg/tasks"
@@ -869,6 +871,59 @@ func Migrate() {
 					}
 				}
 				return nil
+			},
+		},
+		{
+			ID: "0037-migrate-schedule-config",
+			Migrate: func(d *gorm.DB) error {
+				// get the old config values using the old json format
+				var obj models.KV
+				type oldConfigDef struct {
+					Cron struct {
+						ScrapeContentInterval int `json:"scrapeContentInt"`
+						RescanLibraryInterval int `json:"rescanLibraryInt"`
+					} `json:"cron"`
+				}
+
+				var oldConfig oldConfigDef
+				err := d.Where(&models.KV{Key: "config"}).First(&obj).Error
+				if err == nil {
+					if err := json.Unmarshal([]byte(obj.Value), &oldConfig); err == nil {
+						// update the new config
+						config.Config.Cron.RescrapeSchedule.HourInterval = oldConfig.Cron.ScrapeContentInterval
+						config.Config.Cron.RescanSchedule.HourInterval = oldConfig.Cron.RescanLibraryInterval
+					}
+				}
+				// nicety to default scraping to a random start time, so everyone does not start scrapping on the hour, users can change it if they want
+				ms := rand.Intn(59)
+				config.Config.Cron.RescrapeSchedule.MinuteStart = ms
+				config.SaveConfig()
+				return nil
+			},
+		},
+		{
+			ID: "0038-edits-applied",
+			Migrate: func(tx *gorm.DB) error {
+				type Scene struct {
+					EditsApplied bool `json:"edits_applied" gorm:"default:false"`
+				}
+				return tx.AutoMigrate(Scene{}).Error
+			},
+		},
+		{
+			ID: "0039-title-size-change",
+			Migrate: func(tx *gorm.DB) error {
+				if models.GetDBConn().Driver == "mysql" {
+					return tx.Model(&models.Scene{}).ModifyColumn("title", "varchar(1024)").Error
+				}
+				return nil
+			},
+		},
+		{
+			// perVRt change siteID
+			ID: "0040-revert-pervrt",
+			Migrate: func(tx *gorm.DB) error {
+				return db.Model(&models.Scene{}).Where("site = ?", "perVRt/Terrible").Update("site", "perVRt").Error
 			},
 		},
 	})
