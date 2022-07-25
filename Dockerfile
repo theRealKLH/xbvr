@@ -1,4 +1,4 @@
-FROM node:14 as build-env
+FROM node:16 as build-env
 
 #### Install Go ####
 ENV GO_VERSION=1.17.5 \
