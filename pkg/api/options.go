@@ -44,6 +44,7 @@ type RequestSaveOptionsWeb struct {
 	SceneFavourite bool   `json:"sceneFavourite"`
 	SceneWatched   bool   `json:"sceneWatched"`
 	SceneEdit      bool   `json:"sceneEdit"`
+	SceneCuepoint  bool   `json:"sceneCuepoint"`
 	UpdateCheck    bool   `json:"updateCheck"`
 }
 
@@ -81,6 +82,21 @@ type GetStateResponse struct {
 type GetFunscriptCountResponse struct {
 	Total   int64 `json:"total"`
 	Updated int64 `json:"updated"`
+}
+
+type RequestSaveOptionsTaskSchedule struct {
+	RescrapeEnabled      bool `json:"rescrapeEnabled"`
+	RescrapeHourInterval int  `json:"rescrapeHourInterval"`
+	RescrapeUseRange     bool `json:"rescrapeUseRange"`
+	RescrapeMinuteStart  int  `json:"rescrapeMinuteStart"`
+	RescrapeHourStart    int  `json:"rescrapeHourStart"`
+	RescrapeHourEnd      int  `json:"rescrapeHourEnd"`
+	RescanEnabled        bool `json:"rescanEnabled"`
+	RescanHourInterval   int  `json:"rescanHourInterval"`
+	RescanUseRange       bool `json:"rescanUseRange"`
+	RescanMinuteStart    int  `json:"rescanMinuteStart"`
+	RescanHourStart      int  `json:"rescanHourStart"`
+	RescanHourEnd        int  `json:"rescanHourEnd"`
 }
 
 type ConfigResource struct{}
@@ -150,6 +166,9 @@ func (i ConfigResource) WebService() *restful.WebService {
 
 	// "Funscripts" section endpoints
 	ws.Route(ws.GET("/funscripts/count").To(i.getFunscriptsCount).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
+
+	ws.Route(ws.POST("/task-schedule").To(i.saveOptionsTaskSchedule).
 		Metadata(restfulspec.KeyOpenAPITags, tags))
 
 	return ws
@@ -236,6 +255,7 @@ func (i ConfigResource) saveOptionsWeb(req *restful.Request, resp *restful.Respo
 	config.Config.Web.SceneFavourite = r.SceneFavourite
 	config.Config.Web.SceneWatched = r.SceneWatched
 	config.Config.Web.SceneEdit = r.SceneEdit
+	config.Config.Web.SceneCuepoint = r.SceneCuepoint
 	config.Config.Web.UpdateCheck = r.UpdateCheck
 	config.SaveConfig()
 
@@ -373,7 +393,8 @@ func (i ConfigResource) removeStorage(req *restful.Request, resp *restful.Respon
 	// Inform UI about state change
 	common.PublishWS("state.change.optionsStorage", nil)
 
-	tasks.RescanVolumes()
+	tasks.RescanVolumes(-1)
+	tasks.RefreshSceneStatuses()
 
 	log.WithField("task", "rescan").Info("Removed storage", vol.Path)
 
@@ -541,6 +562,7 @@ func (i ConfigResource) generateTestPreview(req *restful.Request, resp *restful.
 			tasks.RenderPreview(
 				files[0].GetPath(),
 				destFile,
+				files[0].VideoProjection,
 				r.StartTime,
 				r.SnippetLength,
 				r.SnippetAmount,
@@ -578,4 +600,39 @@ func (i ConfigResource) getFunscriptsCount(req *restful.Request, resp *restful.R
 	}
 
 	resp.WriteHeaderAndEntity(http.StatusOK, r)
+}
+
+func (i ConfigResource) saveOptionsTaskSchedule(req *restful.Request, resp *restful.Response) {
+	var r RequestSaveOptionsTaskSchedule
+	err := req.ReadEntity(&r)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	if r.RescrapeHourEnd > 23 {
+		r.RescrapeHourEnd -= 24
+	}
+	if r.RescanHourEnd > 23 {
+		r.RescanHourEnd -= 24
+	}
+
+	config.Config.Cron.RescrapeSchedule.Enabled = r.RescrapeEnabled
+	config.Config.Cron.RescrapeSchedule.HourInterval = r.RescrapeHourInterval
+	config.Config.Cron.RescrapeSchedule.UseRange = r.RescrapeUseRange
+	config.Config.Cron.RescrapeSchedule.MinuteStart = r.RescrapeMinuteStart
+	config.Config.Cron.RescrapeSchedule.HourStart = r.RescrapeHourStart
+	config.Config.Cron.RescrapeSchedule.HourEnd = r.RescrapeHourEnd
+
+	config.Config.Cron.RescanSchedule.Enabled = r.RescanEnabled
+	config.Config.Cron.RescanSchedule.HourInterval = r.RescanHourInterval
+	config.Config.Cron.RescanSchedule.UseRange = r.RescanUseRange
+	config.Config.Cron.RescanSchedule.MinuteStart = r.RescanMinuteStart
+	config.Config.Cron.RescanSchedule.HourStart = r.RescanHourStart
+	config.Config.Cron.RescanSchedule.HourEnd = r.RescanHourEnd
+
+	config.SaveConfig()
+
+	resp.WriteHeaderAndEntity(http.StatusOK, r)
+
 }
