@@ -8,7 +8,7 @@ jobs:
     - uses: oprypin/find-latest-tag@v1.1.0
       with:
         repository: therealklh/xbvr  # The repository to scan.
-        releases-only: true  # We know that all relevant tags have a GitHub release for them.
+        releases-only: false  # We know that all relevant tags have a GitHub release for them.
 #        prefix: '0.3.'
       id: xbvr  # The step ID to refer to later.
 
