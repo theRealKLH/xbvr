@@ -45,14 +45,14 @@ jobs:
 #      - name: Show value of 'has_new_commits'
 #        run: echo ${{ steps.sync.outputs.has_new_commits }}
 
-  build-latest:
-    needs: sync_with_upstream
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
-#          ref: multi-docker
+#  build-latest:
+#    needs: sync_with_upstream
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
+#          ref: master
       - name: Find Tag
         id: tagger
         uses: jimschubert/query-tag-action@v2
