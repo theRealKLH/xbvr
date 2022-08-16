@@ -49,10 +49,10 @@ jobs:
 #    needs: sync_with_upstream
 #    runs-on: ubuntu-latest
 #    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
-#          ref: master
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
+          ref: master
       - name: Find Tag
         id: tagger
         uses: jimschubert/query-tag-action@v2
