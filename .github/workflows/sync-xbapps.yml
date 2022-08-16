@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
-          ref: multi-docker
+#          ref: multi-docker
       - name: Find Tag
         id: tagger
         uses: jimschubert/query-tag-action@v2
@@ -80,6 +80,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
       - name: build the image
         run: |
+          git checkout multi-docker Dockerfile
           docker buildx build --push \
           --tag iamklh/xbvr:latest \
           --platform linux/amd64 .
