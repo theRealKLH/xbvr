@@ -80,7 +80,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
       - name: build the image
         run: |
-          git checkout multi-docker Dockerfile
+          git checkout origin/multi-docker Dockerfile
           docker buildx build --push \
           --tag iamklh/xbvr:latest \
           --platform linux/amd64 .
