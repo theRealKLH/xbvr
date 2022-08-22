@@ -22,12 +22,12 @@ jobs:
       # Step 2: run this sync action - specify the upstream repo, upstream branch to sync with, and target sync branch
       - name: Pull (Fast-Forward) upstream changes
         id: sync
-        uses: aormsby/Fork-Sync-With-Upstream-action@v3.1
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.2
         with:
           upstream_sync_repo: xbapps/xbvr
           upstream_sync_branch: master
           target_sync_branch: master
-#          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
 #          target_branch_push_args: '--force'
 #          upstream_pull_args: '--tags --allow-unrelated-histories'
           
