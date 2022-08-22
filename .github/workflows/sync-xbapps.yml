@@ -28,8 +28,8 @@ jobs:
           upstream_sync_branch: master
           target_sync_branch: master
 #          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
-#          target_branch_push_args: '--force'
-#          upstream_pull_args: '--tags --allow-unrelated-histories'
+          target_branch_push_args: '--force'
+          upstream_pull_args: '--tags --allow-unrelated-histories'
           
 
        # Set test_mode true to run tests instead of the true action!!
