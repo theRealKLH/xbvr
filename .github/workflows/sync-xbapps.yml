@@ -27,7 +27,7 @@ jobs:
           upstream_sync_repo: xbapps/xbvr
           upstream_sync_branch: master
           target_sync_branch: master
-#          target_repo_token: ${{ secrets.SYNC_TOKEN }}
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
 #          target_branch_push_args: '--force'
           upstream_pull_args: '--tags --allow-unrelated-histories'
           
