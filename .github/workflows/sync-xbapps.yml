@@ -15,6 +15,7 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v2
         with:
+          fetch-depth: 0
           token: ${{ secrets.SYNC_TOKEN }}
           ref: master
 
@@ -46,14 +47,14 @@ jobs:
 #      - name: Show value of 'has_new_commits'
 #        run: echo ${{ steps.sync.outputs.has_new_commits }}
 
-  build-latest:
-    needs: sync_with_upstream
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
-          ref: master
+#  build-latest:
+#    needs: sync_with_upstream
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
+#          ref: master
       - name: Find Tag
         id: tagger
         uses: jimschubert/query-tag-action@v2
@@ -62,7 +63,7 @@ jobs:
 #          include: '0.3.*'
           commit-ish: 'HEAD~'
         # if you unshallow in a separate step, use the following option:
-          skip-unshallow: 'true'
+#          skip-unshallow: 'true'
       - name: Show Tag
         id: display
         run: |
