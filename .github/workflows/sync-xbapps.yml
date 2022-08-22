@@ -30,7 +30,7 @@ jobs:
           target_sync_branch: master
           target_repo_token: ${{ secrets.SYNC_TOKEN }}
           target_branch_push_args: '--force'
-          upstream_pull_args: '--tags'
+          upstream_pull_args: '--tags -f'
           
 
        # Set test_mode true to run tests instead of the true action!!
