@@ -15,9 +15,9 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
           token: ${{ secrets.SYNC_TOKEN }}
           ref: master
+          fetch-depth: 0
 
       # Step 2: run this sync action - specify the upstream repo, upstream branch to sync with, and target sync branch
       - name: Pull (Fast-Forward) upstream changes
