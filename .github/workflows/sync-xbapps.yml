@@ -17,7 +17,7 @@ jobs:
         with:
           token: ${{ secrets.SYNC_TOKEN }}
 #          persist-credentials: false
-#          ref: master
+          ref: master
           fetch-depth: 0
 
       # Step 2: run this sync action - specify the upstream repo, upstream branch to sync with, and target sync branch
