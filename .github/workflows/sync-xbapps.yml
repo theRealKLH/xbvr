@@ -87,3 +87,17 @@ jobs:
           docker buildx build --push \
           --tag iamklh/xbvr:latest \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
+
+  pushover-actions:
+    needs: build-latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2 # required to clone your code
+      - name: pushover-actions
+        uses: umahmood/pushover-actions@main
+        env:
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+        with:
+          status: ${{ job.status }}
+          title: 'notOfficial deployment status'
