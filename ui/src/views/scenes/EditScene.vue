@@ -127,10 +127,19 @@ export default {
     const scene = Object.assign({}, this.$store.state.overlay.edit.scene)
     scene.castArray = scene.cast.map(c => c.name)
     scene.tagsArray = scene.tags.map(t => t.name)
-    const images = JSON.parse(scene.images)
+    let images;
+    try {
+      images = JSON.parse(scene.images)
+    } catch {
+      images = []
+    }
     scene.covers = images.filter(i => i.type === 'cover').map(i => i.url)
     scene.gallery = images.filter(i => i.type === 'gallery').map(i => i.url)
-    scene.files = JSON.parse(scene.filenames_arr)
+    try {
+      scene.files = JSON.parse(scene.filenames_arr)
+    } catch {
+      scene.files = []
+    }
     return {
       scene,
       // A shallow copy won't work, need a deep copy

@@ -1,6 +1,6 @@
 module github.com/xbapps/xbvr
 
-go 1.17
+go 1.19
 
 require (
 	github.com/ProtonMail/go-appdir v1.1.0
@@ -20,7 +20,7 @@ require (
 	github.com/emicklei/go-restful-openapi v1.4.1
 	github.com/gammazero/nexus/v3 v3.0.4
 	github.com/getlantern/systray v1.2.1
-	github.com/go-openapi/spec v0.20.6
+	github.com/go-openapi/spec v0.20.7
 	github.com/go-test/deep v1.0.8
 	github.com/gocolly/colly v1.2.0
 	github.com/google/uuid v1.3.0
@@ -36,7 +36,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/marcsauter/single v0.0.0-20201009143647-9f8d81240be2
 	github.com/markphelps/optional v0.10.0
-	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mozillazg/go-slugify v0.2.0
@@ -44,7 +44,7 @@ require (
 	github.com/nleeper/goment v1.4.4
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/posthog/posthog-go v0.0.0-20220706162856-f7d06545b580
+	github.com/posthog/posthog-go v0.0.0-20220817142604-0b0bbf0f9c0f
 	github.com/putdotio/go-putio v1.6.0
 	github.com/robertkrimen/otto v0.0.0-20211024170158-b87d35c0b86f
 	github.com/robfig/cron/v3 v3.0.1
@@ -52,13 +52,13 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/thoas/go-funk v0.9.2
-	github.com/tidwall/gjson v1.14.1
+	github.com/tidwall/gjson v1.14.3
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xo/dburl v0.11.0
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
-	golang.org/x/oauth2 v0.0.0-20220722155238-128564f6959c
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
+	golang.org/x/crypto v0.0.0-20220817201139-bc19a97f63c8
+	golang.org/x/net v0.0.0-20220812174116-3211cb980234
+	golang.org/x/oauth2 v0.0.0-20220808172628-8227340efae7
+	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6
 	golang.org/x/text v0.3.7
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/resty.v1 v1.12.0
@@ -125,6 +125,7 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
+	github.com/shiena/ansicolor v0.0.0-20200904210342-c7312218db18
 	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/temoto/robotstxt v0.0.0-20180810133444-97ee4a9ee6ea // indirect
 	github.com/tidwall/match v1.1.1 // indirect

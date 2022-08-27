@@ -444,6 +444,20 @@ func Migrate() {
 			},
 		},
 		{
+			ID: "0038-edits-applied",
+			Migrate: func(tx *gorm.DB) error {
+				type Scene struct {
+					EditsApplied bool `json:"edits_applied" gorm:"default:false"`
+				}
+				return tx.AutoMigrate(Scene{}).Error
+			},
+		},
+
+		// ===============================================================================================
+		// Put DB Schema migrations above this line and migrations that rely on the updated schema below
+		// ===============================================================================================
+
+		{
 			ID: "0024-drop-actions-old",
 			Migrate: func(tx *gorm.DB) error {
 				return tx.Exec("DROP TABLE IF EXISTS actions_old").Error
@@ -902,15 +916,6 @@ func Migrate() {
 			},
 		},
 		{
-			ID: "0038-edits-applied",
-			Migrate: func(tx *gorm.DB) error {
-				type Scene struct {
-					EditsApplied bool `json:"edits_applied" gorm:"default:false"`
-				}
-				return tx.AutoMigrate(Scene{}).Error
-			},
-		},
-		{
 			ID: "0039-title-size-change",
 			Migrate: func(tx *gorm.DB) error {
 				if models.GetDBConn().Driver == "mysql" {
@@ -924,6 +929,21 @@ func Migrate() {
 			ID: "0040-revert-pervrt",
 			Migrate: func(tx *gorm.DB) error {
 				return db.Model(&models.Scene{}).Where("site = ?", "perVRt/Terrible").Update("site", "perVRt").Error
+			},
+		},
+		{
+			// populate default cuepoint actions and positions
+			ID: "0041-default-cuepoints",
+			Migrate: func(tx *gorm.DB) error {
+				var kv models.KV
+				kv.Key = "cuepoints"
+				db.Find(&kv)
+
+				if kv.Value == "" {
+					kv.Value = "{\"positions\":[\"standing\", \"sitting\", \"laying\", \"kneeling\"],\"actions\":[\"handjob\", \"blowjob\", \"doggy\", \"cowgirl\", \"revcowgirl\", \"missionary\", \"titfuck\", \"anal\", \"cumshot\", \"69\", \"facesit\"]}"
+					kv.Save()
+				}
+				return nil
 			},
 		},
 	})
