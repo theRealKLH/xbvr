@@ -83,7 +83,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
       - name: build the image
         run: |
-          git checkout origin/multi-docker Dockerfile .yarnrc
+          git checkout origin/util Dockerfile .yarnrc
           docker buildx build --push \
           --tag iamklh/xbvr:latest \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
@@ -100,4 +100,4 @@ jobs:
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
         with:
           status: ${{ job.status }}
-          title: 'notOfficial deployment status'
+          title: 'notOfficial deployment COMPLETE'
