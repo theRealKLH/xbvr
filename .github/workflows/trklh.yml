@@ -42,6 +42,7 @@ jobs:
           tags: ghcr.io/therealklh/xbvr:fuckyeah
           
   pushover-actions:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2 # required to clone your code
