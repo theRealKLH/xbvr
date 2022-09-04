@@ -1,11 +1,11 @@
 name: build UNOFFICIAL
 
 on:
+  schedule:
+    - cron: "20 14,18 * * *"
+  workflow_dispatch:
   push:
     branches: master
-  schedule:
-    - cron: "0 14,18 * * *"
-  workflow_dispatch:
 
 jobs:
   DH:
