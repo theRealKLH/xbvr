@@ -1,4 +1,4 @@
-name: Sync upstream & build NotOfficial
+name: Sync upstream & build latest (DockerHub)
 
 on:
   schedule:
@@ -31,22 +31,6 @@ jobs:
 #          target_repo_token: ${{ secrets.SYNC_TOKEN }}
           target_branch_push_args: '--follow-tags --force'
           upstream_pull_args: '--tags -f'
-          
-
-       # Set test_mode true to run tests instead of the true action!!
-#          test_mode: true
-
-      # Step 3: Display a sample message based on the sync output var 'has_new_commits'
-#      - name: New commits found
-#        if: steps.sync.outputs.has_new_commits == 'true'
-#        run: echo "New commits were found to sync."
-    
-#      - name: No new commits
-#        if: steps.sync.outputs.has_new_commits == 'false'
-#        run: echo "There were no new commits."
-      
-#      - name: Show value of 'has_new_commits'
-#        run: echo ${{ steps.sync.outputs.has_new_commits }}
 
   build-latest:
     needs: sync_with_upstream
@@ -100,4 +84,4 @@ jobs:
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
         with:
           status: ${{ job.status }}
-          title: 'notOfficial deployment COMPLETE'
+          title: 'LATEST deployment COMPLETE'
