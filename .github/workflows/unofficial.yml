@@ -1,4 +1,4 @@
-name: build our image
+name: build UNOFFICIAL
 
 on:
   push:
@@ -50,3 +50,18 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: ghcr.io/therealklh/xbvr:almostofficial          
+  PUSH:
+    needs: [DH, GHCR]
+    runs-on: ubuntu-latest
+    if: ${{github.event.action == 'push' }}
+    steps:
+      - uses: actions/checkout@v2 # required to clone your code
+      - name: Report Pushing
+        uses: umahmood/pushover-actions@main
+        env:
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+        with:
+          status: ${{ job.status }}
+          title: 'MASTER has been updated!'      
+
