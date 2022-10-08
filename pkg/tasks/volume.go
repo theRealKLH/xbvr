@@ -295,24 +295,6 @@ func scanLocalVolume(vol models.Volume, db *gorm.DB, tlog *logrus.Entry) {
 			ScanLocalHspFile(path, vol.ID, 0)
 		}
 
-		for _, path := range hspProcList {
-			var fl models.File
-			db.Where(&models.File{
-				Path:     filepath.Dir(path),
-				Filename: filepath.Base(path),
-				Type:     "hsp",
-			}).FirstOrCreate(&fl)
-
-			fStat, _ := os.Stat(path)
-			fTimes, _ := times.Stat(path)
-
-			fl.Size = fStat.Size()
-			fl.CreatedTime = fTimes.ModTime()
-			fl.UpdatedTime = fTimes.ModTime()
-			fl.VolumeID = vol.ID
-			fl.Save()
-		}
-
 		vol.LastScan = time.Now()
 		vol.Save()
 
