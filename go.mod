@@ -46,7 +46,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/posthog/posthog-go v0.0.0-20220817142604-0b0bbf0f9c0f
 	github.com/putdotio/go-putio v1.6.0
-	github.com/robertkrimen/otto v0.0.0-20221011175642-09fc211e5ab1
+	github.com/robertkrimen/otto v0.0.0-20221025135307-511d75fba9f8
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.8.2
 	github.com/sirupsen/logrus v1.9.0
@@ -59,7 +59,7 @@ require (
 	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
 	golang.org/x/oauth2 v0.0.0-20221006150949-b44042a4b9c1
 	golang.org/x/sys v0.0.0-20221013171732-95e765b1cc43
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.4.0
 	gopkg.in/gormigrate.v1 v1.6.0
 	gopkg.in/resty.v1 v1.12.0
 	willnorris.com/go/imageproxy v0.11.2
