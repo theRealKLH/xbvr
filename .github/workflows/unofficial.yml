@@ -46,11 +46,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Grab Dockerfile
+        run: |
+          git checkout origin/util -- Dockerfile .yarnrc
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
 #          context: .
-          file: refs/remotes/origin/util/Dockerfile
+#          file: refs/remotes/origin/util/Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: ghcr.io/therealklh/xbvr:almostofficial          
