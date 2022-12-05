@@ -52,6 +52,9 @@ func NaughtyAmericaVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string,
 			}
 		})
 
+		// trailer details
+		sc.TrailerType = "url"
+
 		// Filenames & Covers
 		// There's a different video element for the four most recent scenes
 		// New video element
@@ -77,6 +80,7 @@ func NaughtyAmericaVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string,
 			base[8] = "vertical"
 			base[9] = "1182x1788c.jpg"
 			sc.Covers = append(sc.Covers, "https://"+strings.Join(base, "/"))
+			sc.TrailerSrc = `https://videos.naughtycdn.com/` + base[5] + `/trailers/vr/` + base[5] + base[6] + `/` + base[5] + base[6] + `teaser_vrdesktophd.mp4`
 		})
 		// Old video element
 		e.ForEach(`a.play-trailer img.start-card.desktop-only`, func(id int, e *colly.HTMLElement) {
@@ -105,6 +109,7 @@ func NaughtyAmericaVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string,
 			base[8] = "vertical"
 			base[9] = "1182x1788c.jpg"
 			sc.Covers = append(sc.Covers, "https://"+strings.Join(base, "/"))
+			sc.TrailerSrc = `https://videos.naughtycdn.com/` + base[5] + `/trailers/vr/` + base[5] + base[6] + `/` + base[5] + base[6] + `teaser_vrdesktophd.mp4`
 		})
 
 		// Gallery
