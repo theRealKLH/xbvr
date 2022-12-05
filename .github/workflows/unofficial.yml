@@ -23,7 +23,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
       - name: build the image
         run: |
-          git checkout util -- Dockerfile .yarnrc
+          git checkout util -- /Dockerfile /.yarnrc
           docker buildx build --push \
           --tag iamklh/xbvr:notofficial \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
