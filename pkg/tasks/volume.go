@@ -93,12 +93,6 @@ func RescanVolumes(id int) {
 
 		GenerateHeatmaps(tlog)
 
-		// Update versions statuses
-		tlog.Infof("Finding Scenes with multiple versions")
-
-		db.Model(&scenes).Update("versions", false)
-		db.Exec("UPDATE scenes set versions = true where id IN (select scene_id from files where type = 'video' AND scene_id > 0 group by scene_id HAVING count(scene_id) > 1)")
-
 		tlog.Infof("Scanning complete")
 
 		// Inform UI about state change

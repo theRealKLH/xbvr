@@ -322,6 +322,21 @@ func (o *Scene) UpdateStatus() {
 			changed = true
 		}
 
+		if videos <= 1 && scripts <= 1 && o.Versions {
+			o.Versions = false
+			changed = true
+		}
+
+		if videos > 1 && !o.Versions {
+			o.Versions = true
+			changed = true
+		}
+
+		if scripts > 1 && !o.Versions {
+			o.Versions = true
+			changed = true
+		}
+
 		if !newestFileDate.Equal(o.AddedDate) && !newestFileDate.IsZero() {
 			o.AddedDate = newestFileDate
 			changed = true
