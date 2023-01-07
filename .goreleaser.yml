@@ -100,7 +100,7 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
     build_flag_templates:
       - --platform=linux/amd64
       - --no-cache
@@ -115,7 +115,7 @@ dockers:
     goos: linux
     goarch: arm64
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
     build_flag_templates:
       - --platform=linux/arm64
       - --no-cache
@@ -131,7 +131,7 @@ dockers:
     goarch: arm
     goarm: 7
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
     build_flag_templates:
       - --platform=linux/arm/v7
       - --no-cache
@@ -142,16 +142,16 @@ dockers:
       - --label=org.opencontainers.image.revision={{ .FullCommit }}      
 
 docker_manifests:
-  - name_template: ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}
+  - name_template: ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
-  - name_template: ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:latest
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
+  - name_template: ghcr.io/{{.Env.GITHUB_PROJECT}}:latest
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
+      - ghcr.io/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
 
 archives:
 - id: archive-linux
