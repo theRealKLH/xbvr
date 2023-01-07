@@ -71,4 +71,4 @@ release:
 		-v `pwd`/sysroot:/sysroot \
 		-w /go/src \
 		ghcr.io/goreleaser/goreleaser-cross:${GORELEASER_CROSS_VERSION} \
-		release --rm-dist --skip-publish
+		release --rm-dist --nightly
