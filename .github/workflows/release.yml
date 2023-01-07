@@ -34,4 +34,4 @@ jobs:
           echo '${{github.event.repository.owner.login}}:${{ secrets.GITHUB_TOKEN }}:ghcr.io' >> .docker-creds
 
       - name: Release publish
-        run: make release-snapshot
+        run: make release
