@@ -287,11 +287,18 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 	var scene models.Scene
 	err := db.Preload("Cast").
 		Preload("Tags").
-		Preload("Cuepoints").
+		Preload("Cuepoints", "track is null").
 		Where("id = ?", sceneID).First(&scene).Error
 	if err != nil {
 		log.Error(err)
 		return
+	}
+	if len(scene.Cuepoints) == 0 {
+		db.Preload("Cast").
+			Preload("Tags").
+			Preload("Cuepoints", "track = 0").
+			Preload("Files").
+			Where("id = ?", sceneID).First(&scene)
 	}
 
 	var stereoMode string = ""
@@ -320,7 +327,7 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 	var sources []DeoSceneEncoding
 	var sourcesSpatial []DeoSceneEncoding
 	var videoFiles []models.File
-	videoFiles, err = scene.GetVideoFiles()
+	videoFiles, err = scene.GetVideoFilesSorted(config.Config.Interfaces.Players.VideoSortSeq)
 	if err != nil {
 		log.Error(err)
 		return
@@ -446,12 +453,18 @@ func (i DeoVRResource) getDeoScene(req *restful.Request, resp *restful.Response)
 		}
 	}
 
+	// set date to EPOCH in case it is missing or 0001-01-01
+	finalDate := scene.ReleaseDate.Unix()
+	if finalDate < 0 {
+		finalDate = 0
+	}
+
 	deoScene := DeoScene{
 		ID:               scene.ID,
 		Authorized:       1,
 		Title:            title,
 		Description:      scene.Synopsis,
-		Date:             scene.ReleaseDate.Unix(),
+		Date:             finalDate,
 		Actors:           actors,
 		Paysite:          DeoScenePaysite{ID: 1, Name: scene.Site, Is3rdParty: true},
 		IsFavorite:       scene.Favourite,

@@ -20,7 +20,13 @@ const state = {
     allow_cuepoint_updates: false,
     allow_watchlist_updates: false,
     allow_hsp_data: false,
-    multitrack_cuepoints: true
+    multitrack_cuepoints: true,
+    multitrack_cast_cuepoints: true,
+    retain_non_hsp_cuepoints: true
+  },
+  players: {
+    video_sort_seq: '',
+    script_sort_seq: ''
   }
 }
 
@@ -48,12 +54,16 @@ const actions = {
         state.heresphere.allow_watchlist_updates = data.config.interfaces.heresphere.allow_watchlist_updates
         state.heresphere.allow_hsp_data = data.config.interfaces.heresphere.allow_hsp_data
         state.heresphere.multitrack_cuepoints = data.config.interfaces.heresphere.multitrack_cuepoints
+        state.players.video_sort_seq = data.config.interfaces.players.video_sort_seq
+        state.players.script_sort_seq = data.config.interfaces.players.script_sort_seq
+        state.heresphere.multitrack_cast_cuepoints = data.config.interfaces.heresphere.multitrack_cast_cuepoints
+        state.heresphere.retain_non_hsp_cuepoints = data.config.interfaces.heresphere.retain_non_hsp_cuepoints
         state.loading = false        
       })
   },
   async save ({ state }, enabled) {
     state.loading = true
-    ky.put('/api/options/interface/deovr', { json: { ...state.deovr, ...state.heresphere } })
+    ky.put('/api/options/interface/deovr', { json: { ...state.deovr, ...state.heresphere, ...state.players } })
       .json()
       .then(data => {
         state.loading = false

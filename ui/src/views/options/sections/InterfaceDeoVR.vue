@@ -53,6 +53,64 @@
                   </b-switch>
                 </b-field>
               </div>
+              <hr/>
+              <div class="block">
+                <b-tooltip label="Specfy feilds if you wish control the sequence of the scenes video files" multilined :delay="750" >
+                  <b-field label="Video File Sorting">
+                    <b-input v-model="videoSequence" disabled></b-input>
+                  </b-field>
+                  <b-field>
+                    <b-button label="Add Field" @click="addVideoField('video')" />
+                    <b-button label="Clear Fields" @click="videoSequence=''" />                  
+                    <b-dropdown v-model="selectedVideoField" aria-role="list" :scrollable=true max-height="200">
+                        <template #trigger>
+                            <b-button :label="selectedVideoField" icon-right="menu-down"/>
+                        </template>
+                        <b-dropdown-item aria-role="listitem" value='Filename'>Filename</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Added'>Added</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Updated'>Updated</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Resolution'>Resolution</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Size'>Size</b-dropdown-item>                      
+                        <b-dropdown-item aria-role="listitem" value='Bitrate'>Bitrate</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Frame Rate'>Frame Rate</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Codec'>Codec</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Duration'>Duration</b-dropdown-item>
+                    </b-dropdown>
+                    <b-dropdown v-model="selectedVideoSequence" aria-role="list">
+                        <template #trigger>
+                            <b-button :label="selectedVideoSequence" icon-right="menu-down" />
+                        </template>
+                        <b-dropdown-item aria-role="listitem" value='Ascending'>Ascending</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Descending'>Descending</b-dropdown-item>
+                    </b-dropdown>
+                  </b-field>
+                </b-tooltip>
+                <b-tooltip label="Specfy feilds if you wish control the sequence of the scenes video files" multilined :delay="750" >
+                  <b-field label="Script File Sorting">
+                    <b-input v-model="scriptSequence" disabled></b-input>
+                  </b-field>
+                  <b-field>
+                    <b-button label="Add Field" @click="addVideoField('script')" />
+                    <b-button label="Clear Fields" @click="scriptSequence=''" />                  
+                    <b-dropdown v-model="selectedScriptField" aria-role="list">
+                        <template #trigger>
+                            <b-button :label="selectedScriptField" icon-right="menu-down" />
+                        </template>
+                        <b-dropdown-item aria-role="listitem" value='Filename'>Filename</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Added'>Added</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Updated'>Updated</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Selected'>Selected</b-dropdown-item>                      
+                    </b-dropdown>
+                    <b-dropdown v-model="selectedScriptSequence" aria-role="list">
+                        <template #trigger>
+                            <b-button :label="selectedScriptSequence" icon-right="menu-down" />
+                        </template>
+                        <b-dropdown-item aria-role="listitem" value='Ascending'>Ascending</b-dropdown-item>
+                        <b-dropdown-item aria-role="listitem" value='Descending'>Descending</b-dropdown-item>
+                    </b-dropdown>
+                  </b-field>
+                </b-tooltip>
+              </div>
             </div>
           </section>
         </div>
@@ -136,15 +194,41 @@
               Enabled
             </b-switch>
           </b-field>
-          <b-tooltip
-            label="This option will split Cuepoint into multiple tracks, eg Standing-Doggy will split into 2 tracks in Heresphere"
-            size="is-large" type="is-primary" multilined :delay="250" >
-            <b-field label="Use Multi-Track Cuepoints">
-              <b-switch v-model="multiTrackCuepoints">
-                Enabled
-              </b-switch>
-            </b-field>
-          </b-tooltip>
+          <div class="columns">
+            <div class="column is-one-thrid">
+              <b-tooltip
+                label="This option will split Cuepoints into multiple tracks, eg Standing-Doggy will split into 2 tracks in Heresphere"
+                size="is-large" type="is-primary" multilined :delay="250" >
+                <b-field label="Use Multi-Track Cuepoints">
+                  <b-switch v-model="multiTrackCuepoints">
+                    Enabled
+                  </b-switch>
+                </b-field>
+              </b-tooltip>
+            </div>
+            <div class="column is-one-thrid">
+              <b-tooltip
+                label="This option will split Cuepoints matching the Actors Name into seperate tracks in Heresphere"
+                size="is-large" type="is-primary" multilined :delay="250" >
+                <b-field label="Use Multi-Track Cast Cuepoints">
+                  <b-switch v-model="multiTrackCastCuepoints">
+                    Enabled
+                  </b-switch>
+                </b-field>
+              </b-tooltip>
+            </div>
+            <div class="column is-one-thrid"> 
+              <b-tooltip
+                label="This option controls whether you use wish to keep existing non-HSP Cuepoints when you sync cuepoints changes. Syncing changes to Cuepoints in HSP will be saved with extended fields"
+                size="is-large" type="is-primary" multilined :delay="250" >
+                <b-field label="Retain Non-HSP Cuepoints">
+                  <b-switch v-model="retainNonHSPCuepoints">
+                    Enabled
+                  </b-switch>
+                </b-field>
+              </b-tooltip>
+            </div>
+          </div>
       </div>
       <b-field>
         <b-button type="is-primary" @click="save">Save and apply changes</b-button>
@@ -160,7 +244,11 @@ export default {
   },
   data () {
     return {
-      activeTab: 0
+      activeTab: 0,
+      selectedVideoField: 'Filename',
+      selectedVideoSequence: 'Ascending',
+      selectedScriptField: 'Filename',
+      selectedScriptSequence: 'Ascending'
     }
   },
   methods: {
@@ -177,6 +265,57 @@ export default {
     },
     hasDuplicates (array) {
       return (new Set(array)).size !== array.length
+    },
+    addVideoField(type) {      
+      let dbfield=''
+      let field=this.selectedVideoField            
+      if (type!='video'){        
+        field=this.selectedScriptField
+      }
+
+      switch (field) {
+        case 'Added':
+          dbfield = 'created_time'
+          break
+        case 'Updated':
+          dbfield = 'updated_time'
+          break
+        case 'Resolution':
+          dbfield = 'video_height'
+          break
+        case 'Bitrate':
+          dbfield = 'video_bit_rate'
+          break
+        case 'Frame Rate':
+          dbfield = 'video_avg_frame_rate_val'
+          break
+        case 'Codec':
+          dbfield = "case when video_codec_name in ('hevc', 'h265') then 0 when video_codec_name='h264' then 1 else 2 end"
+          break
+        case 'Duration':
+          dbfield = 'video_direction'
+          break
+        case 'Selected':
+          dbfield = 'is_selected_script'
+          break
+        default:
+          dbfield = field.toLowerCase()
+      }
+          
+      if (type=='video'){        
+        if (this.selectedVideoSequence=='Ascending') {
+          this.videoSequence=[this.videoSequence, dbfield ].filter(Boolean).join(',')
+        }else{
+          this.videoSequence=[this.videoSequence, dbfield+' desc' ].filter(Boolean).join(',')
+        }
+      }else{
+        if (this.selectedScriptSequence=='Ascending') {
+          this.scriptSequence=[this.scriptSequence, dbfield ].filter(Boolean).join(',')
+        }else{
+          this.scriptSequence=[this.scriptSequence, dbfield+' desc' ].filter(Boolean).join(',')
+        }
+      }
+
     }
   },
   computed: {
@@ -303,6 +442,38 @@ export default {
       },
       set (value) {
         this.$store.state.optionsDeoVR.heresphere.multitrack_cuepoints = value
+      }
+    },
+    videoSequence: {
+      get () {
+        return this.$store.state.optionsDeoVR.players.video_sort_seq
+      },
+      set (value) {
+        this.$store.state.optionsDeoVR.players.video_sort_seq = value
+      },
+    },
+    scriptSequence: {
+      get () {
+        return this.$store.state.optionsDeoVR.players.script_sort_seq
+      },
+      set (value) {
+        this.$store.state.optionsDeoVR.players.script_sort_seq = value
+      },
+    },
+    multiTrackCastCuepoints: {
+      get () {        
+        return this.$store.state.optionsDeoVR.heresphere.multitrack_cast_cuepoints
+      },
+      set (value) {
+        this.$store.state.optionsDeoVR.heresphere.multitrack_cast_cuepoints = value
+      }
+    },
+    retainNonHSPCuepoints: {
+      get () {        
+        return this.$store.state.optionsDeoVR.heresphere.retain_non_hsp_cuepoints
+      },
+      set (value) {
+        this.$store.state.optionsDeoVR.heresphere.retain_non_hsp_cuepoints = value
       }
     },
     isLoading: function () {
