@@ -15,3 +15,5 @@ yarn-error.log
 
 .release-env
 .docker-creds
+.dockerignore
+.gitattributes
