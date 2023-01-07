@@ -53,7 +53,7 @@ release-snapshot:
 		-v `pwd`/sysroot:/sysroot \
 		-w /go/src \
 		ghcr.io/goreleaser/goreleaser-cross:${GORELEASER_CROSS_VERSION} \
-		release --rm-dist --snapshot
+		release --rm-dist --nightly
 
 .PHONY: release
 release:
