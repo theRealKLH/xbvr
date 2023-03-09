@@ -561,6 +561,12 @@ func Migrate() {
 				return err
 			},
 		},
+		{
+			ID: "0057-Tag-groups",
+			Migrate: func(tx *gorm.DB) error {
+				return tx.AutoMigrate(&models.TagGroup{}).Error
+			},
+		},
 
 		// ===============================================================================================
 		// Put DB Schema migrations above this line and migrations that rely on the updated schema below
@@ -1289,7 +1295,7 @@ func Migrate() {
 				}
 				//backup bundle
 				common.Log.Infof("Creating pre-migration backup, please waiit, backups can take some time on a system with a large number of scenes ")
-				tasks.BackupBundle(true, false, true, true, true, true, true, true, true, true, true, "0", "xbvr-premigration-bundle.json", "2")
+				tasks.BackupBundle(true, false, true, true, true, true, true, true, true, true, true, true, "0", "xbvr-premigration-bundle.json", "2")
 				common.Log.Infof("Go to download/xbvr-premigration-bundle.json, or http://xxx.xxx.xxx.xxx:9999/download/xbvr-premigration-bundle.json if you need access to the backup")
 				var sites []models.Site
 				officalSiteChanges := []SiteChange{
@@ -1370,6 +1376,28 @@ func Migrate() {
 				common.Log.Infof("Migration needs to Reindex scenes.. please wait")
 				tasks.SearchIndex()
 				common.Log.Infof("Reindex of scenes complete")
+				return nil
+			},
+		},
+		{
+			// Fixes the filenames of scenes for Custom SLR Sites, which have a (SLR) prefix enbedded in the filename
+			ID: "0057-fix-slr-filenames-for-custom-studios",
+			Migrate: func(tx *gorm.DB) error {
+				common.Log.Infof("Migration updating filenames for Custom SLR Sites")
+				var scenes []models.Scene
+				err := tx.Where("site like ?", "% (SLR)").Find(&scenes).Error
+				if err != nil {
+					return err
+				}
+
+				for _, scene := range scenes {
+					scene.FilenamesArr = strings.ReplaceAll(scene.FilenamesArr, "SLR_"+scene.Site, "SLR_"+strings.TrimSuffix(scene.Site, " (SLR)"))
+					err = tx.Save(&scene).Error
+					if err != nil {
+						return err
+					}
+				}
+				common.Log.Infof("Migration update for Custom SLR Site filenames completed")
 				return nil
 			},
 		},
