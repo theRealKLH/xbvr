@@ -18,7 +18,7 @@ RUN cd /app && \
     yarn build && \
     go mod download && \
     go generate && \
-    go build -tags='json1' -ldflags '-w -X main.version=$RELVER' -o xbvr main.go
+    go build -tags='json1' -ldflags "-w -X main.version=$RELVER" -o xbvr main.go
 
 FROM gcr.io/distroless/base
 COPY --from=build-env /app/xbvr /
