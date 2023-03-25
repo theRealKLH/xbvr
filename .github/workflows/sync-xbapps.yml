@@ -68,7 +68,7 @@ jobs:
       - name: build the image
         run: |
           git checkout origin/util Dockerfile .yarnrc
-          docker buildx build --push \
+          docker buildx build --build-arg RELVER=${{steps.tagger.outputs.tag}} --push \
           --tag iamklh/xbvr:latest \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
@@ -84,4 +84,4 @@ jobs:
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
         with:
           status: ${{ job.status }}
-          title: 'LATEST deployment COMPLETE'
+          title: 'LATEST deployment ${{steps.tagger.outputs.tag}} COMPLETE'
