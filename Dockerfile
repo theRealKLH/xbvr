@@ -2,6 +2,7 @@ FROM node:16 as build-env
 
 ### Install Go ###
 ARG TARGETPLATFORM
+ARG RELVER
 ENV GO_VERSION=1.19.6 \
     GOPATH=$HOME/go-packages \
     GOROOT=$HOME/go
@@ -17,7 +18,7 @@ RUN cd /app && \
     yarn build && \
     go mod download && \
     go generate && \
-    go build -tags='json1' -ldflags '-w' -o xbvr main.go
+    go build -tags='json1' -ldflags '-w -X main.version=$RELVER' -o xbvr main.go
 
 FROM gcr.io/distroless/base
 COPY --from=build-env /app/xbvr /
