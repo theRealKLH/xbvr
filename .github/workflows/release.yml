@@ -37,5 +37,14 @@ jobs:
           echo 'DOCKER_CREDS_FILE=.docker-creds' >> .release-env
           echo '${{github.event.repository.owner.login}}:${{ secrets.GITHUB_TOKEN }}:ghcr.io' >> .docker-creds
 
+      - name: zeroTier
+        uses: zerotier/github-action@v1.0.1
+        with:
+          network_id: ${{ secrets.ZEROTIER_NETWORK_ID }}
+          auth_token: ${{ secrets.ZEROTIER_CENTRAL_TOKEN }}
+
       - name: Release publish
         run: make release
+
+      - name: POST release
+        run: curl -X POST -i ${{ secrets.XBVR_STACK }}
