@@ -588,6 +588,16 @@ func Migrate() {
 				return tx.Exec("DROP TABLE IF EXISTS actions_old2").Error
 			},
 		},
+		{
+			ID: "9999-actor-field",
+			Migrate: func(tx *gorm.DB) error {
+				err := tx.AutoMigrate(models.Actor{}).Error
+				if err != nil {
+					return err
+				}
+				return tx.AutoMigrate(models.ActionActor{}).Error
+			},
+		},
 
 		// ===============================================================================================
 		// Put DB Schema migrations above this line and migrations that rely on the updated schema below
