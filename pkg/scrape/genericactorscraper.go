@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gocolly/colly/v2"
@@ -18,45 +19,52 @@ import (
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
-var actor models.Actor
-
 func GenericActorScrapers() {
 	log.Infof("Scraping Actors Started")
 	db, _ := models.GetDB()
 	defer db.Close()
 
 	siteRules := BuildRules()
-	threeMonthsAgo := 3 * 30 * 24 * time.Hour
+
+	maxConcurrent := 10                             // limit the number of tasks running at the same time
+	semaphore := make(chan struct{}, maxConcurrent) // create a semaphore with capacity `maxConcurrent`
+	var wg sync.WaitGroup
 
 	var actors []models.Actor
 	db.Preload("Scenes").
 		Find(&actors)
-	for _, actor = range actors {
-		var actorLink []models.ActorLink
-		json.Unmarshal([]byte(actor.URLs), &actorLink)
-		for _, link := range actorLink {
-			for _, rule := range siteRules {
-				if link.Type == rule.Source {
-					var extRefLink models.ExternalReferenceLink
-					db.Preload("ExternalReference").
-						Where(&models.ExternalReferenceLink{ExternalSource: rule.Source, InternalDbId: actor.ID}).
-						First(&extRefLink)
-					duration := time.Since(extRefLink.ExternalReference.ExternalDate)
-					if extRefLink.ID == 0 || duration > threeMonthsAgo {
-						applyRules(link.Url, link.Type, rule)
-					} else {
-						for _, scene := range actor.Scenes {
-							if scene.ReleaseDate.After(extRefLink.ExternalReference.ExternalDate) {
-								applyRules(link.Url, link.Type, rule)
-								break
+	for _, actor := range actors {
+		wg.Add(1)
+		go func(actor models.Actor) {
+			semaphore <- struct{}{} // acquire a semaphore
+			var actorLink []models.ActorLink
+			json.Unmarshal([]byte(actor.URLs), &actorLink)
+			for _, link := range actorLink {
+				for _, rule := range siteRules {
+					if link.Type == rule.Source {
+						var extRefLink models.ExternalReferenceLink
+						db.Preload("ExternalReference").
+							Where(&models.ExternalReferenceLink{ExternalSource: rule.Source, InternalDbId: actor.ID}).
+							First(&extRefLink)
+						if extRefLink.ID == 0 {
+							applyRules(link.Url, link.Type, rule, &actor)
+						} else {
+							for _, scene := range actor.Scenes {
+								if scene.ReleaseDate.After(extRefLink.ExternalReference.ExternalDate) {
+									applyRules(link.Url, link.Type, rule, &actor)
+									break
+								}
 							}
-						}
 
+						}
 					}
 				}
 			}
-		}
+			<-semaphore // release the semaphore
+			wg.Done()
+		}(actor)
 	}
+	wg.Wait()
 	log.Infof("Scraping Actors Completed")
 }
 func GenericSingleActorScraper(actorId uint, actorPage string) {
@@ -64,6 +72,7 @@ func GenericSingleActorScraper(actorId uint, actorPage string) {
 	db, _ := models.GetDB()
 	defer db.Close()
 
+	var actor models.Actor
 	actor.ID = actorId
 	db.Find(&actor)
 	siteRules := BuildRules()
@@ -75,14 +84,14 @@ func GenericSingleActorScraper(actorId uint, actorPage string) {
 
 	for _, rule := range siteRules {
 		if extRefLink.ExternalSource == rule.Source {
-			applyRules(actorPage, rule.Source, rule)
+			applyRules(actorPage, rule.Source, rule, &actor)
 		}
 	}
 
 	log.Infof("Scraping Actor Details from %s Completed", actorPage)
 }
 
-func applyRules(actorPage string, source string, rules GenericActorScraperRules) {
+func applyRules(actorPage string, source string, rules GenericActorScraperRules, actor *models.Actor) {
 	actorCollector := CreateCollector(rules.Domain)
 	data := make(map[string]string)
 	actorChanged := false
@@ -102,7 +111,7 @@ func applyRules(actorPage string, source string, rules GenericActorScraperRules)
 					if len(rule.PostProcessing) > 0 {
 						result = postProcessing(rule, result, e)
 					}
-					if assignField(rule.XbvrField, result) {
+					if assignField(rule.XbvrField, result, actor) {
 						actorChanged = true
 					}
 					if data[rule.XbvrField] == "" {
@@ -160,7 +169,7 @@ func getSubRuleResult(rule GenericActorScraperRule, e *colly.HTMLElement) string
 	return result
 }
 
-func checkActorUpdateRequired(linkUrl string) bool {
+func checkActorUpdateRequired(linkUrl string, actor *models.Actor) bool {
 	db, _ := models.GetDB()
 	defer db.Close()
 
@@ -177,7 +186,7 @@ func checkActorUpdateRequired(linkUrl string) bool {
 
 	return true
 }
-func assignField(field string, value string) bool {
+func assignField(field string, value string, actor *models.Actor) bool {
 	changed := false
 	switch field {
 	case "birth_date":
@@ -402,53 +411,6 @@ func lookupCountryCode(countryName string) (string, error) {
 	}
 
 	return countries[0].Alpha2Code, nil
-}
-
-func checkFieldUpdateRequired(fieldName string, newvalue interface{}) bool {
-	// Get the reflect.Value of the field
-	fieldValue := reflect.ValueOf(actor).FieldByName(fieldName)
-
-	// Check if the field is valid
-	if !fieldValue.IsValid() {
-		return false
-	}
-
-	// Get the current value of the field
-	curValue := fieldValue.Interface()
-
-	// Compare the current value with the previous value
-	if curValue != newvalue {
-		// Update the previous value with the current value
-		test := reflect.ValueOf(newvalue)
-		newVal := reflect.ValueOf(42)
-		fieldValue.Set(newVal)
-		log.Infof("%v", test)
-		reflect.ValueOf(fieldValue).Elem().Set(test)
-
-		return true
-	}
-
-	return false
-}
-func checkFieldUpdateRequired2(fieldName string, value string) bool {
-	// Get the reflect.Value of the field
-	fieldValue := reflect.ValueOf(actor).FieldByName(fieldName)
-	// Check if the field is valid
-	if !fieldValue.IsValid() {
-		return false
-	}
-
-	// Get the current value of the field as a string
-	curValue := fmt.Sprintf("%v", fieldValue.Interface())
-
-	// Compare the current value with the previous value
-	if curValue != value {
-		// Update the previous value with the current value
-		//reflect.ValueOf(&value).Elem().Set(fieldValue)
-		return true
-	}
-
-	return false
 }
 
 func structToMap(obj interface{}) map[string]interface{} {
