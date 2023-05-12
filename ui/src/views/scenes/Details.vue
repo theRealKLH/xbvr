@@ -114,7 +114,23 @@
                 </div>
               </div>
             </div>
-
+            
+            <div class="image-row" v-if="activeTab != 1">
+              <div v-for="(image, idx) in castimages" :key="idx" class="image-wrapper">
+                <b-tooltip  type="is-light" :label="image.actor_name"  :delay=100>
+                  <vue-load-image>                                    
+                    <img slot="image" :src="getImageURL(image.src)" alt="Image" class="thumbnail" @mouseover="showTooltip(idx)" @mouseout="hideTooltip(idx)" @click='showCastScenes([image.actor_name])' />                    
+                    <img slot="preloader" :src="getImageURL('https://i.stack.imgur.com/kOnzy.gif')" style="height: 50px;display: block;margin-left:auto;margin-right: auto;" @click='showCastScenes([image.actor_name])' />
+                    <img slot="error" src="/ui/images/blank_female_profile.png" width="80" @click='showCastScenes([image.actor_name])' />
+                  </vue-load-image>
+                </b-tooltip>
+                
+                <div v-if="image.visible" class="tooltip">
+                  <img :src="getImageURL(image.src)" alt="Tooltip Image" />                    
+                </div>
+              </div>              
+            </div>
+            
             <div class="block-tags block" v-if="activeTab != 1">
               <b-taglist>
                 <a v-for="(c, idx) in item.cast" :key="'cast' + idx" @click='showCastScenes([c.name])'
@@ -382,6 +398,7 @@ export default {
       track: null,
       endTime: null,
       sortMultiple: true,
+      castimages: [],
     }
   },
   computed: {
@@ -390,6 +407,22 @@ export default {
       if (this.$store.state.optionsWeb.web.tagSort === 'alphabetically') {
         item.tags.sort((a, b) => a.name < b.name ? -1 : 1)
       }
+
+      console.log(item.cast)
+      let imgs = item.cast.map((actor) => {
+        let img = actor.image_url
+        if (img == "" ){
+          img = "blank"  // forces an error image to load, blank won't display an image
+        }        
+        if (actor.name.startsWith("aka:")) {
+          img = ""
+        }
+        return {src: img, visible: false, actor_name: actor.name};
+      });
+
+      this.castimages =  imgs.filter((img) => {
+        return img.src !== '';
+        });
       return item
     },
     // Properties for gallery
@@ -822,6 +855,12 @@ export default {
       this.cuepointSelected(row) 
       this.updateCuepoint(true)
     },
+    showTooltip(idx) {
+      this.castimages[idx].visible = true;      
+    },
+    hideTooltip(idx) {
+      this.castimages[idx].visible = false;      
+    },
     format,
     parseISO,
     prettyBytes,
@@ -954,4 +993,33 @@ span.is-active img {
 .is-divider {
   margin: .8rem 0;
 }
-</style>
+.image-row {
+  display: flex;  
+}
+.image-wrapper {
+  position: relative;
+}
+.thumbnail {
+  height: 100px;
+  margin-right: .5em;
+  object-fit: cover;
+}
+.tooltip {
+  position: absolute;
+  z-index: 1;
+  top: 50px;
+  right: 100%;
+  width: 400px;
+  height: 400px;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  transform: translateX(10px);
+}
+.tooltip img {
+  max-width: 100%;
+  max-height: 100%;
+}</style>
