@@ -76,7 +76,7 @@
           <template #selected="props">
             <b-tag v-for="(tag, index) in props.tags"
               :type="tag.charAt(0)=='!' ? 'is-danger': (tag.charAt(0)=='&' ? 'is-success' : '')"
-              :key="tag+index" :tabstop="false" closable  @close="sites=sites.filter(e => e !== tag)" @click="toggle2Way(tag,index,'sites')">
+              :key="tag+index" :tabstop="false" closable  @close="sites=sites.filter(e => e !== tag)" @click="toggle3way(tag,index,'sites')">
                 <b-tooltip position="is-right" :delay="200"
                   :label="tag.charAt(0)=='!' ? 'Exclude ' + removeConditionPrefix(tag) : 'Include ' + removeConditionPrefix(tag)">
                   <b-icon pack="mdi" v-if="tag.charAt(0)=='!'" icon="minus-circle-outline" size="is-small" class="tagicon"></b-icon>
@@ -272,8 +272,8 @@ export default {
         case 'cast':
           tags=this.cast 
           break
-        case 'tags':
-          tags=this.tags
+        case 'sites':
+          tags=this.sites
           break
         case 'attributes':
           tags=this.attributes
@@ -293,8 +293,8 @@ export default {
         case 'cast':
           this.cast=tags
           break
-        case 'tags':
-          this.tags=tags
+        case 'sites':
+          this.sites=tags
           break
         case 'attributes':
           this.attributes=tags

@@ -25,7 +25,7 @@
                 <b-carousel v-model="carouselSlide" @change="scrollToActiveIndicator" :autoplay="false" :indicator-inside="false">
                   <b-carousel-item v-for="(carousel, i) in images" :key="i">
                     <div class="image is-1by1 is-full"
-                         v-bind:style="{backgroundImage: `url(${getImageURL(carousel.url, '700,fit')})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}"></div>
+                         v-bind:style="{backgroundImage: `url(${getImageURL(carousel, '700,fit')})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat'}"></div>
                   </b-carousel-item>
                   <template slot="indicators" slot-scope="props">
                       <span class="al image" style="width:max-content;">
@@ -289,7 +289,8 @@ export default {
       if (this.actor.image_arr==undefined || this.actor.image_arr=="") {
         return []
       }
-      return JSON.parse(this.actor.image_arr).filter(im => im && im.url)
+      
+      return JSON.parse(this.actor.image_arr).filter(im => im != "")      
     },
     showEdit () {
       return this.$store.state.overlay.actoredit.show
@@ -351,7 +352,7 @@ export default {
     },
     getIndicatorURL (idx) {      
       if (this.images[idx] !== undefined) {
-        return this.getImageURL(this.images[idx].url, 'x85')
+        return this.getImageURL(this.images[idx], 'x85')
       } else {
         return '/ui/images/blank_female_profile.png'
       }
@@ -492,7 +493,7 @@ export default {
       ky.post('/api/actor/setimage', {
       json: {
         actor_id: this.actor.id,
-        url: this.images[this.carouselSlide].url
+        url: this.images[this.carouselSlide]
       }}).json().then(data => {
         this.$store.state.overlay.actordetails.actor = data
       })    
@@ -501,7 +502,7 @@ export default {
       ky.delete('/api/actor/delimage', {
       json: {
         actor_id: this.actor.id,
-        url: this.images[this.carouselSlide].url
+        url: this.images[this.carouselSlide]
       }}).json().then(data => {
         this.$store.state.overlay.actordetails.actor = data
       })    

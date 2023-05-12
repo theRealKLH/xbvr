@@ -385,11 +385,14 @@ func QueryActors(r RequestActorList, enablePreload bool) ResponseActorList {
 	if r.MaxSceneRating.OrElse(5) < 5 {
 		tx = tx.Where("(select AVG(s.star_rating) from scene_cast sc join scenes s on s.id=sc.scene_id where sc.actor_id =actors.id and s.star_rating > 0 ) <= ?", r.MaxSceneRating.OrElse(50))
 	}
-
 	var sites []string
+	var mustHaveSites []string
 	var excludedSites []string
 	for _, i := range r.Sites {
 		switch firstchar := string(i.OrElse(" ")[0]); firstchar {
+		case "&":
+			inclSite, _ := i.Get()
+			mustHaveSites = append(mustHaveSites, inclSite[1:])
 		case "!":
 			exSite, _ := i.Get()
 			excludedSites = append(excludedSites, exSite[1:])
@@ -397,9 +400,17 @@ func QueryActors(r RequestActorList, enablePreload bool) ResponseActorList {
 			sites = append(sites, i.OrElse(""))
 		}
 	}
-
 	if len(sites) > 0 {
 		tx = tx.Where("(select count(*) from scene_cast sc join scenes s on s.id=sc.scene_id join sites on sites.id = s.scraper_id where sc.actor_id=actors.id and sites.name IN (?)) > 0", sites)
+	}
+	for idx, musthave := range mustHaveSites {
+		scAlias := "sc_i" + strconv.Itoa(idx)
+		sceneAlias := "s_i" + strconv.Itoa(idx)
+		siteAlias := "st_i" + strconv.Itoa(idx)
+		tx = tx.
+			Joins("join scene_cast "+scAlias+" on "+scAlias+".actor_id=actors.id").
+			Joins("join scenes "+sceneAlias+" on "+sceneAlias+".id="+scAlias+".scene_id").
+			Joins("join sites "+siteAlias+" on "+siteAlias+".id="+sceneAlias+".scraper_id and "+siteAlias+".name = ?", musthave)
 	}
 	if len(excludedSites) > 0 {
 		tx = tx.Where("(select count(*) from scene_cast sc join scenes s on s.id=sc.scene_id join sites on sites.id = s.scraper_id where sc.actor_id=actors.id and sites.name IN (?)) = 0", excludedSites)
@@ -464,11 +475,11 @@ func QueryActors(r RequestActorList, enablePreload bool) ResponseActorList {
 		return db.Order("release_date DESC")
 	})
 
-	tx = tx.Select(`actors.*, 
+	tx = tx.Select(`distinct actors.*, 
 	(select AVG(s.star_rating) scene_avg from scene_cast sc join scenes s on s.id=sc.scene_id where sc.actor_id =actors.id and s.star_rating > 0 ) as scene_rating_average	
 	`)
 
-	tx.Limit(limit).
+	tx.Debug().Limit(limit).
 		Offset(offset).
 		Find(&out.Actors)
 

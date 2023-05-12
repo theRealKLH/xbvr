@@ -121,8 +121,7 @@ export default {
     } catch {
       images = []
     }    
-    actor.imageArray = images.map(i => i.url)
-        
+    actor.imageArray = images.map(i => i)    
     try {
       actor.aliasArray = JSON.parse(actor.aliases)
     } catch {
@@ -222,15 +221,7 @@ export default {
       })
       this.actor.urls = JSON.stringify(dataArray)
 
-      dataArray = []
-      this.actor.imageArray.forEach(url => {
-        dataArray.push({
-          url,
-          type: '',
-          orientation: ''
-        })
-      })
-      this.actor.image_arr = JSON.stringify(dataArray)      
+      this.actor.image_arr = JSON.stringify(this.actor.imageArray)  
 
       ky.post(`/api/actor/edit/${this.actor.id}`, { json: { ...this.actor } })
       this.$store.commit('actorList/updateActor', this.actor)
