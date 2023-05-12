@@ -72,6 +72,7 @@ func StartServer(version, commit, branch, date string) {
 
 	restful.Add(ws)
 	restful.Add(api.SceneResource{}.WebService())
+	restful.Add(api.ActorResource{}.WebService())
 	restful.Add(api.TaskResource{}.WebService())
 	restful.Add(api.DMSResource{}.WebService())
 	restful.Add(api.ConfigResource{}.WebService())

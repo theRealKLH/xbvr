@@ -134,5 +134,15 @@
   "Enter Studio Name": "Enter Studio Name",
   "Optional: defaults to Name": "Optional: defaults to Name",
   "Optional": "Optional",
+  "Actors": "Actors",
+  "Added Date": "Added Date",
+  "Birthdate": "Birthdate",
+  "Modified Date": "Modified Date",
+  "Has Stashdb Link": "Has Stashdb Link",
+  "Has Tattoo": "Has Tattoo",
+  "Aka Group": "Aka Group",
+  "Possible Aka": "Possible Aka",
+  "Average Scene Rating": "Average Scene Rating",
+  "Set Main Image": "Set Main Image",
   "Go": "Go"
 }

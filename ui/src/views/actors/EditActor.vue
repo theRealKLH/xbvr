@@ -1,0 +1,296 @@
+<template>
+  <div class="modal is-active">
+    <GlobalEvents
+      :filter="e => !['INPUT', 'TEXTAREA'].includes(e.target.tagName)"
+      @keyup.esc="close"
+      @keyup.s="save"/>
+
+    <div class="modal-background"></div>
+
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">{{ $t('Edit actor details') }} - {{ actor.name }}</p>
+        <button class="delete" @click="close" aria-label="close"></button>
+      </header>
+
+      <section class="modal-card-body">
+        <b-tabs position="is-centered" :animated="false">
+
+          <b-tab-item :label="$t('Information')">
+            <b-field grouped group-multiline style="margin-bottom: 2em;">
+              <b-field label="Nationality" label-position="on-border" class="field-extra">
+                <b-taginput v-model="countries" autocomplete :data="filteredCountries" @typing="getFilteredCountries" maxtags="1" :open-on-focus=true :has-counter="false">
+                  <template slot-scope="props">{{ props.option }}</template>
+                  <template slot="empty">No matching country</template>
+                  <template #selected="props">
+                      <b-tag v-for="(tag, index) in props.tags"                
+                        :key="tag+index" :tabstop="false" closable @close="countries=countries.filter(e => e !== tag)" >
+                          {{tag}}
+                      </b-tag>
+                  </template>
+                </b-taginput>
+              </b-field>              
+              <b-field :label="$t('Ethnicity')" label-position="on-border">
+                <b-input type="text" v-model="actor.ethnicity" @blur="blur('ethnicity')"/>
+              </b-field>
+               <b-datepicker v-model="birthdate" icon="calendar-today" @blur="blur('birth_date')">
+                 <b-button label="Clear" type="is-danger" icon-left="close" outlined @click="birthdate = null" />
+               </b-datepicker>
+            </b-field>
+            <b-field grouped group-multiline style="margin-bottom: 2em;">
+              <b-field :label="$t('Eye Color')" label-position="on-border">
+                <b-input type="text" v-model="actor.eye_color" @blur="blur('eye_color')"/>
+              </b-field>
+              <b-field :label="$t('Hair Color')" label-position="on-border">
+                <b-input type="text" v-model="actor.hair_color" @blur="blur('hair_color')"/>
+              </b-field>
+            </b-field>
+            <b-field grouped group-multiline style="margin-bottom: 2em;">
+              <b-field :label="$t('Height')" label-position="on-border">
+                <b-input type="number" v-model.number="actor.height"  placeholder="Height in cm" @blur="blur('height')"/>
+              </b-field>
+              <b-field :label="$t('Weight')" label-position="on-border">
+                <b-input type="number" v-model.number="actor.weight" placeholder="Weight in kg" @blur="blur('weight')"/>
+              </b-field>
+            </b-field>
+            <b-field grouped group-multiline style="margin-bottom: 2em;">
+              <b-field :label="$t('Measurements')" label-position="on-border">
+                <b-input type="text" v-model="actor.measurements" placeholder="eg 36C-24-36" pattern="(^(\d{2})?([A-Za-z]{0,2})-(\d{2})?-(\d{2}$)?)|^[A-Z]{0,2}$" validation-message="use the format 99A-99-99"
+                  @blur="blur('measurements')"/>
+              </b-field>
+              <b-field :label="$t('Breast Type')" label-position="on-border">
+                <b-input type="text" v-model="actor.breast_type" placeholder="eg Fake, Natural" @blur="blur('breast_type')"/>
+              </b-field>
+            </b-field>
+            <b-field grouped group-multiline style="margin-bottom: 2em;">
+              <b-field :label="$t('Active From')" label-position="on-border">
+                <b-input type="number" v-model.number="actor.start_year" :max="new Date().getFullYear()" pattern="^[1-2]\d{1,3}$|^0$|^$"  validation-message="Up to the current year" @blur="blur('start_year')"/>
+              </b-field>
+              <b-field :label="$t('Active To')" label-position="on-border">
+                <b-input type="number" v-model.number="actor.end_year" :max="new Date().getFullYear()" pattern="^[1-2]\d{1,3}$|^0$|^$"  validation-message="Up to the current year" @blur="blur('end_year')"/>
+              </b-field>
+            </b-field>
+            <b-field :label="$t('Biography')" label-position="on-border">
+              <b-input type="textarea" v-model="actor.biography" @blur="blur('biography')"/>
+            </b-field>
+          </b-tab-item>
+
+          <b-tab-item :label="$t('Aliases')">
+            <ListEditor :list="this.actor.aliasArray" type="aliases" :blurFn="() => blur('aliases')"/>
+          </b-tab-item>
+          <b-tab-item :label="$t('Tattoos')">
+            <ListEditor :list="this.actor.tattooArray" type="tattoos" :blurFn="() => blur('tattoos')"/>
+          </b-tab-item>
+          <b-tab-item :label="$t('Piercings')">
+            <ListEditor :list="this.actor.piercingArray" type="piercings" :blurFn="() => blur('piercings')"/>
+          </b-tab-item>
+
+          <b-tab-item :label="$t('Links')">
+            <ListEditor :list="this.actor.urlArray" type="urls" :blurFn="() => blur('urls')" :showUrl="true"/>
+          </b-tab-item>
+
+          <b-tab-item :label="$t('Images')">
+            <ListEditor :list="this.actor.imageArray" type="image_arr" :blurFn="() => blur('image_arr')" :showUrl="true"/>
+          </b-tab-item>
+        </b-tabs>
+
+      </section>
+
+      <footer class="modal-card-foot">
+        <b-field>
+          <b-button type="is-primary" @click="save">{{ $t('Save Details') }}</b-button>          
+        </b-field>
+      </footer>
+    </div>
+  </div>
+</template>
+
+<script>
+import ky from 'ky'
+import GlobalEvents from 'vue-global-events'
+import ListEditor from '../../components/ListEditor'
+
+export default {
+  name: 'EditActor',
+  components: { ListEditor, GlobalEvents },
+  data () {
+    const actor = Object.assign({}, this.$store.state.overlay.actoredit.actor)    
+    let images;
+    try {
+      images = JSON.parse(actor.image_arr)
+    } catch {
+      images = []
+    }    
+    actor.imageArray = images.map(i => i.url)
+        
+    try {
+      actor.aliasArray = JSON.parse(actor.aliases)
+    } catch {
+      actor.aliasArray = []
+    }
+    try {
+      actor.tattooArray = JSON.parse(actor.tattoos)
+    } catch {
+      actor.tattooArray = []
+    }
+    try {
+      actor.piercingArray = JSON.parse(actor.piercings)
+    } catch {
+      actor.piercingArray = []
+    }
+    actor.measurements = actor.band_size + actor.cup_size + '-' + actor.waist_size + '-' + actor.hip_size
+    this.convertCountryCodeToName()
+    let urls;
+    try {
+      urls = JSON.parse(actor.urls)
+    } catch {
+      urls = []
+    }    
+    actor.urlArray = urls.map(i => i.url)
+
+    return {
+      actor,
+      // A shallow copy won't work, need a deep copy
+      source: JSON.parse(JSON.stringify(actor)),
+      changesMade: false,
+      countryList: [],
+      countries: [],
+      selectedCountry: '',
+      filteredCountries: [],      
+    }
+  },
+  computed: {
+    birthdate: {
+      get () {
+        console.log("get date",this.actor.birth_date)
+        if (this.actor.birth_date=='0001-01-01T00:00:00Z') {
+          return new Date()
+        }
+        return new Date(this.actor.birth_date)
+      },
+      set (value) {
+        console.log("set date",value)
+        if (value==null){
+          this.actor.birth_date=null
+        }else{
+        // remove the time offset, or toISOString may result in a different date
+        let adjustedDate = new Date(value.getTime() - (value.getTimezoneOffset() * 60000))
+        this.actor.birth_date = adjustedDate.toISOString().split('.')[0] + 'Z'        
+      }
+      }
+    }
+  },
+  mounted () {    
+        ky.get('/api/actor/countrylist')
+        .json()
+        .then(list => {
+          this.countryList = list
+          this.convertCountryCodeToName()
+        })  
+  },
+  methods: {
+    close () {
+      if (this.changesMade) {
+        this.$buefy.dialog.confirm({
+          title: 'Close without saving',
+          message: 'Are you sure you want to close before saving your changes?',
+          confirmText: 'Close',
+          type: 'is-warning',
+          hasIcon: true,
+          onConfirm: () => this.$store.commit('overlay/hideActorEditDetails')
+        })
+        return
+      }
+      this.$store.commit('overlay/hideActorEditDetails')
+    },
+    save () {
+      this.actor.aliases = JSON.stringify(this.actor.aliasArray)      
+      this.actor.tattoos = JSON.stringify(this.actor.tattooArray)         
+      this.actor.piercings = JSON.stringify(this.actor.piercingArray)
+      if (this.countries.length==0){
+        this.actor.nationality=""
+      } else {
+        this.actor.nationality=this.countries[0]
+      }
+
+      let  dataArray = []
+      this.actor.urlArray.forEach(url => {
+        dataArray.push({
+          url,
+          type: ''          
+        })
+      })
+      this.actor.urls = JSON.stringify(dataArray)
+
+      dataArray = []
+      this.actor.imageArray.forEach(url => {
+        dataArray.push({
+          url,
+          type: '',
+          orientation: ''
+        })
+      })
+      this.actor.image_arr = JSON.stringify(dataArray)      
+
+      ky.post(`/api/actor/edit/${this.actor.id}`, { json: { ...this.actor } })
+      this.$store.commit('actorList/updateActor', this.actor)
+      this.changesMade = false
+      this.close()
+    },
+    blur (field) {
+      if (this.changesMade) return // Changes have already been made. No point to check any further   
+      if (['image_arr', 'tattoos', 'piercings', 'aliases', 'urls'].includes(field)) {
+        if (this.actor[field].length !== this.source[field].length) {
+          this.changesMade = true
+        } else {
+          // change to actor and use foreah 
+          for (let i = 0; i < this.actor[field].length; i++) {
+            if (this.actor[field][i] !== this.source[field][i]) {
+              this.changesMade = true
+              break
+            }
+          }
+        }
+      } else if (this.actor[field] !== this.source[field]) {       
+        this.changesMade = true
+      }      
+    },
+    getFilteredCountries (text) {
+      const filtered = this.countryList.filter(option => (
+        option.name.toString().toLowerCase().indexOf(text.toLowerCase()) >= 0        
+      ))
+      this.filteredCountries=[]
+      filtered.forEach(item => this.filteredCountries.push(item.name))      
+    },
+    getYear (text) {
+      if (text==0) {
+        return ""
+      }
+      return year
+    },
+    convertCountryCodeToName() {      
+      if (this.countryList != undefined && this.actor != undefined && this.actor.nationality.length == 2) {
+        this.countryList.forEach(country => {
+          if (country.code == this.actor.nationality) {
+            this.actor.nationality=country.name
+          }
+        })
+      }
+
+      if (this.actor != undefined){      
+        this.countries = [this.actor.nationality]
+      }      
+    },
+  },
+}
+</script>
+
+<style scoped>
+.modal-card {
+  width: 65%;
+}
+
+.tab-item {
+  height: 40vh;
+}
+</style>
