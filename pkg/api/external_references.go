@@ -1,6 +1,7 @@
 package api
 
 import (
+	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
 )
 
@@ -16,6 +17,20 @@ func (i ExternalReference) WebService() *restful.WebService {
 	ws.Path("/api/extref").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON)
+	ws.Route(ws.GET("/stashdb/apply_scene_rules").To(i.stashSceneApplyRules).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
+
+	ws.Route(ws.GET("/stashdb/match_akas").To(i.matchAkaPerformers).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
+
+	ws.Route(ws.GET("/stashdb/update_images").To(i.stashDbUpdateImages).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
+
+	ws.Route(ws.GET("/stashdb/run_all").To(i.stashRunAll).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
+
+	ws.Route(ws.GET("/stashdb/refresh_performer/{performerid}").To(i.refreshStashPerformer).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
 
 	return ws
 }
