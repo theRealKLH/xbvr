@@ -497,6 +497,26 @@ func SceneCreateUpdateFromExternal(db *gorm.DB, ext ScrapedScene) error {
 	for _, name := range ext.Cast {
 		tmpActor = Actor{}
 		db.Where(&Actor{Name: strings.Replace(name, ".", "", -1)}).FirstOrCreate(&tmpActor)
+		saveActor := false
+		if ext.ActorDetails[name].ImageUrl != "" {
+			if tmpActor.ImageUrl == "" {
+				tmpActor.ImageUrl = ext.ActorDetails[name].ImageUrl
+				saveActor = true
+			}
+			if tmpActor.AddToImageArray(ext.ActorDetails[name].ImageUrl) {
+				saveActor = true
+			}
+			AddActionActor(name, ext.ActorDetails[name].Source, "add", "image_url", ext.ActorDetails[name].ImageUrl)
+		}
+		if ext.ActorDetails[name].ProfileUrl != "" {
+			if tmpActor.AddToActorUrlArray(ActorLink{Url: ext.ActorDetails[name].ProfileUrl, Type: ext.ActorDetails[name].Source}) {
+				saveActor = true
+			}
+			AddActionActor(name, ext.ActorDetails[name].Source, "add", "image_url", ext.ActorDetails[name].ImageUrl)
+		}
+		if saveActor {
+			tmpActor.Save()
+		}
 		db.Model(&o).Association("Cast").Append(tmpActor)
 	}
 
