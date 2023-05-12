@@ -598,6 +598,17 @@ func Migrate() {
 				return tx.AutoMigrate(models.ActionActor{}).Error
 			},
 		},
+		{
+			ID: "0061-ExternalReferences",
+			Migrate: func(tx *gorm.DB) error {
+				err := tx.AutoMigrate(&models.ExternalReference{}).Error
+				if err != nil {
+					return err
+				}
+				return tx.AutoMigrate(&models.ExternalReferenceLink{}).Error
+
+			},
+		},
 
 		// ===============================================================================================
 		// Put DB Schema migrations above this line and migrations that rely on the updated schema below
