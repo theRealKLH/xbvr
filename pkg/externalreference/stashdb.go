@@ -335,7 +335,7 @@ func matchPerformerName(scene models.StashScene, xbvrScene models.Scene, matchLe
 						if len(data.Images) > 0 {
 							actor.ImageUrl = data.Images[0].URL
 							actor.Save()
-							models.AddActionActor(actor.Name, "stash", "add", "image_url", actor.ImageUrl)
+							//models.AddActionActor(actor.Name, "stash", "add", "image_url", actor.ImageUrl)
 						}
 					}
 				}
@@ -608,7 +608,6 @@ func initaliseConfig() ExtRefConfig {
 			//siteConfig.StashId = studio.Data.Studio.ID
 			siteConfig.Rules = append(siteConfig.Rules, MatchRule{XbvrMatchType: RegexMatch, XbvrField: "scene_id", XbvrMatch: `-\d+$`, XbvrMatchResultPosition: 0, StashMatchType: RegexGroup, StashField: "", StashRule: `(sexlikereal).com\/[^0-9]*(-\d*)`, StashMatchResultPosition: 2})
 			config.Sites[site.ID] = siteConfig
-			log.Infof("initaliseConfig %s", config.Sites[site.ID])
 		}
 		if strings.HasSuffix(site.Name, "POVR)") {
 			siteConfig := config.Sites[site.ID]
@@ -616,7 +615,6 @@ func initaliseConfig() ExtRefConfig {
 			if len(siteConfig.Rules) == 0 {
 				siteConfig.Rules = append(siteConfig.Rules, MatchRule{XbvrMatchType: RegexMatch, XbvrField: "scene_id", XbvrMatch: `-\d+$`, XbvrMatchResultPosition: 0, StashMatchType: RegexGroup, StashField: "", StashRule: `(povr|wankzvr).com\/(.*)(-\d*?)\/?$`, StashMatchResultPosition: 2})
 				config.Sites[site.ID] = siteConfig
-				log.Infof("initaliseConfig %s", config.Sites[site.ID])
 			}
 		}
 	}

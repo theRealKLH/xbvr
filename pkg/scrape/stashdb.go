@@ -137,11 +137,9 @@ func StashDb() {
 			}
 			log.Info("calling processStudioPerformers")
 			processStudioPerformers(studio.Data.Studio.ID)
-			log.Info("calling getScenes")
 			scenes := getScenes(studio.Data.Studio.ID, siteConfig.ParentId, siteConfig.TagIdFilter)
-			log.Info("calling saveScenesToExternalReferences")
 			saveScenesToExternalReferences(scenes, studio.Data.Studio.ID)
-			log.Infof("Updating %x completed ", sitename)
+			log.Infof("Updating %s completed ", sitename)
 		} else {
 			log.Infof("No Stash Studio matching %v", site.Name)
 		}
