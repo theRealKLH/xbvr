@@ -506,13 +506,13 @@ func SceneCreateUpdateFromExternal(db *gorm.DB, ext ScrapedScene) error {
 			if tmpActor.AddToImageArray(ext.ActorDetails[name].ImageUrl) {
 				saveActor = true
 			}
-			AddActionActor(name, ext.ActorDetails[name].Source, "add", "image_url", ext.ActorDetails[name].ImageUrl)
+			//AddActionActor(name, ext.ActorDetails[name].Source, "add", "image_url", ext.ActorDetails[name].ImageUrl)
 		}
 		if ext.ActorDetails[name].ProfileUrl != "" {
 			if tmpActor.AddToActorUrlArray(ActorLink{Url: ext.ActorDetails[name].ProfileUrl, Type: ext.ActorDetails[name].Source}) {
 				saveActor = true
 			}
-			AddActionActor(name, ext.ActorDetails[name].Source, "add", "image_url", ext.ActorDetails[name].ImageUrl)
+			//AddActionActor(name, ext.ActorDetails[name].Source, "add", "image_url", ext.ActorDetails[name].ImageUrl)
 		}
 		if saveActor {
 			tmpActor.Save()
