@@ -279,6 +279,10 @@ func Scrape(toScrape string) {
 			tlog.Infof("Scraped %v new scenes in %s",
 				sceneCount,
 				time.Now().Sub(t0).Round(time.Second))
+
+			if config.Config.Advanced.ScrapeActorAfterScene {
+				go ScrapeActors()
+			}
 		}
 	}
 }
