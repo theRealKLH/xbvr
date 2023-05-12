@@ -262,10 +262,10 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 	actor.Tattoos = convertBodyModArrayToJson(performer.Tattos)
 	actor.Piercings = convertBodyModArrayToJson(performer.Piercings)
 	for _, img := range performer.Images {
-		actor.ImageArr = addToImageArray(actor.ImageArr, img.URL)
+		actor.AddToImageArray(img.URL)
 	}
 	for _, url := range performer.URLs {
-		actor.URLs = addToImageArray(actor.URLs, url.URL)
+		actor.AddToActorUrlArray(models.ActorLink{Url: url.URL, Type: ""})
 	}
 	actor.Save()
 }
@@ -288,27 +288,7 @@ func addToArray(existingArray string, newValue string) string {
 	return string(jsonBytes)
 
 }
-func addToImageArray(existingArray string, newValue string) string {
-	values := []models.Image{}
-	var newimg models.Image
-	json.Unmarshal([]byte(newValue), &newimg)
-	if existingArray != "" {
-		err := json.Unmarshal([]byte(existingArray), &values)
-		if err != nil {
-			log.Errorf("Could not extract array %s", values)
-		}
-	}
-	for _, existingValue := range values {
-		if existingValue.URL == newimg.URL {
-			return existingArray
-		}
-	}
 
-	values = append(values, models.Image{URL: newimg.URL})
-	jsonBytes, _ := json.Marshal(values)
-	return string(jsonBytes)
-
-}
 func convertBodyModArrayToJson(bodyMods []models.StashBodyModification) string {
 
 	arr := []string{}
