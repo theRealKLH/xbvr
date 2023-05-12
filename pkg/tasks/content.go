@@ -50,19 +50,26 @@ type BackupSceneAction struct {
 	SceneID string          `xbvrbackup:"scene_id"`
 	Actions []models.Action `xbvrbackup:"actions"`
 }
+type BackupActionActor struct {
+	ActorName    string               `xbvrbackup:"actor_name"`
+	ActionActors []models.ActionActor `xbvrbackup:"action_actors"`
+}
 type BackupContentBundle struct {
-	Timestamp     time.Time             `xbvrbackup:"timestamp"`
-	BundleVersion string                `xbvrbackup:"bundleVersion"`
-	Volumne       []models.Volume       `xbvrbackup:"volumes"`
-	Playlists     []models.Playlist     `xbvrbackup:"playlists"`
-	Sites         []models.Site         `xbvrbackup:"sites"`
-	Scenes        []models.Scene        `xbvrbackup:"scenes"`
-	FilesLinks    []BackupFileLink      `xbvrbackup:"sceneFileLinks"`
-	Cuepoints     []BackupSceneCuepoint `xbvrbackup:"sceneCuepoints"`
-	History       []BackupSceneHistory  `xbvrbackup:"sceneHistory"`
-	Actions       []BackupSceneAction   `xbvrbackup:"actions"`
-	Akas          []models.Aka          `xbvrbackup:"akas"`
-	TagGroups     []models.TagGroup     `xbvrbackup:"tagGroups"`
+	Timestamp     time.Time                  `xbvrbackup:"timestamp"`
+	BundleVersion string                     `xbvrbackup:"bundleVersion"`
+	Volumne       []models.Volume            `xbvrbackup:"volumes"`
+	Playlists     []models.Playlist          `xbvrbackup:"playlists"`
+	Sites         []models.Site              `xbvrbackup:"sites"`
+	Scenes        []models.Scene             `xbvrbackup:"scenes"`
+	FilesLinks    []BackupFileLink           `xbvrbackup:"sceneFileLinks"`
+	Cuepoints     []BackupSceneCuepoint      `xbvrbackup:"sceneCuepoints"`
+	History       []BackupSceneHistory       `xbvrbackup:"sceneHistory"`
+	Actions       []BackupSceneAction        `xbvrbackup:"actions"`
+	Akas          []models.Aka               `xbvrbackup:"akas"`
+	TagGroups     []models.TagGroup          `xbvrbackup:"tagGroups"`
+	ExternalRefs  []models.ExternalReference `xbvrbackup:"externalReferences"`
+	Actors        []models.Actor             `xbvrbackup:"actors"`
+	ActionActors  []BackupActionActor        `xbvrbackup:"actionActors"`
 }
 type RequestRestore struct {
 	InclAllSites     bool   `json:"allSites"`
@@ -79,6 +86,9 @@ type RequestRestore struct {
 	InclActions      bool   `json:"inclActions"`
 	Overwrite        bool   `json:"overwrite"`
 	UploadData       string `json:"uploadData"`
+	InclExternalRefs bool   `json:"inclExtRefs"`
+	InclActors       bool   `json:"inclActors"`
+	inclActionActors bool   `json:"inclActionActors"`
 }
 
 func CleanTags() {
@@ -458,7 +468,7 @@ func ImportBundleV1(bundleData ContentBundle) {
 
 }
 
-func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bool, inclFileLinks bool, inclCuepoints bool, inclHistory bool, inclPlaylists bool, InclActorAkas bool, inclTagGroups bool, inclVolumes bool, inclSites bool, inclActions bool, playlistId string, outputBundleFilename string, version string) string {
+func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bool, inclFileLinks bool, inclCuepoints bool, inclHistory bool, inclPlaylists bool, InclActorAkas bool, inclTagGroups bool, inclVolumes bool, inclSites bool, inclActions bool, inclExtRefs bool, inclActors bool, inclActionActors bool, playlistId string, outputBundleFilename string, version string) string {
 	var out BackupContentBundle
 	var content []byte
 	exportCnt := 0
@@ -487,6 +497,7 @@ func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bo
 		backupFileLinkList := []BackupFileLink{}
 		backupHistoryList := []BackupSceneHistory{}
 		backupActionList := []BackupSceneAction{}
+		backupActionActorList := []BackupActionActor{}
 
 		if inclScenes || inclFileLinks || inclCuepoints || inclHistory || inclActions {
 			var selectedSites []models.Site
@@ -598,6 +609,46 @@ func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bo
 			db.Preload("TagGroupTag").Preload("Tags").Find(&tagGroups)
 		}
 
+		var externalReferences []models.ExternalReference
+		if inclExtRefs {
+			db.Order("external_source").Order("id").Find(&externalReferences)
+			recCnt := 0
+			go func() {
+				for {
+					tlog.Infof("Reading %v of %v external references", recCnt, len(externalReferences))
+					time.Sleep(5 * time.Second)
+				}
+			}()
+			for idx, ref := range externalReferences {
+
+				var links []models.ExternalReferenceLink
+				db.Where("external_reference_id = ?", ref.ID).Find(&links)
+				externalReferences[idx].XbvrLinks = links
+				recCnt += 1
+			}
+		}
+
+		var actors []models.Actor
+		if inclActors {
+			db.Find(&actors)
+		}
+
+		var actionActors []models.ActionActor
+		if InclActorAkas {
+			db.Order("actor_name, created_at").Find(&actionActors)
+			if len(actionActors) > 1 {
+				var actorsActions BackupActionActor
+				for _, action := range actionActors {
+					if action.ActorName != action.ActorName && actorsActions.ActorName != "" {
+						backupActionActorList = append(backupActionActorList, actorsActions)
+						actorsActions = BackupActionActor{ActorName: action.ActorName}
+					}
+					actorsActions.ActionActors = append(actorsActions.ActionActors, action)
+				}
+				backupActionActorList = append(backupActionActorList, actorsActions)
+			}
+		}
+
 		var err error
 		out = BackupContentBundle{
 			Timestamp:     time.Now().UTC(),
@@ -612,6 +663,9 @@ func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bo
 			Actions:       backupActionList,
 			Akas:          akas,
 			TagGroups:     tagGroups,
+			ExternalRefs:  externalReferences,
+			Actors:        actors,
+			ActionActors:  backupActionActorList,
 		}
 
 		var json = jsoniter.Config{
@@ -725,6 +779,15 @@ func RestoreBundle(request RequestRestore) {
 			if request.InclScenes || request.InclTagGroups {
 				var tagGroup models.TagGroup
 				tagGroup.UpdateSceneTagRecords()
+			}
+			if request.InclExternalRefs {
+				RestoreExternalRefs(bundleData.ExternalRefs, request.Overwrite, db)
+			}
+			if request.InclActors {
+				RestoreActors(bundleData.Actors, request.Overwrite, db)
+			}
+			if request.inclActionActors {
+				RestoreActionActors(bundleData.ActionActors, request.Overwrite, db)
 			}
 
 			tlog.Infof("Restore complete")
@@ -1179,6 +1242,196 @@ func RenameTags() {
 		}
 
 	}
+}
+
+func RestoreExternalRefs(extRefs []models.ExternalReference, overwrite bool, db *gorm.DB) {
+	tlog := log.WithField("task", "scrape")
+	tlog.Infof("Restoring External References")
+
+	addedCnt := 0
+	lastMessage := time.Now()
+	for idx, extRef := range extRefs {
+		if time.Now().Sub(lastMessage).Seconds() > 30 {
+			tlog.Infof("Restored %v of %v External References", idx, len(extRefs))
+			lastMessage = time.Now()
+		}
+		var found models.ExternalReference
+		db.Where(&models.ExternalReference{ExternalSource: extRef.ExternalSource, ExternalId: extRef.ExternalId}).First(&found)
+
+		if found.ID == 0 || overwrite {
+			extRef.ID = found.ID // use the Id from the existing db record or 0
+			for idx, link := range extRef.XbvrLinks {
+				switch link.InternalTable {
+				//				case "sites":
+				//					extRef.XbvrLinks[idx].InternalDbId = link.InternalNameId
+				case "scenes":
+					var scene models.Scene
+					scene.GetIfExist(link.InternalNameId)
+					extRef.XbvrLinks[idx].InternalDbId = scene.ID
+				case "actors":
+					var actor models.Actor
+					db.Where("name = ?", link.InternalNameId).First(&actor)
+					extRef.XbvrLinks[idx].InternalDbId = actor.ID
+				}
+				extRef.XbvrLinks[idx].ExternalReferenceID = extRef.ID
+				extRef.XbvrLinks[idx].ExternalSource = extRef.ExternalSource
+				extRef.XbvrLinks[idx].ExternalId = extRef.ExternalId
+
+			}
+
+			if found.ID == 0 { // id = 0 is a new record
+				models.SaveWithRetry(db, &extRef)
+				addedCnt++
+			} else {
+				if overwrite {
+					models.SaveWithRetry(db, &extRef)
+					addedCnt++
+				}
+			}
+		}
+	}
+	tlog.Info("%Refreshing Actor Image Urls")
+	//externalreference.UpdateAllPerformerImages()
+	tlog.Infof("%v External References restored", addedCnt)
+}
+
+func RestoreActors(actorList []models.Actor, overwrite bool, db *gorm.DB) {
+	tlog := log.WithField("task", "scrape")
+	tlog.Infof("Restoring Actors")
+
+	addedCnt := 0
+	go func(addedCnt int, total int) {
+		for {
+			tlog.Infof("Processing %v of %v actors", addedCnt, total)
+			time.Sleep(30 * time.Second)
+		}
+	}(addedCnt, len(actorList))
+
+	for _, bundleActor := range actorList {
+		addedCnt += 1
+		var actor models.Actor
+		db.Where("name = ?", bundleActor.Name).Find(&actor)
+		if actor.ID != 0 {
+			if overwrite || actor.ImageUrl == "" {
+				actor.ImageUrl = bundleActor.ImageUrl
+			}
+			if overwrite || actor.ImageArr == "" {
+				actor.ImageArr = bundleActor.ImageArr
+			}
+			if overwrite || actor.StarRating == 0 {
+				actor.StarRating = bundleActor.StarRating
+			}
+			if overwrite || actor.Favourite {
+				actor.Favourite = bundleActor.Favourite
+			}
+			if overwrite || actor.Watchlist {
+				actor.Watchlist = bundleActor.Watchlist
+			}
+			if overwrite || actor.BirthDate.IsZero() {
+				actor.BirthDate = bundleActor.BirthDate
+			}
+			if overwrite || actor.Nationality == "" {
+				actor.Nationality = bundleActor.Nationality
+			}
+			if overwrite || actor.Ethnicity == "" {
+				actor.Ethnicity = bundleActor.Ethnicity
+			}
+			if overwrite || actor.EyeColor == "" {
+				actor.EyeColor = bundleActor.EyeColor
+			}
+			if overwrite || actor.HairColor == "" {
+				actor.HairColor = bundleActor.HairColor
+			}
+			if overwrite || actor.Height == 0 {
+				actor.Height = bundleActor.Height
+			}
+			if overwrite || actor.Weight == 0 {
+				actor.Weight = bundleActor.Weight
+			}
+			if overwrite || actor.CupSize == "" {
+				actor.CupSize = bundleActor.CupSize
+			}
+			if overwrite || actor.BandSize == 0 {
+				actor.BandSize = bundleActor.BandSize
+			}
+			if overwrite || actor.WaistSize == 0 {
+				actor.WaistSize = bundleActor.WaistSize
+			}
+			if overwrite || actor.HipSize == 0 {
+				actor.HipSize = bundleActor.HipSize
+			}
+			if overwrite || actor.BreastType == "" {
+				actor.BreastType = bundleActor.BreastType
+			}
+			if overwrite || actor.StartYear == 0 {
+				actor.StartYear = bundleActor.StartYear
+			}
+			if overwrite || actor.EndYear == 0 {
+				actor.EndYear = bundleActor.EndYear
+			}
+			if overwrite || actor.Tattoos == "" {
+				actor.Tattoos = bundleActor.Tattoos
+			}
+			if overwrite || actor.Piercings == "" {
+				actor.Piercings = bundleActor.Piercings
+			}
+			if overwrite || actor.Biography == "" {
+				actor.Biography = bundleActor.Biography
+			}
+			if overwrite || actor.Aliases == "" {
+				actor.Aliases = bundleActor.Aliases
+			}
+			if overwrite || actor.Gender == "" {
+				actor.Gender = bundleActor.Gender
+			}
+			if overwrite || actor.BreastType == "" {
+				actor.URLs = bundleActor.URLs
+			}
+		}
+		actor.Save()
+	}
+}
+
+func RestoreActionActors(actionActorsList []BackupActionActor, overwrite bool, db *gorm.DB) {
+	tlog := log.WithField("task", "scrape")
+	tlog.Infof("Restoring Actor Edits")
+
+	addedCnt := 0
+	go func(addedCnt int, total int) {
+		for {
+			tlog.Infof("Processing edits for %v of %v actors", addedCnt, total)
+			time.Sleep(30 * time.Second)
+		}
+	}(addedCnt, len(actionActorsList))
+
+	for cnt, actions := range actionActorsList {
+		if cnt%500 == 0 {
+			tlog.Infof("Processing actor actions %v of %v", cnt+1, len(actionActorsList))
+		}
+
+		if overwrite {
+			if len(actions.ActionActors) > 0 {
+				err := db.Delete(&models.ActionActor{}, "actor_name = ?", actions.ActorName).Error
+				if err != nil {
+					tlog.Infof("Eror deleteing actor edits")
+				}
+			}
+		} else {
+			var existingAction models.ActionActor
+			db.Where(&models.ActionActor{ActorName: actions.ActorName}).First(&existingAction)
+			if existingAction.ID > 0 {
+				tlog.Infof("Actions already exist for %s, cannot add new actions, use Overwrite+New", actions.ActorName)
+				continue
+			}
+
+		}
+		for _, action := range actions.ActionActors {
+			action.ID = 0
+			models.SaveWithRetry(db, &action)
+		}
+		addedCnt++
+	}
+	tlog.Infof("%v Actors with edits restored", addedCnt)
 }
 
 func CountTags() {
