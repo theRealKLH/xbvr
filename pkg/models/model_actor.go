@@ -267,9 +267,9 @@ func QueryActors(r RequestActorList, enablePreload bool) ResponseActorList {
 		case "Possible Aka":
 			// find where the stashdb actor is linked to more than 1 xbv actor
 			if truefalse {
-				where = "(select count(*) from external_reference_links " + erlAlias + " join external_reference_links " + erlAlias + "_2" + " on " + erlAlias + ".external_id = " + erlAlias + "_2" + ".external_id  where " + erlAlias + ".internal_db_id = actors.id and " + erlAlias + ".`external_source` = 'stashdb performer') > 1"
+				where = "(select count(*) from external_reference_links " + erlAlias + " join external_reference_links " + erlAlias + "_2" + " on " + erlAlias + ".external_id = " + erlAlias + "_2" + ".external_id and " + erlAlias + "_2" + " .internal_db_id <> " + erlAlias + ".internal_db_id  where " + erlAlias + ".internal_db_id = actors.id and " + erlAlias + ".`external_source` = 'stashdb performer') > 0"
 			} else {
-				where = "(select count(*) from external_reference_links " + erlAlias + " join external_reference_links " + erlAlias + "_2" + " on " + erlAlias + ".external_id = " + erlAlias + "_2" + ".external_id  where " + erlAlias + ".internal_db_id = actors.id and " + erlAlias + ".`external_source` = 'stashdb performer') <= 1"
+				where = "(select count(*) from external_reference_links " + erlAlias + " join external_reference_links " + erlAlias + "_2" + " on " + erlAlias + ".external_id = " + erlAlias + "_2" + ".external_id and " + erlAlias + "_2" + " .internal_db_id <> " + erlAlias + ".internal_db_id  where " + erlAlias + ".internal_db_id = actors.id and " + erlAlias + ".`external_source` = 'stashdb performer') = 0"
 			}
 		case "Has Stashdb Link":
 			if truefalse {
@@ -468,8 +468,7 @@ func QueryActors(r RequestActorList, enablePreload bool) ResponseActorList {
 	(select AVG(s.star_rating) scene_avg from scene_cast sc join scenes s on s.id=sc.scene_id where sc.actor_id =actors.id and s.star_rating > 0 ) as scene_rating_average	
 	`)
 
-	tx.Debug().
-		Limit(limit).
+	tx.Limit(limit).
 		Offset(offset).
 		Find(&out.Actors)
 
