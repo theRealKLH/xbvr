@@ -27,6 +27,10 @@ func (i ExternalReference) stashDbUpdateImages(req *restful.Request, resp *restf
 
 }
 func (i ExternalReference) stashRunAll(req *restful.Request, resp *restful.Response) {
+	StashdbRunAll()
+}
+
+func StashdbRunAll() {
 	go func() {
 		scrape.StashDb()
 

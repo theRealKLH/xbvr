@@ -131,6 +131,14 @@ type RequestSaveOptionsTaskSchedule struct {
 	PreviewHourStart     int  `json:"previewHourStart"`
 	PreviewHourEnd       int  `json:"previewHourEnd"`
 	PreviewStartDelay    int  `json:"previewStartDelay"`
+
+	StashdbRescrapeEnabled      bool `json:"stashdbRescrapeEnabled"`
+	StashdbRescrapeHourInterval int  `json:"stashdbRescrapeHourInterval"`
+	StashdbRescrapeUseRange     bool `json:"stashdbRescrapeUseRange"`
+	StashdbRescrapeMinuteStart  int  `json:"stashdbRescrapeMinuteStart"`
+	StashdbRescrapeHourStart    int  `json:"stashdbRescrapeHourStart"`
+	StashdbRescrapeHourEnd      int  `json:"stashdbRescrapeHourEnd"`
+	StashdbRescrapeStartDelay   int  `json:"stashdbRescrapeStartDelay"`
 }
 
 type RequestCuepointsResponse struct {
@@ -750,6 +758,14 @@ func (i ConfigResource) saveOptionsTaskSchedule(req *restful.Request, resp *rest
 	config.Config.Cron.PreviewSchedule.HourStart = r.PreviewHourStart
 	config.Config.Cron.PreviewSchedule.HourEnd = r.PreviewHourEnd
 	config.Config.Cron.PreviewSchedule.RunAtStartDelay = r.PreviewStartDelay
+
+	config.Config.Cron.StashdbRescrapeSchedule.Enabled = r.StashdbRescrapeEnabled
+	config.Config.Cron.StashdbRescrapeSchedule.HourInterval = r.StashdbRescrapeHourInterval
+	config.Config.Cron.StashdbRescrapeSchedule.UseRange = r.StashdbRescrapeUseRange
+	config.Config.Cron.StashdbRescrapeSchedule.MinuteStart = r.StashdbRescrapeMinuteStart
+	config.Config.Cron.StashdbRescrapeSchedule.HourStart = r.StashdbRescrapeHourStart
+	config.Config.Cron.StashdbRescrapeSchedule.HourEnd = r.StashdbRescrapeHourEnd
+	config.Config.Cron.StashdbRescrapeSchedule.RunAtStartDelay = r.StashdbRescrapeStartDelay
 
 	config.SaveConfig()
 
