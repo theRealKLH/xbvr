@@ -45,6 +45,7 @@ type ObjectConfig struct {
 		ShowHSPApiLink        bool   `default:"false" json:"showHSPApiLink"`
 		StashApiKey           string `default:"" json:"stashApiKey"`
 		ScrapeActorAfterScene bool   `default:"true" json:"scrapeActorAfterScene"`
+		UseImperialEntry      bool   `default:"false" json:"useImperialEntry"`
 	} `json:"advanced"`
 	Vendor struct {
 		TPDB struct {

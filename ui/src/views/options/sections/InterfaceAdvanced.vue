@@ -35,21 +35,26 @@
       <div class="columns" v-if="activeTab == 1">
         <div class="column">
           <section>
+              <b-tooltip :label="$t('Allows the entry of Actor Height/Weight in Imperial measurements')" :delay="500" type="is-warning">
+                <b-switch v-model="useImperialEntry" type="is-default">
+                  {{ $t('Entry Height/Weight in Imperial Measurements') }}
+                </b-switch>
+              </b-tooltip>
             <b-field>
               <b-tooltip :label="$t('Scrape Actor details from sites after running a Scene Scrape, otherwise run manually')" :delay="500" type="is-warning">
                 <b-switch v-model="scrapeActorAfterScene" type="is-default">
-                  Scrape Site Actors after Scene Scrape
+                  {{ $t('Scrape Site Actors after Scene Scrape') }}
                 </b-switch>
               </b-tooltip>
             </b-field>
-            <b-field label="Stashdb Api Key" label-position="on-border">
+            <b-field :label="$t('Stashdb Api Key')" label-position="on-border">
               <b-input v-model="stashApiKey" placeholder="Visit https://discord.com/invite/2TsNFKt to sign up to Stashdb" type="password"></b-input>
             </b-field>
             <b-field>
-              <b-button type="is-primary" @click="stashdb">Scrape StashDB</b-button>
+              <b-button type="is-primary" @click="stashdb">{{ $t('Scrape StashDB') }}</b-button>
             </b-field>
             <b-field>
-              <b-button type="is-primary" @click="scrapeXbvrActors">Scrape Actor from XBVR Sites</b-button>
+              <b-button type="is-primary" @click="scrapeXbvrActors">{{ $t('Scrape Actor Detals from XBVR Sites') }}</b-button>
             </b-field>
             <b-field>
               <b-button type="is-primary" @click="save">Save</b-button>
@@ -107,8 +112,7 @@ export default {
     save () {
       this.$store.dispatch('optionsAdvanced/save')
     },
-    validateScraperFields() {
-      console.log("validateScraperFields")
+    validateScraperFields() {      
       this.scraperFieldsValid=false
       if (this.scraperName != "") {
         if (this.scraperUrl.startsWith("https://") || this.scraperUrl.startsWith("http://") ) {
@@ -159,6 +163,15 @@ export default {
       },
       set (value) {
         this.$store.state.optionsAdvanced.advanced.stashApiKey = value
+
+      }
+    },
+    useImperialEntry: {
+      get () {
+        return this.$store.state.optionsAdvanced.advanced.useImperialEntry
+      },
+      set (value) {
+        this.$store.state.optionsAdvanced.advanced.useImperialEntry = value
 
       }
     },

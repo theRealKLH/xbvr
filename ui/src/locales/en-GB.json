@@ -134,5 +134,12 @@
   "Enter Studio Name": "Enter Studio Name",
   "Optional: defaults to Name": "Optional: defaults to Name",
   "Optional": "Optional",
+  "Allows the entry of Actor Height/Weight in Imperial measurements": "Allows the entry of Actor Height/Weight in Imperial measurements",
+  "Entry Height/Weight in Imperial Measurements":"Entry Height/Weight in Imperial Measurements",
+  "Scrape Actor details from sites after running a Scene Scrape, otherwise run manually": "Scrape Actor details from sites after running a Scene Scrape, otherwise run manually",
+  "Scrape Site Actors after Scene Scrape": "Scrape Site Actors after Scene Scrape",
+  "Stashdb Api Key":"Stashdb Api Key",
+  "Scrape StashDB":"Scrape StashDB",
+  "Scrape Actor Detals from XBVR Sites":"Scrape Actor Detals from XBVR Sites",
   "Go": "Go"
 }

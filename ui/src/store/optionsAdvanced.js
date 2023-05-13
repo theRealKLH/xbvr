@@ -7,6 +7,7 @@ const state = {
     showHSPApiLink: false,
     stashApiKey: '',
     scrapeActorAfterScene: 'true',
+    useImperialEntry: 'false',
   }
 }
 
@@ -22,6 +23,7 @@ const actions = {
         state.advanced.showHSPApiLink = data.config.advanced.showHSPApiLink
         state.advanced.stashApiKey = data.config.advanced.stashApiKey
         state.advanced.scrapeActorAfterScene = data.config.advanced.scrapeActorAfterScene
+        state.advanced.useImperialEntry = data.config.advanced.useImperialEntry
         state.loading = false
       })
   },
@@ -34,6 +36,7 @@ const actions = {
         state.advanced.showHSPApiLink = data.showHSPApiLink
         state.advanced.stashApiKey = data.stashApiKey
         state.advanced.scrapeActorAfterScene = data.scrapeActorAfterScene
+        state.advanced.useImperialEntry = data.useImperialEntry
         state.loading = false
       })
   }

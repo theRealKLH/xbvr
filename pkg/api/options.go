@@ -61,6 +61,7 @@ type RequestSaveOptionsAdvanced struct {
 	ShowHSPApiLink        bool   `json:"showHSPApiLink"`
 	StashApiKey           string `json:"stashApiKey"`
 	ScrapeActorAfterScene bool   `json:"scrapeActorAfterScene"`
+	UseImperialEntry      bool   `json:"useImperialEntry"`
 }
 
 type RequestSaveOptionsDLNA struct {
@@ -356,6 +357,7 @@ func (i ConfigResource) saveOptionsAdvanced(req *restful.Request, resp *restful.
 	config.Config.Advanced.ShowHSPApiLink = r.ShowHSPApiLink
 	config.Config.Advanced.StashApiKey = r.StashApiKey
 	config.Config.Advanced.ScrapeActorAfterScene = r.ScrapeActorAfterScene
+	config.Config.Advanced.UseImperialEntry = r.UseImperialEntry
 	config.SaveConfig()
 
 	resp.WriteHeaderAndEntity(http.StatusOK, r)
