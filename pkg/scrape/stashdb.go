@@ -138,7 +138,6 @@ func StashDb() {
 			processStudioPerformers(studio.Data.Studio.ID)
 			scenes := getScenes(studio.Data.Studio.ID, siteConfig.ParentId, siteConfig.TagIdFilter)
 			saveScenesToExternalReferences(scenes, studio.Data.Studio.ID)
-			log.Infof("Updating %s completed ", sitename)
 		} else {
 			log.Infof("No Stash Studio matching %v", site.Name)
 		}
@@ -253,8 +252,6 @@ func getScenes(studioId string, parentId string, tagId string) QueryScenesResult
 		nextList = getScenePage(variables)
 		sceneList.Data.QueryScenes.Scenes = append(sceneList.Data.QueryScenes.Scenes, nextList.Data.QueryScenes.Scenes...)
 	}
-	log.Infof("got %v scenes", len(sceneList.Data.QueryScenes.Scenes))
-
 	return sceneList
 }
 
