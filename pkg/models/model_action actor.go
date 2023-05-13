@@ -10,7 +10,7 @@ type ActionActor struct {
 	ID        uint      `gorm:"primary_key" json:"id"  xbvrbackup:"-"`
 	CreatedAt time.Time `json:"-" xbvrbackup:"-"`
 
-	ActorName     string `json:"actor_name" xbvrbackup:"actor_name"`
+	ActorID       uint   `json:"actor_id" xbvrbackup:"-"`
 	ActionType    string `json:"action_type" xbvrbackup:"action_type"`
 	Source        string `json:"source" xbvrbackup:"source"`
 	ChangedColumn string `json:"changed_column" xbvrbackup:"changed_column"`
@@ -44,9 +44,9 @@ func (a *ActionActor) Save() {
 	}
 }
 
-func AddActionActor(actorName string, source string, actionType string, changedColumn string, newValue string) {
+func AddActionActor(actorId uint, source string, actionType string, changedColumn string, newValue string) {
 	action := ActionActor{
-		ActorName:     actorName,
+		ActorID:       actorId,
 		Source:        source,
 		ActionType:    actionType,
 		ChangedColumn: changedColumn,
