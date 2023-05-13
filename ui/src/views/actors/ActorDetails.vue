@@ -288,8 +288,7 @@ export default {
     images () {
       if (this.actor.image_arr==undefined || this.actor.image_arr=="") {
         return []
-      }
-      
+      }      
       return JSON.parse(this.actor.image_arr).filter(im => im != "")      
     },
     showEdit () {
@@ -305,8 +304,7 @@ export default {
   },
   watch: {
     // when a file is selected, then this will fire the upload process
-    activeTab: function (newval, oldval) {
-      console.log("tab changing ",oldval,newval)        
+    activeTab: function (newval, oldval) {      
       }
     },  
     methods: {
@@ -533,8 +531,8 @@ export default {
       if (this.actor.urls=="")
       {
         return []
-      }      let array = JSON.parse(this.actor.urls)
-      console.log( array)
+      }      
+      let array = JSON.parse(this.actor.urls)      
       return array
     },
     createAkaGroup () {
@@ -590,8 +588,7 @@ export default {
         if (data.status != '') {
           this.$buefy.toast.open({message: `Warning:  ${data.status}`, type: 'is-warning', duration: 5000})
         }
-        ky.get('/api/actor/'+this.actor.id).json().then(data => {
-          console.log("adding to aka",data)
+        ky.get('/api/actor/'+this.actor.id).json().then(data => {          
           if (data.id != 0){
             this.$store.state.overlay.actordetails.actor = data          
           }          
@@ -615,8 +612,7 @@ export default {
         if (this.akas.possible_akas[idx].name.startsWith("aka:")) {
           return false
         }
-      }
-      console.log("enable aka")
+      }      
       return true
     },
     format,

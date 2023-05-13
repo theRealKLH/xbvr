@@ -151,5 +151,12 @@
   "Stashdb Api Key":"Stashdb Api Key",
   "Scrape StashDB":"Scrape StashDB",
   "Scrape Actor Detals from XBVR Sites":"Scrape Actor Detals from XBVR Sites",
+  "Enter Weight in kg":"Enter Weight in kg",
+  "Enter Weight in lbs":"Enter Weight in lbs",
+  "Height in feet": "Height in feet",
+  "Height in inches":"Height in inches",
+  "Height feet/inches":"Height feet/inches",
+  "Weight":"Weight",
+
   "Go": "Go"
 }

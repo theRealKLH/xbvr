@@ -46,11 +46,20 @@
               </b-field>
             </b-field>
             <b-field grouped group-multiline style="margin-bottom: 2em;">
-              <b-field :label="$t('Height')" label-position="on-border">
-                <b-input type="number" v-model.number="actor.height"  placeholder="Height in cm" @blur="blur('height')"/>
+              <b-field v-if="useImperialEntry" :label="$t('Weight in lbs')" label-position="on-border">
+                <b-input type="number" v-model.number="actor.lbs" :placeholder="$t('Enter Weight in lbs')"  @blur="blur('weight')"/>                 
               </b-field>
-              <b-field :label="$t('Weight')" label-position="on-border">
-                <b-input type="number" v-model.number="actor.weight" placeholder="Weight in kg" @blur="blur('weight')"/>
+              <b-field v-if="!useImperialEntry" :label="$t('Weight')" label-position="on-border">
+                <b-input type="number" v-model.number="actor.weight" :placeholder="$t('Enter Weight in kg')"  @blur="blur('weight')"/>                 
+              </b-field>
+              <b-field>
+              <b-field v-if="useImperialEntry" :label="$t('Height feet/inches')" label-position="on-border">
+                <b-input type="number" v-model.number="actor.feet" min="0" max="10" placeholder="Height in feet" @blur="blur('height')" style="width: 5em;"/>
+                <b-input type="number" v-model.number="actor.inches" min="0" max="12" placeholder="Height in inches" @blur="blur('height')" style="width: 5em;"/>
+              </b-field>
+              </b-field>
+              <b-field v-if="!useImperialEntry" :label="$t('Height')" label-position="on-border">
+                <b-input type="number" v-model.number="actor.height"  placeholder="Height in cm" @blur="blur('height')"/>
               </b-field>
             </b-field>
             <b-field grouped group-multiline style="margin-bottom: 2em;">
@@ -114,7 +123,7 @@ export default {
   name: 'EditActor',
   components: { ListEditor, GlobalEvents },
   data () {
-    const actor = Object.assign({}, this.$store.state.overlay.actoredit.actor)    
+    const actor = Object.assign({}, this.$store.state.overlay.actoredit.actor)
     let images;
     try {
       images = JSON.parse(actor.image_arr)
@@ -145,7 +154,15 @@ export default {
     } catch {
       urls = []
     }    
-    actor.urlArray = urls.map(i => i.url)
+    actor.urlArray = urls.map(i => i.url)    
+
+    const totalInches = Math.round(actor.height / 2.54)
+    const  feet = Math.floor(totalInches / 12)
+    const inches =  Math.round(totalInches - (feet*12))      
+    const lbs = Math.round(actor.weight * 220462 / 100000);
+    actor.feet = feet
+    actor.inches = inches
+    actor.lbs = lbs
 
     return {
       actor,
@@ -155,29 +172,30 @@ export default {
       countryList: [],
       countries: [],
       selectedCountry: '',
-      filteredCountries: [],      
+      filteredCountries: [],
     }
   },
   computed: {
     birthdate: {
-      get () {
-        console.log("get date",this.actor.birth_date)
+      get () {        
         if (this.actor.birth_date=='0001-01-01T00:00:00Z') {
           return new Date()
         }
         return new Date(this.actor.birth_date)
       },
-      set (value) {
-        console.log("set date",value)
+      set (value) {        
         if (value==null){
           this.actor.birth_date=null
         }else{
         // remove the time offset, or toISOString may result in a different date
         let adjustedDate = new Date(value.getTime() - (value.getTimezoneOffset() * 60000))
         this.actor.birth_date = adjustedDate.toISOString().split('.')[0] + 'Z'        
+        }
       }
-      }
-    }
+    },
+    useImperialEntry () {
+      return this.$store.state.optionsAdvanced.advanced.useImperialEntry
+    },
   },
   mounted () {    
         ky.get('/api/actor/countrylist')
@@ -203,6 +221,10 @@ export default {
       this.$store.commit('overlay/hideActorEditDetails')
     },
     save () {
+      if (this.useImperialEntry) {
+        this.actor.height = Math.round(((this.actor.feet * 12) + this.actor.inches) * 2.54)
+        this.actor.weight = Math.round(this.actor.lbs * 453592 / 1000000);
+      }
       this.actor.aliases = JSON.stringify(this.actor.aliasArray)      
       this.actor.tattoos = JSON.stringify(this.actor.tattooArray)         
       this.actor.piercings = JSON.stringify(this.actor.piercingArray)
