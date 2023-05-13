@@ -437,6 +437,9 @@ func RefreshPerformer(performerId string) {
 	var ext models.ExternalReference
 	ext.FindExternalId("stashdb performer", performerId)
 	fullDetails := getStashPerformer(performerId).Data.Performer
+	if fullDetails.ID == "" {
+		return
+	}
 	jsonData, _ := json.MarshalIndent(fullDetails, "", "  ")
 	newext := models.ExternalReference{ExternalSource: "stashdb performer", ExternalURL: "https://stashdb.org/performers/" + fullDetails.ID, ExternalId: fullDetails.ID, ExternalDate: fullDetails.Updated, ExternalData: string(jsonData)}
 	if ext.ID != 0 {
