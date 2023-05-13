@@ -19,6 +19,7 @@ import (
 	"github.com/markphelps/optional"
 	"github.com/xbapps/xbvr/pkg/common"
 	"github.com/xbapps/xbvr/pkg/config"
+	"github.com/xbapps/xbvr/pkg/externalreference"
 	"github.com/xbapps/xbvr/pkg/models"
 	"github.com/xbapps/xbvr/pkg/scrape"
 )
@@ -472,6 +473,7 @@ func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bo
 	var out BackupContentBundle
 	var content []byte
 	exportCnt := 0
+	lastMessage := time.Now()
 
 	if !models.CheckLock("scrape") {
 		models.CreateLock("scrape")
@@ -611,21 +613,20 @@ func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bo
 
 		var externalReferences []models.ExternalReference
 		if inclExtRefs {
+			lastMessage = time.Now()
 			db.Order("external_source").Order("id").Find(&externalReferences)
 			recCnt := 0
-			go func() {
-				for {
-					tlog.Infof("Reading %v of %v external references", recCnt, len(externalReferences))
-					time.Sleep(5 * time.Second)
-				}
-			}()
 			for idx, ref := range externalReferences {
-
+				if time.Since(lastMessage) > 30*time.Second {
+					tlog.Infof("Reading %v of %v external references", recCnt, len(externalReferences))
+					lastMessage = time.Now()
+				}
 				var links []models.ExternalReferenceLink
 				db.Where("external_reference_id = ?", ref.ID).Find(&links)
 				externalReferences[idx].XbvrLinks = links
 				recCnt += 1
 			}
+			tlog.Infof("Reading %v of %v external references", recCnt, len(externalReferences))
 		}
 
 		var actors []models.Actor
@@ -1251,10 +1252,11 @@ func RestoreExternalRefs(extRefs []models.ExternalReference, overwrite bool, db 
 	addedCnt := 0
 	lastMessage := time.Now()
 	for idx, extRef := range extRefs {
-		if time.Now().Sub(lastMessage).Seconds() > 30 {
+		if time.Since(lastMessage) > 30*time.Second {
 			tlog.Infof("Restored %v of %v External References", idx, len(extRefs))
 			lastMessage = time.Now()
 		}
+
 		var found models.ExternalReference
 		db.Where(&models.ExternalReference{ExternalSource: extRef.ExternalSource, ExternalId: extRef.ExternalId}).First(&found)
 
@@ -1291,7 +1293,7 @@ func RestoreExternalRefs(extRefs []models.ExternalReference, overwrite bool, db 
 		}
 	}
 	tlog.Info("%Refreshing Actor Image Urls")
-	//externalreference.UpdateAllPerformerImages()
+	externalreference.UpdateAllPerformerImages()
 	tlog.Infof("%v External References restored", addedCnt)
 }
 
