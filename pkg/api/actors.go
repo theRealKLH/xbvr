@@ -520,8 +520,8 @@ func checkStringArrayChanged(field_name string, newValue *string, actorField *st
 	if *actorField != *newValue {
 		var actorArray []string
 		var newArray []string
-		json.Unmarshal([]byte(*newValue), newArray)
-		json.Unmarshal([]byte(*actorField), actorArray)
+		json.Unmarshal([]byte(*newValue), &newArray)
+		json.Unmarshal([]byte(*actorField), &actorArray)
 		for _, actorField := range actorArray {
 			exists := false
 			for _, newField := range newArray {
