@@ -41,8 +41,11 @@ type ObjectConfig struct {
 		UpdateCheck       bool   `default:"true" json:"updateCheck"`
 	} `json:"web"`
 	Advanced struct {
-		ShowInternalSceneId bool `default:"false" json:"showInternalSceneId"`
-		ShowHSPApiLink      bool `default:"false" json:"showHSPApiLink"`
+		ShowInternalSceneId   bool   `default:"false" json:"showInternalSceneId"`
+		ShowHSPApiLink        bool   `default:"false" json:"showHSPApiLink"`
+		StashApiKey           string `default:"" json:"stashApiKey"`
+		ScrapeActorAfterScene bool   `default:"true" json:"scrapeActorAfterScene"`
+		UseImperialEntry      bool   `default:"false" json:"useImperialEntry"`
 	} `json:"advanced"`
 	Vendor struct {
 		TPDB struct {
