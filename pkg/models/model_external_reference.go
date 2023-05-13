@@ -20,10 +20,12 @@ type ExternalReference struct {
 	ExternalData   string                  `json:"external_data" sql:"type:text;" xbvrbackup:"external_data"`
 }
 type ExternalReferenceLink struct {
-	ID             uint   `gorm:"primary_key" json:"id" xbvrbackup:"-"`
-	InternalTable  string `json:"internal_table" xbvrbackup:"internal_table"`
-	InternalDbId   uint   `json:"internal_db_id" gorm:"index" xbvrbackup:"-"`
-	InternalNameId string `json:"internal_name_id" gorm:"index" xbvrbackup:"internal_name_id"`
+	ID             uint      `gorm:"primary_key" json:"id" xbvrbackup:"-"`
+	CreatedAt      time.Time `json:"-" xbvrbackup:"created_at-"`
+	UpdatedAt      time.Time `json:"-" xbvrbackup:"updated_at"`
+	InternalTable  string    `json:"internal_table" xbvrbackup:"internal_table"`
+	InternalDbId   uint      `json:"internal_db_id" gorm:"index" xbvrbackup:"-"`
+	InternalNameId string    `json:"internal_name_id" gorm:"index" xbvrbackup:"internal_name_id"`
 
 	ExternalReferenceID uint   `json:"external_reference_id" gorm:"index" xbvrbackup:"-"`
 	ExternalSource      string `json:"external_source" xbvrbackup:"-"`
