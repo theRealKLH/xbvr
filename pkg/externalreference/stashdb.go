@@ -42,6 +42,7 @@ func UpdateAllPerformerImages() {
 	log.Infof("Updating Actor Images Completed")
 }
 
+// this applies rules for matching xbvr scenes to stashdb, it then check if any matched scenes can be used to match actors
 func ApplySceneRules() {
 	log.Infof("Starting Scene Rule Matching")
 
@@ -126,7 +127,6 @@ func matchSceneOnRules(sitename string) {
 
 	db.Joins("Left JOIN external_reference_links erl on erl.external_reference_id = external_references.id").
 		Where("external_references.external_source = ? and erl.internal_db_id is null and external_data like ?", "stashdb scene", "%"+stashId+"%").
-		//Where("external_references.external_source = ? and erl.internal_db_id is null and external_data like ? and external_references.external_id='eefa73fb-1621-45a9-8574-19f23a565540'", "stashdb scene", "%"+stashId+"%").
 		Find(&stashScenes)
 
 	for _, stashScene := range stashScenes {
@@ -228,6 +228,7 @@ func checkMatchedScenes() {
 	}
 }
 
+// updates an xbvr actor with data from a match stashdb actor
 func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 	db, _ := models.GetDB()
 	defer db.Close()
@@ -418,12 +419,8 @@ func MatchAkaPerformers() {
 						}
 					}
 				}
-
-				//	for _, alias := range aka
 			}
-
 		}
-
 	}
 	ReverseMatch()
 	LinkOnXbvrAkaGroups()
@@ -431,9 +428,9 @@ func MatchAkaPerformers() {
 	log.Info("Match on Actor Aka/Aliases completed")
 }
 
+// we match from an xbvr back to stash for cases where the Stash actor name or aka used is different to the xbvr actor name
+// if the scene was matched, then we can check the stash actors aliases for a match
 func ReverseMatch() {
-	// we match from an xbvr back to stash for cases where the Stash actor name or aka used is different to the xbvr actor name
-	// if the scene was matched, then we can check the stash actors aliases for a match
 
 	log.Infof("Starting Reverse actor match from XBVR to Stashdb ")
 	db, _ := models.GetDB()
@@ -491,7 +488,6 @@ func ReverseMatch() {
 		}
 	}
 	log.Info("Reverse actor match from XBVR to Stashdb completed")
-	// reapply edits in case manual change if match_cycle
 }
 
 type ExtRefConfig struct {
