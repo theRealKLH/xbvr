@@ -167,15 +167,13 @@ export default {
   },
   computed: {
     birthdate: {
-      get () {
-        console.log("get date",this.actor.birth_date)
+      get () {        
         if (this.actor.birth_date=='0001-01-01T00:00:00Z') {
           return new Date()
         }
         return new Date(this.actor.birth_date)
       },
-      set (value) {
-        console.log("set date",value)
+      set (value) {        
         if (value==null){
           this.actor.birth_date=null
         }else{
@@ -283,8 +281,7 @@ export default {
         this.changesMade = true
       }      
     },
-    extrefBlur () {
-      console.log("extrefBlur", this.extrefsChangesMade)
+    extrefBlur () {      
       if (this.extrefsChangesMade) return // Changes have already been made. No point to check any further         
       if (this.extrefsArray.length !== this.extrefsSource.length) {
         this.extrefsChangesMade = true
@@ -296,8 +293,7 @@ export default {
             break
           }
         }
-      }
-      console.log("extrefBlur done", this.extrefsChangesMade)
+      }      
     },
     getFilteredCountries (text) {
       const filtered = this.countryList.filter(option => (
