@@ -240,6 +240,10 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 	for _, alias := range performer.Aliases {
 		actor.Aliases = addToArray(actor.Aliases, alias)
 	}
+	if strings.ToLower(actor.Name) != strings.ToLower(performer.Name) {
+		actor.Aliases = addToArray(actor.Aliases, performer.Name)
+	}
+
 	actor.Gender = performer.Gender
 	if performer.BirthDate != "" {
 		bd, err := time.Parse("2006-01-02", performer.BirthDate)
