@@ -604,6 +604,7 @@ func QueryScenes(r RequestSceneList, enablePreload bool) ResponseSceneList {
 		scenecastAlias := "scene_cast_f" + strconv.Itoa(idx)
 		actorsAlias := "actors_f" + strconv.Itoa(idx)
 		scenecuepointAlias := "scene_cuepoints_f" + strconv.Itoa(idx)
+		erlAlias := "external_reference_links_f" + strconv.Itoa(idx)
 
 		if strings.HasPrefix(fieldName, "!") { // ! prefix indicate NOT filtering
 			truefalse = false
@@ -857,6 +858,12 @@ func QueryScenes(r RequestSceneList, enablePreload bool) ResponseSceneList {
 				where = "favourite = 1"
 			} else {
 				where = "favourite = 0"
+			}
+		case "Stashdb Linked":
+			if truefalse {
+				where = "(select count(*) from external_reference_links " + erlAlias + " where " + erlAlias + ".internal_db_id = scenes.id and " + erlAlias + ".`external_source` = 'stashdb scene') > 0"
+			} else {
+				where = "(select count(*) from external_reference_links " + erlAlias + " where " + erlAlias + ".internal_db_id = scenes.id and " + erlAlias + ".`external_source` = 'stashdb scene') = 0"
 			}
 		case "POVR Scraper":
 			if truefalse {
