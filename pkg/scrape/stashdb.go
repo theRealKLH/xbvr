@@ -135,7 +135,6 @@ func StashDb() {
 					XbvrLinks: []models.ExternalReferenceLink{{InternalTable: "sites", InternalNameId: site.ID, ExternalSource: "stashdb studio", ExternalId: "https://stashdb.org/studios/" + studio.Data.Studio.ID}}}
 				ext.AddUpdateWithId()
 			}
-			log.Info("calling processStudioPerformers")
 			processStudioPerformers(studio.Data.Studio.ID)
 			scenes := getScenes(studio.Data.Studio.ID, siteConfig.ParentId, siteConfig.TagIdFilter)
 			saveScenesToExternalReferences(scenes, studio.Data.Studio.ID)
