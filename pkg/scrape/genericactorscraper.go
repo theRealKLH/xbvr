@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"io/ioutil"
 	"math"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -16,6 +19,7 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/markphelps/optional"
 	"github.com/tidwall/gjson"
+	"github.com/xbapps/xbvr/pkg/common"
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
@@ -24,7 +28,8 @@ func GenericActorScrapers() {
 	db, _ := models.GetDB()
 	defer db.Close()
 
-	siteRules := BuildRules()
+	siteRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
+	siteRules.BuildRules()
 
 	maxConcurrent := 10                             // limit the number of tasks running at the same time
 	semaphore := make(chan struct{}, maxConcurrent) // create a semaphore with capacity `maxConcurrent`
@@ -40,11 +45,11 @@ func GenericActorScrapers() {
 			var actorLink []models.ActorLink
 			json.Unmarshal([]byte(actor.URLs), &actorLink)
 			for _, link := range actorLink {
-				for _, rule := range siteRules {
-					if link.Type == rule.Source {
+				for source, rule := range siteRules.Rules {
+					if link.Type == source {
 						var extRefLink models.ExternalReferenceLink
 						db.Preload("ExternalReference").
-							Where(&models.ExternalReferenceLink{ExternalSource: rule.Source, InternalDbId: actor.ID}).
+							Where(&models.ExternalReferenceLink{ExternalSource: source, InternalDbId: actor.ID}).
 							First(&extRefLink)
 						if extRefLink.ID == 0 {
 							applyRules(link.Url, link.Type, rule, &actor)
@@ -75,23 +80,24 @@ func GenericSingleActorScraper(actorId uint, actorPage string) {
 	var actor models.Actor
 	actor.ID = actorId
 	db.Find(&actor)
-	siteRules := BuildRules()
+	siteRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
+	siteRules.BuildRules()
 
 	var extRefLink models.ExternalReferenceLink
 	db.Preload("ExternalReference").
 		Where(&models.ExternalReferenceLink{ExternalId: actorPage, InternalDbId: actor.ID}).
 		First(&extRefLink)
 
-	for _, rule := range siteRules {
-		if extRefLink.ExternalSource == rule.Source {
-			applyRules(actorPage, rule.Source, rule, &actor)
+	for source, rule := range siteRules.Rules {
+		if extRefLink.ExternalSource == source {
+			applyRules(actorPage, source, rule, &actor)
 		}
 	}
 
 	log.Infof("Scraping Actor Details from %s Completed", actorPage)
 }
 
-func applyRules(actorPage string, source string, rules GenericActorScraperRules, actor *models.Actor) {
+func applyRules(actorPage string, source string, rules GenericScraperRuleSet, actor *models.Actor) {
 	actorCollector := CreateCollector(rules.Domain)
 	data := make(map[string]string)
 	actorChanged := false
@@ -364,9 +370,13 @@ type PostProcessing struct {
 	Params   []string                `json:"params`          // used to pass params to PostProcessing functions, eg date format
 	SubRule  GenericActorScraperRule `json:"sub_rule`        // sub rules allow for a foreach within a foreach, use Function CollyForEach
 }
-type GenericActorScraperRules struct {
+
+type ActorScraperRulesMap map[string]GenericScraperRuleSet
+type ActorScraperRules struct {
+	Rules ActorScraperRulesMap
+}
+type GenericScraperRuleSet struct {
 	SiteRules []GenericActorScraperRule `json:"rules"`
-	Source    string                    `json:"source"`
 	Domain    string                    `json:"domain"`
 }
 
@@ -427,13 +437,9 @@ func structToMap(obj interface{}) map[string]interface{} {
 	return result
 }
 
-func BuildRules() []GenericActorScraperRules {
-	var siteActorScrapeRules []GenericActorScraperRules
+func (siteActorScrapeRules ActorScraperRules) BuildRules() {
 
-	// , PostProcessing: []PostProcessing{{Function:"RegexString", Params: []string{`^(Eye color: )(.+),"2"}}}})
-
-	siteDetails := GenericActorScraperRules{}
-	siteDetails.Source = "zexyvr scrape"
+	siteDetails := GenericScraperRuleSet{}
 	siteDetails.Domain = "zexyvr.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `li:contains("Birth date") > b`, PostProcessing: []PostProcessing{{Function: "Parse Date", Params: []string{"Jan 2, 2006"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `li:contains("Height") > b:first-of-type`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d+`, "0"}}}})
@@ -445,14 +451,12 @@ func BuildRules() []GenericActorScraperRules {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "weight", Selector: "li:contains(\"Weight\") > b:first-of-type", PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d+`, "0"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "images", Selector: `div.col-12.col-lg-5 > img, div.col-12.col-lg-7 img`, ResultType: "attr", Attribute: "src"})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `div.col-12.col-lg-5 > img`, ResultType: "attr", Attribute: "src", First: optional.NewInt(0)})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["zexyvr scrape"] = siteDetails
 
-	siteDetails.Source = "wankitnowvr scrape"
 	siteDetails.Domain = "wankitnowvr.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["wankitnowvr scrape"] = siteDetails
 
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "slr scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "www.sexlikereal.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `div[data-qa="model-info-birth"] div.u-wh`, PostProcessing: []PostProcessing{{Function: "Parse Date", Params: []string{"January 2, 2006"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `div[data-qa="model-info-height"] div.u-wh`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d+`, "0"}}}})
@@ -460,10 +464,9 @@ func BuildRules() []GenericActorScraperRules {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "weight", Selector: `div[data-qa="model-info-weight"] div.u-wh`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d+`, "0"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "aliases", Selector: `div[data-qa="model-info-aliases"] div.u-wh`})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "biography", Selector: `div[data-qa="model-info-bio"] div.u-wh`})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["slr scrape"] = siteDetails
 
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "baberoticavr scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "baberoticavr.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `div[id="model"] div:contains('Birth date:')+div`, PostProcessing: []PostProcessing{{Function: "Parse Date", Params: []string{"January 2, 2006"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "eye_color", Selector: `div[id="model"] div:contains('Eye Color:')+div`})
@@ -480,10 +483,9 @@ func BuildRules() []GenericActorScraperRules {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "waist_size", Selector: `div[id="model"] div:contains('Body:')+div`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(W)(\d{2})`, "2"}}, {Function: "inch to cm"}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "hip_size", Selector: `div[id="model"] div:contains('Body:')+div`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(H)(\d{2})`, "2"}}, {Function: "inch to cm"}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "cup_size", Selector: `div[id="model"] div:contains('Breasts Cup:')+div`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`[A-K]{1,2}`, "0"}}}})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["baberoticavr scrape"] = siteDetails
 
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "vrporn scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "vrporn.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `li:contains('Birthdate:')`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`^(Birthdate: )(.+)`, "2"}}, {Function: "Parse Date", Params: []string{"02/01/2006"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "nationality", Selector: `li:contains('Country of origin:')`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`^(Country of origin: )(.+)`, "2"}}, {Function: "Lookup Country"}}})
@@ -494,10 +496,9 @@ func BuildRules() []GenericActorScraperRules {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "hair_color", Selector: `li:contains('Hair color:')`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`^(Hair color: )(.+)`, "2"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "eye_color", Selector: `li:contains('Eye color:')`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`^(Eye color: )(.+)`, "2"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "aliases", Selector: `div.list_aliases_pornstar li`})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["vrporn scrape"] = siteDetails
 
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "virtualrealporn scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "virtualrealporn.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `script[type="application/ld+json"][class!='yoast-schema-graph']`,
 		PostProcessing: []PostProcessing{{Function: "jsonString", Params: []string{"birthDate"}},
@@ -511,26 +512,21 @@ func BuildRules() []GenericActorScraperRules {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "band_size", Selector: `table[id="table_about"] tr th:contains('Bust')+td`})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "waist_size", Selector: `table[id="table_about"] tr th:contains('Waist')+td`})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "hip_size", Selector: `table[id="table_about"] tr th:contains('Hips')+td`})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["virtualrealporn scrape"] = siteDetails
 
-	siteDetails.Source = "virtualrealtrans scrape"
 	siteDetails.Domain = "virtualrealtrans.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["virtualrealtrans scrape"] = siteDetails
 
-	siteDetails.Source = "virtualrealgay scrape"
 	siteDetails.Domain = "virtualrealgay.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["virtualrealgay scrape"] = siteDetails
 
-	siteDetails.Source = "virtualrealpassion scrape"
 	siteDetails.Domain = "virtualrealpassion.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["virtualrealpassion scrape"] = siteDetails
 
-	siteDetails.Source = "virtualrealamateurporn scrape"
 	siteDetails.Domain = "virtualrealamateurporn.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["virtualrealamateurporn scrape"] = siteDetails
 
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "groobyvr scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "www.groobyvr.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `div.model_photo img`, ResultType: "attr", Attribute: "src",
 		PostProcessing: []PostProcessing{{Function: "AbsoluteUrl"}}})
@@ -543,10 +539,9 @@ func BuildRules() []GenericActorScraperRules {
 		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`^(Nationality: )(.+)`, "2"}}, {Function: "Lookup Country"}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `div[id="bio"] li:contains('Height:')`,
 		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`^(Height: )(.+)`, "2"}}, {Function: "Feet+Inches to cm"}}})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["groobyvr scrape"] = siteDetails
 
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "hologirlsvr scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "www.hologirlsvr.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `.starBio`,
 		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d+\s*ft\s*\d+\s*in`, "0"}},
@@ -564,36 +559,28 @@ func BuildRules() []GenericActorScraperRules {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "hip_size", Selector: `.starBio`,
 		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d{2,3}.{1,2}-\d{2,3}-(\d{2,3})`, "1"}},
 			{Function: "inch to cm"}}})
+	siteActorScrapeRules.Rules["hologirlsvr scrape"] = siteDetails
 
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
-
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "vrbangers scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "vrbangers.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `div.single-model-profile__image > img`, ResultType: "attr", Attribute: "src"})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "biography", Selector: `div.single-model-biography__content div.toggle-content__text`, First: optional.NewInt(1), Last: optional.NewInt(1)})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
-	siteDetails.Source = "vrbtrans scrape"
+	siteActorScrapeRules.Rules["vrbangers scrape"] = siteDetails
 	siteDetails.Domain = "vrbtrans.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
-	siteDetails.Source = "vrbgay scrape"
+	siteActorScrapeRules.Rules["vrbtrans scrape"] = siteDetails
 	siteDetails.Domain = "vrbgay.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
-	siteDetails.Source = "vrconk scrape"
+	siteActorScrapeRules.Rules["vrbgay scrape"] = siteDetails
 	siteDetails.Domain = "vrconk.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
-	siteDetails.Source = "blowvr scrape"
+	siteActorScrapeRules.Rules["vrconk scrape"] = siteDetails
 	siteDetails.Domain = "blowvr.com"
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["blowvr scrape"] = siteDetails
 
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "bvr scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "virtualporn.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `div.model__img-wrapper > img`, ResultType: "attr", Attribute: "src"})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["bvr scrape"] = siteDetails
 
-	siteDetails = GenericActorScraperRules{}
-	siteDetails.Source = "realitylovers scrape"
+	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "realitylovers.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `img.girlDetails-posterImage`, ResultType: "attr", Attribute: "srcset",
 		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(.*) \dx,`, "1"}}}})
@@ -606,7 +593,47 @@ func BuildRules() []GenericActorScraperRules {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `.girlDetails-info`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3}) cm`, "1"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "weight", Selector: `.girlDetails-info`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3}) kg`, "1"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "biography", Selector: `.girlDetails-bio`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`Biography:\s*(.*)`, "1"}}}})
-	siteActorScrapeRules = append(siteActorScrapeRules, siteDetails)
+	siteActorScrapeRules.Rules["realitylovers scrape"] = siteDetails
 
-	return siteActorScrapeRules
+	siteActorScrapeRules.GetCustomRules()
+}
+
+// Loads custom rules from actor_scrapers_examples.json
+// Building custom rules for Actor scrapers is an advanced task, requiring developer or scraping skills
+// Most likely to be used to post updated rules by developers, prior to an offical release
+func (siteActorScrapeRules ActorScraperRules) GetCustomRules() {
+	// first see if we have an example file with the builting rules
+	//	this is to give examples, it is not loaded
+	fName := filepath.Join(common.AppDir, "actor_scrapers_examples.json")
+	out, _ := json.MarshalIndent(siteActorScrapeRules, "", "  ")
+	ioutil.WriteFile(fName, out, 0644)
+
+	// now check if the user has any custom rules
+	fName = filepath.Join(common.AppDir, "actor_scrapers_custom.json")
+	if _, err := os.Stat(fName); os.IsNotExist(err) {
+		if _, err := os.Stat(fName); os.IsNotExist(err) {
+			// create a dummy template
+			exampleRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
+			siteDetails := GenericScraperRuleSet{}
+			siteDetails.Domain = ".com"
+			siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "", Selector: ``, ResultType: "", Attribute: "",
+				PostProcessing: []PostProcessing{{Function: "", Params: []string{``}}}})
+			exampleRules.Rules[" scrape"] = siteDetails
+			out, _ := json.MarshalIndent(exampleRules, "", "  ")
+			ioutil.WriteFile(fName, out, 0644)
+		}
+	} else {
+		// load any custom rules and update the builtin list
+		customSiteActorScrapeRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
+		b, err := ioutil.ReadFile(fName)
+		if err != nil {
+			return
+		}
+		json.Unmarshal(b, &customSiteActorScrapeRules)
+		for key, rule := range customSiteActorScrapeRules.Rules {
+			if key != " scrape" {
+				siteActorScrapeRules.Rules[key] = rule
+			}
+		}
+	}
 }
