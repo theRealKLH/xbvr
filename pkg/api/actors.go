@@ -459,14 +459,14 @@ func (i ActorResource) editActor(req *restful.Request, resp *restful.Response) {
 			}
 		}
 	}
-	checkDateFieldChanged("birth_date", &r.BirthDate, &actor.BirthDate, actor.Name)
-	checkStringFieldChanged("nationality", &r.Nationality, &actor.Nationality, actor.Name)
-	checkStringFieldChanged("ethnicity", &r.Ethnicity, &actor.Ethnicity, actor.Ethnicity)
-	checkStringArrayChanged("image_arr", &r.ImageArr, &actor.ImageArr, actor.Name)
-	checkStringFieldChanged("eye_color", &r.EyeColor, &actor.EyeColor, actor.Name)
-	checkStringFieldChanged("hair_color", &r.HairColor, &actor.HairColor, actor.Name)
-	checkIntFieldChanged("height", &r.Height, &actor.Height, actor.Name)
-	checkIntFieldChanged("weight", &r.Weight, &actor.Weight, actor.Name)
+	checkDateFieldChanged("birth_date", &r.BirthDate, &actor.BirthDate, actor.ID)
+	checkStringFieldChanged("nationality", &r.Nationality, &actor.Nationality, actor.ID)
+	checkStringFieldChanged("ethnicity", &r.Ethnicity, &actor.Ethnicity, actor.ID)
+	checkStringArrayChanged("image_arr", &r.ImageArr, &actor.ImageArr, actor.ID)
+	checkStringFieldChanged("eye_color", &r.EyeColor, &actor.EyeColor, actor.ID)
+	checkStringFieldChanged("hair_color", &r.HairColor, &actor.HairColor, actor.ID)
+	checkIntFieldChanged("height", &r.Height, &actor.Height, actor.ID)
+	checkIntFieldChanged("weight", &r.Weight, &actor.Weight, actor.ID)
 
 	re := regexp.MustCompile(`(?m)(^(\d{2})?([A-Za-z]{0,2})-(\d{2})?-(\d{2}$)?)|^[A-Z]{0,2}$`)
 	match := re.FindStringSubmatch(r.Measurements)
@@ -479,44 +479,44 @@ func (i ActorResource) editActor(req *restful.Request, resp *restful.Response) {
 		r.WaistSize, _ = strconv.Atoi(match[4])
 		r.HipSize, _ = strconv.Atoi(match[5])
 	}
-	checkIntFieldChanged("band_size", &r.BandSize, &actor.BandSize, actor.Name)
-	checkStringFieldChanged("cup_size", &r.CupSize, &actor.CupSize, actor.Name)
-	checkIntFieldChanged("waist_size", &r.WaistSize, &actor.WaistSize, actor.Name)
-	checkIntFieldChanged("hip_size", &r.HipSize, &actor.HipSize, actor.Name)
-	checkStringFieldChanged("breast_type", &r.BreastType, &actor.BreastType, actor.Name)
-	checkIntFieldChanged("start_year", &r.StartYear, &actor.StartYear, actor.Name)
-	checkIntFieldChanged("end_year", &r.EndYear, &actor.EndYear, actor.Name)
-	checkStringArrayChanged("tattoos", &r.Tattoos, &actor.Tattoos, actor.Name)
-	checkStringArrayChanged("piercings", &r.Piercings, &actor.Piercings, actor.Name)
-	checkStringFieldChanged("biography", &r.Biography, &actor.Biography, actor.Name)
-	checkStringArrayChanged("aliases", &r.Aliases, &actor.Aliases, actor.Name)
-	checkStringArrayChanged("urls", &r.URLs, &actor.URLs, actor.Name)
+	checkIntFieldChanged("band_size", &r.BandSize, &actor.BandSize, actor.ID)
+	checkStringFieldChanged("cup_size", &r.CupSize, &actor.CupSize, actor.ID)
+	checkIntFieldChanged("waist_size", &r.WaistSize, &actor.WaistSize, actor.ID)
+	checkIntFieldChanged("hip_size", &r.HipSize, &actor.HipSize, actor.ID)
+	checkStringFieldChanged("breast_type", &r.BreastType, &actor.BreastType, actor.ID)
+	checkIntFieldChanged("start_year", &r.StartYear, &actor.StartYear, actor.ID)
+	checkIntFieldChanged("end_year", &r.EndYear, &actor.EndYear, actor.ID)
+	checkStringArrayChanged("tattoos", &r.Tattoos, &actor.Tattoos, actor.ID)
+	checkStringArrayChanged("piercings", &r.Piercings, &actor.Piercings, actor.ID)
+	checkStringFieldChanged("biography", &r.Biography, &actor.Biography, actor.ID)
+	checkStringArrayChanged("aliases", &r.Aliases, &actor.Aliases, actor.ID)
+	checkStringArrayChanged("urls", &r.URLs, &actor.URLs, actor.ID)
 
 	actor.Save()
 
 	resp.WriteHeaderAndEntity(http.StatusOK, actor)
 }
 
-func checkStringFieldChanged(field_name string, newValue *string, actorField *string, actorName string) {
+func checkStringFieldChanged(field_name string, newValue *string, actorField *string, actorId uint) {
 	if *actorField != *newValue {
 		*actorField = *newValue
-		models.AddActionActor(actorName, "edit_actor", "edit", field_name, *newValue)
+		models.AddActionActor(actorId, "edit_actor", "edit", field_name, *newValue)
 	}
 }
-func checkIntFieldChanged(field_name string, newValue *int, actorField *int, actorName string) {
+func checkIntFieldChanged(field_name string, newValue *int, actorField *int, actorId uint) {
 	if *actorField != *newValue {
 		*actorField = *newValue
-		models.AddActionActor(actorName, "edit_actor", "edit", field_name, strconv.Itoa(*newValue))
+		models.AddActionActor(actorId, "edit_actor", "edit", field_name, strconv.Itoa(*newValue))
 	}
 }
-func checkDateFieldChanged(field_name string, newValue *time.Time, actorField *time.Time, actorName string) {
+func checkDateFieldChanged(field_name string, newValue *time.Time, actorField *time.Time, actorId uint) {
 	if *actorField != *newValue {
 		*actorField = *newValue
 		dt := *newValue
-		models.AddActionActor(actorName, "edit_actor", "edit", field_name, dt.Format("2006-01-02"))
+		models.AddActionActor(actorId, "edit_actor", "edit", field_name, dt.Format("2006-01-02"))
 	}
 }
-func checkStringArrayChanged(field_name string, newValue *string, actorField *string, actorName string) {
+func checkStringArrayChanged(field_name string, newValue *string, actorField *string, actorId uint) {
 	if *actorField != *newValue {
 		var actorArray []string
 		var newArray []string
@@ -530,7 +530,7 @@ func checkStringArrayChanged(field_name string, newValue *string, actorField *st
 				}
 			}
 			if !exists {
-				models.AddActionActor(actorName, "edit_actor", "delete", field_name, actorField)
+				models.AddActionActor(actorId, "edit_actor", "delete", field_name, actorField)
 			}
 		}
 		for _, newField := range newArray {
@@ -541,7 +541,7 @@ func checkStringArrayChanged(field_name string, newValue *string, actorField *st
 				}
 			}
 			if !exists {
-				models.AddActionActor(actorName, "edit_actor", "add", field_name, newField)
+				models.AddActionActor(actorId, "edit_actor", "add", field_name, newField)
 			}
 		}
 
@@ -574,7 +574,7 @@ func (i ActorResource) setActorImage(req *restful.Request, resp *restful.Respons
 	actor.AddToImageArray(r.Url)
 	actor.Save()
 
-	aa := models.ActionActor{ActorName: actor.Name, ActionType: "setimage", Source: "edit_actor", ChangedColumn: "image_url", NewValue: actor.ImageUrl}
+	aa := models.ActionActor{ActorID: actor.ID, ActionType: "setimage", Source: "edit_actor", ChangedColumn: "image_url", NewValue: actor.ImageUrl}
 	aa.Save()
 	resp.WriteHeaderAndEntity(http.StatusOK, actor)
 }
@@ -625,7 +625,7 @@ func (i ActorResource) deleteActorImage(req *restful.Request, resp *restful.Resp
 	actor.ImageArr = string(jsonarray)
 	actor.Save()
 
-	aa := models.ActionActor{ActorName: actor.Name, ActionType: "delete", Source: "edit_actor", ChangedColumn: "image_arr", NewValue: r.Url}
+	aa := models.ActionActor{ActorID: actor.ID, ActionType: "delete", Source: "edit_actor", ChangedColumn: "image_arr", NewValue: r.Url}
 	aa.Save()
 	resp.WriteHeaderAndEntity(http.StatusOK, actor)
 }
