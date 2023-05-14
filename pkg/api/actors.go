@@ -794,7 +794,7 @@ func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Resp
 		}
 		if !found {
 			db.Delete(&link)
-			models.AddActionActor(actor.Name, "edit_actor", "delete", "external_reference_link", link.ExternalReference.ExternalURL)
+			models.AddActionActor(actor.ID, "edit_actor", "delete", "external_reference_link", link.ExternalReference.ExternalURL)
 		}
 	}
 
@@ -815,7 +815,7 @@ func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Resp
 			extref.XbvrLinks = append(extref.XbvrLinks, models.ExternalReferenceLink{InternalTable: "actors", InternalDbId: id, InternalNameId: actor.Name,
 				ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId, MatchType: 0})
 			extref.Save()
-			models.AddActionActor(actor.Name, "edit_actor", "add", "external_reference_link", url)
+			models.AddActionActor(actor.ID, "edit_actor", "add", "external_reference_link", url)
 		} else {
 			// external reference exists, but check it is linked to this actor
 			found := false
@@ -830,7 +830,7 @@ func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Resp
 				newLink := models.ExternalReferenceLink{InternalTable: "actors", InternalDbId: id, InternalNameId: actor.Name,
 					ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId, MatchType: 0}
 				newLink.Save()
-				models.AddActionActor(actor.Name, "edit_actor", "add", "external_reference_link", url)
+				models.AddActionActor(actor.ID, "edit_actor", "add", "external_reference_link", url)
 			}
 		}
 	}

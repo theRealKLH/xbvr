@@ -108,7 +108,7 @@
           <b-tooltip
             label="Includes your Actor Edits"
             size="is-large" type="is-primary is-light" multilined :delay="1000" >
-            <b-switch v-model="inclActionActors">Include Actor Edits</b-switch>
+            <b-switch v-model="inclActorActions">Include Actor Edits</b-switch>
           </b-tooltip>
         </b-field>
         <b-field>
@@ -210,7 +210,7 @@ export default {
       includeExternalReferences: true,
       includeTagGroups: true,
       includeActors: true,
-      inclActionActors: true,
+      inclActorActions: true,
       overwrite: true,
       allSites: "true",
       onlyIncludeOfficalSites: false,
@@ -252,13 +252,13 @@ export default {
         // put up a starting msg, as large files can cause it to appear to hang
         this.$store.state.messages.lastScrapeMessage = 'Starting restore'
         ky.post('/api/task/bundle/restore', {
-          json: { allSites: this.allSites == "true", onlyIncludeOfficalSites: this.onlyIncludeOfficalSites, inclScenes: this.includeScenes, inclHistory: this.includeHistory, inclLinks: this.includeFileLinks, inclCuepoints: this.includeCuepoints, inclActions: this.includeActions, inclPlaylists: this.includePlaylists, inclActorAkas: this.includeActorAkas, inclTagGroups: this.includeTagGroups, inclVolumes: this.includeVolumes, inclExtRefs: this.includeExternalReferences, inclSites: this.includeSites, inclActors: this.includeActors,inclActionActors: this.inclActionActors, overwrite: this.overwrite, uploadData: this.uploadData }
+          json: { allSites: this.allSites == "true", onlyIncludeOfficalSites: this.onlyIncludeOfficalSites, inclScenes: this.includeScenes, inclHistory: this.includeHistory, inclLinks: this.includeFileLinks, inclCuepoints: this.includeCuepoints, inclActions: this.includeActions, inclPlaylists: this.includePlaylists, inclActorAkas: this.includeActorAkas, inclTagGroups: this.includeTagGroups, inclVolumes: this.includeVolumes, inclExtRefs: this.includeExternalReferences, inclSites: this.includeSites, inclActors: this.includeActors,inclActorActions: this.inclActorActions, overwrite: this.overwrite, uploadData: this.uploadData }
         })
         this.file = null
       }
     },
     backupContent () {      
-      ky.get('/api/task/bundle/backup', { timeout: false, searchParams: { allSites: this.allSites == "true", onlyIncludeOfficalSites: this.onlyIncludeOfficalSites, inclScenes: this.includeScenes, inclHistory: this.includeHistory, inclLinks: this.includeFileLinks, inclCuepoints: this.includeCuepoints, inclActions: this.includeActions, inclPlaylists: this.includePlaylists, inclActorAkas: this.includeActorAkas, inclTagGroups: this.includeTagGroups, inclVolumes: this.includeVolumes, inclExtRefs: this.includeExternalReferences, inclSites: this.includeSites, inclActors: this.includeActors,inclActionActors: this.inclActionActors, playlistId: this.currentPlaylist, download: true } }).json().then(data => {      
+      ky.get('/api/task/bundle/backup', { timeout: false, searchParams: { allSites: this.allSites == "true", onlyIncludeOfficalSites: this.onlyIncludeOfficalSites, inclScenes: this.includeScenes, inclHistory: this.includeHistory, inclLinks: this.includeFileLinks, inclCuepoints: this.includeCuepoints, inclActions: this.includeActions, inclPlaylists: this.includePlaylists, inclActorAkas: this.includeActorAkas, inclTagGroups: this.includeTagGroups, inclVolumes: this.includeVolumes, inclExtRefs: this.includeExternalReferences, inclSites: this.includeSites, inclActors: this.includeActors,inclActorActions: this.inclActorActions, playlistId: this.currentPlaylist, download: true } }).json().then(data => {      
         const link = document.createElement('a')
         link.href = this.myUrl
         link.click()
@@ -274,7 +274,7 @@ export default {
     toggleActorIncludes () {
       this.includeActors = !this.includeActors
       this.includeActorAkas = !this.includeActorAkas
-      this.inclActionActors = !this.inclActionActors
+      this.inclActorActions = !this.inclActorActions
       this.includeExternalReferences = !this.includeExternalReferences
     },
     toggleSettingsIncludes () {

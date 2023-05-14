@@ -89,7 +89,7 @@ type RequestRestore struct {
 	UploadData       string `json:"uploadData"`
 	InclExternalRefs bool   `json:"inclExtRefs"`
 	InclActors       bool   `json:"inclActors"`
-	InclActionActors bool   `json:"inclActionActors"`
+	InclActorActions bool   `json:"inclActorActions"`
 }
 
 func CleanTags() {
@@ -475,7 +475,7 @@ func ImportBundleV1(bundleData ContentBundle) {
 
 }
 
-func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bool, inclFileLinks bool, inclCuepoints bool, inclHistory bool, inclPlaylists bool, InclActorAkas bool, inclTagGroups bool, inclVolumes bool, inclSites bool, inclActions bool, inclExtRefs bool, inclActors bool, inclActionActors bool, playlistId string, outputBundleFilename string, version string) string {
+func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bool, inclFileLinks bool, inclCuepoints bool, inclHistory bool, inclPlaylists bool, InclActorAkas bool, inclTagGroups bool, inclVolumes bool, inclSites bool, inclActions bool, inclExtRefs bool, inclActors bool, inclActorActions bool, playlistId string, outputBundleFilename string, version string) string {
 	var out BackupContentBundle
 	var content []byte
 	exportCnt := 0
@@ -641,7 +641,7 @@ func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bo
 		}
 
 		var actionActors []models.ActionActor
-		if inclActionActors {
+		if inclActorActions {
 			db.Order("actor_id, created_at").Find(&actionActors)
 			if len(actionActors) > 1 {
 				var actorsActions BackupActionActor
@@ -801,7 +801,7 @@ func RestoreBundle(request RequestRestore) {
 			if request.InclActors {
 				RestoreActors(bundleData.Actors, request.Overwrite, db)
 			}
-			if request.InclActionActors {
+			if request.InclActorActions {
 				RestoreActionActors(bundleData.ActionActors, request.Overwrite, db)
 			}
 
