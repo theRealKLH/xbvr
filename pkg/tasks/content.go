@@ -89,7 +89,7 @@ type RequestRestore struct {
 	UploadData       string `json:"uploadData"`
 	InclExternalRefs bool   `json:"inclExtRefs"`
 	InclActors       bool   `json:"inclActors"`
-	inclActionActors bool   `json:"inclActionActors"`
+	InclActionActors bool   `json:"inclActionActors"`
 }
 
 func CleanTags() {
@@ -635,17 +635,25 @@ func BackupBundle(inclAllSites bool, onlyIncludeOfficalSites bool, inclScenes bo
 		}
 
 		var actionActors []models.ActionActor
-		if InclActorAkas {
-			db.Order("actor_name, created_at").Find(&actionActors)
+		if inclActionActors {
+			db.Order("actor_id, created_at").Find(&actionActors)
 			if len(actionActors) > 1 {
 				var actorsActions BackupActionActor
+				lastActorId := uint(0)
 				for _, action := range actionActors {
-					if action.ActorName != action.ActorName && actorsActions.ActorName != "" {
+					if action.ActorID != lastActorId && lastActorId != 0 {
+						var actor models.Actor
+						actor.GetIfExistByPK(lastActorId)
+						actorsActions.ActorName = actor.Name
 						backupActionActorList = append(backupActionActorList, actorsActions)
-						actorsActions = BackupActionActor{ActorName: action.ActorName}
+						actorsActions = BackupActionActor{}
 					}
 					actorsActions.ActionActors = append(actorsActions.ActionActors, action)
+					lastActorId = action.ActorID
 				}
+				var actor models.Actor
+				actor.GetIfExistByPK(lastActorId)
+				actorsActions.ActorName = actor.Name
 				backupActionActorList = append(backupActionActorList, actorsActions)
 			}
 		}
@@ -787,7 +795,7 @@ func RestoreBundle(request RequestRestore) {
 			if request.InclActors {
 				RestoreActors(bundleData.Actors, request.Overwrite, db)
 			}
-			if request.inclActionActors {
+			if request.InclActionActors {
 				RestoreActionActors(bundleData.ActionActors, request.Overwrite, db)
 			}
 
@@ -1399,16 +1407,11 @@ func RestoreActionActors(actionActorsList []BackupActionActor, overwrite bool, d
 	tlog.Infof("Restoring Actor Edits")
 
 	addedCnt := 0
-	go func(addedCnt int, total int) {
-		for {
-			tlog.Infof("Processing edits for %v of %v actors", addedCnt, total)
-			time.Sleep(30 * time.Second)
-		}
-	}(addedCnt, len(actionActorsList))
-
+	lastMessage := time.Now()
 	for cnt, actions := range actionActorsList {
-		if cnt%500 == 0 {
-			tlog.Infof("Processing actor actions %v of %v", cnt+1, len(actionActorsList))
+		if time.Since(lastMessage) > 30*time.Second {
+			tlog.Infof("Processing edits for %v of %v actors", cnt, len(actionActorsList))
+			lastMessage = time.Now()
 		}
 
 		if overwrite {
@@ -1420,7 +1423,9 @@ func RestoreActionActors(actionActorsList []BackupActionActor, overwrite bool, d
 			}
 		} else {
 			var existingAction models.ActionActor
-			db.Where(&models.ActionActor{ActorName: actions.ActorName}).First(&existingAction)
+			var actor models.Actor
+			actor.GetIfExist(actions.ActorName)
+			db.Where(&models.ActionActor{ActorID: actor.ID}).First(&existingAction)
 			if existingAction.ID > 0 {
 				tlog.Infof("Actions already exist for %s, cannot add new actions, use Overwrite+New", actions.ActorName)
 				continue
@@ -1428,7 +1433,10 @@ func RestoreActionActors(actionActorsList []BackupActionActor, overwrite bool, d
 
 		}
 		for _, action := range actions.ActionActors {
+			var actor models.Actor
+			actor.GetIfExist(actions.ActorName)
 			action.ID = 0
+			action.ActorID = actor.ID
 			models.SaveWithRetry(db, &action)
 		}
 		addedCnt++

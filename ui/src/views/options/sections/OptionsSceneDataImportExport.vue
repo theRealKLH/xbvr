@@ -108,7 +108,7 @@
           <b-tooltip
             label="Includes your Actor Edits"
             size="is-large" type="is-primary is-light" multilined :delay="1000" >
-            <b-switch v-model="includeActionActors">Include Actor Edits</b-switch>
+            <b-switch v-model="inclActionActors">Include Actor Edits</b-switch>
           </b-tooltip>
         </b-field>
         <b-field>
@@ -210,7 +210,7 @@ export default {
       includeExternalReferences: true,
       includeTagGroups: true,
       includeActors: true,
-      includeActionActors: true,
+      inclActionActors: true,
       overwrite: true,
       allSites: "true",
       onlyIncludeOfficalSites: false,
@@ -257,8 +257,8 @@ export default {
         this.file = null
       }
     },
-    backupContent () {
-      ky.get('/api/task/bundle/backup', { timeout: false, searchParams: { allSites: this.allSites == "true", onlyIncludeOfficalSites: this.onlyIncludeOfficalSites, inclScenes: this.includeScenes, inclHistory: this.includeHistory, inclLinks: this.includeFileLinks, inclCuepoints: this.includeCuepoints, inclActions: this.includeActions, inclPlaylists: this.includePlaylists, inclActorAkas: this.includeActorAkas, inclTagGroups: this.includeTagGroups, inclVolumes: this.includeVolumes, inclExtRefs: this.includeExternalReferences, inclSites: this.includeSites, inclActors: this.includeActors,inclActionActors: this.inclActionActors, playlistId: this.currentPlaylist, download: true } }).json().then(data => {
+    backupContent () {      
+      ky.get('/api/task/bundle/backup', { timeout: false, searchParams: { allSites: this.allSites == "true", onlyIncludeOfficalSites: this.onlyIncludeOfficalSites, inclScenes: this.includeScenes, inclHistory: this.includeHistory, inclLinks: this.includeFileLinks, inclCuepoints: this.includeCuepoints, inclActions: this.includeActions, inclPlaylists: this.includePlaylists, inclActorAkas: this.includeActorAkas, inclTagGroups: this.includeTagGroups, inclVolumes: this.includeVolumes, inclExtRefs: this.includeExternalReferences, inclSites: this.includeSites, inclActors: this.includeActors,inclActionActors: this.inclActionActors, playlistId: this.currentPlaylist, download: true } }).json().then(data => {      
         const link = document.createElement('a')
         link.href = this.myUrl
         link.click()
@@ -274,7 +274,7 @@ export default {
     toggleActorIncludes () {
       this.includeActors = !this.includeActors
       this.includeActorAkas = !this.includeActorAkas
-      this.includeActionActors = !this.includeActionActors
+      this.inclActionActors = !this.inclActionActors
       this.includeExternalReferences = !this.includeExternalReferences
     },
     toggleSettingsIncludes () {
