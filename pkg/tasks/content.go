@@ -279,17 +279,23 @@ func Scrape(toScrape string) {
 			var dummyTagGroup models.TagGroup
 			dummyTagGroup.UpdateSceneTagRecords()
 
+			if config.Config.Advanced.ScrapeActorAfterScene {
+				go ScrapeActors()
+			}
+
 			tlog.Infof("Updating tag counts")
 			CountTags()
 			dummyAka.RefreshAkaActorNames()
-			SearchIndex()
 
 			tlog.Infof("Reapplying edits")
 			ReapplyEdits()
 
+			SearchIndex()
+
 			tlog.Infof("Scraped %v new scenes in %s",
 				sceneCount,
 				time.Now().Sub(t0).Round(time.Second))
+
 		}
 	}
 }
