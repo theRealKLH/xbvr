@@ -232,42 +232,57 @@ func checkMatchedScenes() {
 func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 	db, _ := models.GetDB()
 	defer db.Close()
+
+	changed := false
 	actor := models.Actor{ID: xbvrActorID}
 	db.Where(&actor).First(&actor)
 
 	if len(performer.Images) > 0 {
+		if actor.ImageUrl != performer.Images[0].URL {
+			changed = true
+		}
 		actor.ImageUrl = performer.Images[0].URL
 	}
 	for _, alias := range performer.Aliases {
-		actor.Aliases = addToArray(actor.Aliases, alias)
+		changed = changed || actor.AddToAliases(alias)
 	}
 	if !strings.EqualFold(actor.Name, performer.Name) {
-		actor.Aliases = addToArray(actor.Aliases, performer.Name)
+		changed = changed || actor.AddToAliases(performer.Name)
 	}
 
-	checkAndSetStringActorField(&actor.Gender, "gender", performer.Gender, actor.ID)
-	checkAndSetDateActorField(&actor.BirthDate, "birth_date", performer.BirthDate, actor.ID)
-	checkAndSetStringActorField(&actor.Nationality, "nationality", performer.Country, actor.ID)
-	checkAndSetStringActorField(&actor.Ethnicity, "ethnicity", performer.Ethnicity, actor.ID)
-	checkAndSetIntActorField(&actor.Height, "height", performer.Height, actor.ID)
-	checkAndSetStringActorField(&actor.EyeColor, "eye_color", performer.EyeColor, actor.ID)
-	checkAndSetStringActorField(&actor.HairColor, "eye_color", performer.HairColor, actor.ID)
-	checkAndSetStringActorField(&actor.CupSize, "cup_size", performer.CupSize, actor.ID)
-	checkAndSetIntActorField(&actor.BandSize, "band_size", int(math.Round(float64(performer.BandSize)*2.54)), actor.ID)
-	checkAndSetIntActorField(&actor.HipSize, "hip_size", int(math.Round(float64(performer.HipSize)*2.54)), actor.ID)
-	checkAndSetIntActorField(&actor.WaistSize, "waist_size", int(math.Round(float64(performer.WaistSize)*2.54)), actor.ID)
-	checkAndSetStringActorField(&actor.BreastType, "breast_type", performer.BreastType, actor.ID)
-	checkAndSetIntActorField(&actor.StartYear, "start_year", performer.CareerStartYear, actor.ID)
-	checkAndSetIntActorField(&actor.EndYear, "end_year", performer.CareerEndYear, actor.ID)
-	actor.Tattoos = convertBodyModArrayToJson(performer.Tattos)
-	actor.Piercings = convertBodyModArrayToJson(performer.Piercings)
+	changed = changed || checkAndSetStringActorField(&actor.Gender, "gender", performer.Gender, actor.ID)
+	changed = changed || checkAndSetDateActorField(&actor.BirthDate, "birth_date", performer.BirthDate, actor.ID)
+	changed = changed || checkAndSetStringActorField(&actor.Nationality, "nationality", performer.Country, actor.ID)
+	changed = changed || checkAndSetStringActorField(&actor.Ethnicity, "ethnicity", performer.Ethnicity, actor.ID)
+	changed = changed || checkAndSetIntActorField(&actor.Height, "height", performer.Height, actor.ID)
+	changed = changed || checkAndSetStringActorField(&actor.EyeColor, "eye_color", performer.EyeColor, actor.ID)
+	changed = changed || checkAndSetStringActorField(&actor.HairColor, "eye_color", performer.HairColor, actor.ID)
+	changed = changed || checkAndSetStringActorField(&actor.CupSize, "cup_size", performer.CupSize, actor.ID)
+	changed = changed || checkAndSetIntActorField(&actor.BandSize, "band_size", int(math.Round(float64(performer.BandSize)*2.54)), actor.ID)
+	changed = changed || checkAndSetIntActorField(&actor.HipSize, "hip_size", int(math.Round(float64(performer.HipSize)*2.54)), actor.ID)
+	changed = changed || checkAndSetIntActorField(&actor.WaistSize, "waist_size", int(math.Round(float64(performer.WaistSize)*2.54)), actor.ID)
+	changed = changed || checkAndSetStringActorField(&actor.BreastType, "breast_type", performer.BreastType, actor.ID)
+	changed = changed || checkAndSetIntActorField(&actor.StartYear, "start_year", performer.CareerStartYear, actor.ID)
+	changed = changed || checkAndSetIntActorField(&actor.EndYear, "end_year", performer.CareerEndYear, actor.ID)
+	jsonstring := convertBodyModArrayToJson(performer.Tattos)
+	if actor.Tattoos != jsonstring {
+		actor.Tattoos = convertBodyModArrayToJson(performer.Tattos)
+		changed = true
+	}
+	jsonstring = convertBodyModArrayToJson(performer.Piercings)
+	if actor.Piercings != jsonstring {
+		actor.Piercings = convertBodyModArrayToJson(performer.Tattos)
+		changed = true
+	}
 	for _, img := range performer.Images {
-		actor.AddToImageArray(img.URL)
+		changed = changed || actor.AddToImageArray(img.URL)
 	}
 	for _, url := range performer.URLs {
-		actor.AddToActorUrlArray(models.ActorLink{Url: url.URL, Type: ""})
+		changed = changed || actor.AddToActorUrlArray(models.ActorLink{Url: url.URL, Type: ""})
 	}
-	actor.Save()
+	if changed {
+		actor.Save()
+	}
 }
 
 func addToArray(existingArray string, newValue string) string {
@@ -696,6 +711,9 @@ func LinkOnXbvrAkaGroups() {
 
 // check if the field was modified by the user, if so don't change it
 func checkAndSetStringActorField(actor_field *string, fieldName string, newValue string, actor_id uint) bool {
+	if *actor_field == newValue {
+		return false
+	}
 	if *actor_field == "" {
 		*actor_field = newValue
 		return true
@@ -716,6 +734,9 @@ func checkAndSetStringActorField(actor_field *string, fieldName string, newValue
 
 // check if the field was modified by the user, if so don't change it
 func checkAndSetIntActorField(actor_field *int, fieldName string, newValue int, actor_id uint) bool {
+	if *actor_field == newValue {
+		return false
+	}
 	if *actor_field == 0 {
 		*actor_field = newValue
 		return true
@@ -738,6 +759,9 @@ func checkAndSetIntActorField(actor_field *int, fieldName string, newValue int, 
 func checkAndSetDateActorField(actor_field *time.Time, fieldName string, newValue string, actor_id uint) bool {
 	bd, err := time.Parse("2006-01-02", newValue)
 	if err != nil {
+		return false
+	}
+	if bd.Equal(*actor_field) {
 		return false
 	}
 	if actor_field.IsZero() {
