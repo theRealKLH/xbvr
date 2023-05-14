@@ -244,26 +244,26 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 		actor.ImageUrl = performer.Images[0].URL
 	}
 	for _, alias := range performer.Aliases {
-		changed = changed || actor.AddToAliases(alias)
+		changed = actor.AddToAliases(alias) || changed
 	}
 	if !strings.EqualFold(actor.Name, performer.Name) {
-		changed = changed || actor.AddToAliases(performer.Name)
+		changed = actor.AddToAliases(performer.Name) || changed
 	}
 
-	changed = changed || checkAndSetStringActorField(&actor.Gender, "gender", performer.Gender, actor.ID)
-	changed = changed || checkAndSetDateActorField(&actor.BirthDate, "birth_date", performer.BirthDate, actor.ID)
-	changed = changed || checkAndSetStringActorField(&actor.Nationality, "nationality", performer.Country, actor.ID)
-	changed = changed || checkAndSetStringActorField(&actor.Ethnicity, "ethnicity", performer.Ethnicity, actor.ID)
-	changed = changed || checkAndSetIntActorField(&actor.Height, "height", performer.Height, actor.ID)
-	changed = changed || checkAndSetStringActorField(&actor.EyeColor, "eye_color", performer.EyeColor, actor.ID)
-	changed = changed || checkAndSetStringActorField(&actor.HairColor, "eye_color", performer.HairColor, actor.ID)
-	changed = changed || checkAndSetStringActorField(&actor.CupSize, "cup_size", performer.CupSize, actor.ID)
-	changed = changed || checkAndSetIntActorField(&actor.BandSize, "band_size", int(math.Round(float64(performer.BandSize)*2.54)), actor.ID)
-	changed = changed || checkAndSetIntActorField(&actor.HipSize, "hip_size", int(math.Round(float64(performer.HipSize)*2.54)), actor.ID)
-	changed = changed || checkAndSetIntActorField(&actor.WaistSize, "waist_size", int(math.Round(float64(performer.WaistSize)*2.54)), actor.ID)
-	changed = changed || checkAndSetStringActorField(&actor.BreastType, "breast_type", performer.BreastType, actor.ID)
-	changed = changed || checkAndSetIntActorField(&actor.StartYear, "start_year", performer.CareerStartYear, actor.ID)
-	changed = changed || checkAndSetIntActorField(&actor.EndYear, "end_year", performer.CareerEndYear, actor.ID)
+	changed = checkAndSetStringActorField(&actor.Gender, "gender", performer.Gender, actor.ID) || changed
+	changed = checkAndSetDateActorField(&actor.BirthDate, "birth_date", performer.BirthDate, actor.ID) || changed
+	changed = checkAndSetStringActorField(&actor.Nationality, "nationality", performer.Country, actor.ID) || changed
+	changed = checkAndSetStringActorField(&actor.Ethnicity, "ethnicity", performer.Ethnicity, actor.ID) || changed
+	changed = checkAndSetIntActorField(&actor.Height, "height", performer.Height, actor.ID) || changed
+	changed = checkAndSetStringActorField(&actor.EyeColor, "eye_color", performer.EyeColor, actor.ID) || changed
+	changed = checkAndSetStringActorField(&actor.HairColor, "eye_color", performer.HairColor, actor.ID) || changed
+	changed = checkAndSetStringActorField(&actor.CupSize, "cup_size", performer.CupSize, actor.ID) || changed
+	changed = checkAndSetIntActorField(&actor.BandSize, "band_size", int(math.Round(float64(performer.BandSize)*2.54)), actor.ID) || changed
+	changed = checkAndSetIntActorField(&actor.HipSize, "hip_size", int(math.Round(float64(performer.HipSize)*2.54)), actor.ID) || changed
+	changed = checkAndSetIntActorField(&actor.WaistSize, "waist_size", int(math.Round(float64(performer.WaistSize)*2.54)), actor.ID) || changed
+	changed = checkAndSetStringActorField(&actor.BreastType, "breast_type", performer.BreastType, actor.ID) || changed
+	changed = checkAndSetIntActorField(&actor.StartYear, "start_year", performer.CareerStartYear, actor.ID) || changed
+	changed = checkAndSetIntActorField(&actor.EndYear, "end_year", performer.CareerEndYear, actor.ID) || changed
 	jsonstring := convertBodyModArrayToJson(performer.Tattoos)
 	if actor.Tattoos != jsonstring {
 		actor.Tattoos = convertBodyModArrayToJson(performer.Tattoos)
@@ -275,10 +275,10 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 		changed = true
 	}
 	for _, img := range performer.Images {
-		changed = changed || actor.AddToImageArray(img.URL)
+		changed = actor.AddToImageArray(img.URL) || changed
 	}
 	for _, url := range performer.URLs {
-		changed = changed || actor.AddToActorUrlArray(models.ActorLink{Url: url.URL, Type: ""})
+		changed = actor.AddToActorUrlArray(models.ActorLink{Url: url.URL, Type: ""}) || changed
 	}
 	if changed {
 		actor.Save()
