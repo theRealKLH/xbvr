@@ -37,7 +37,7 @@ type StashPerformer struct {
 	BreastType      string                  `json:"breast_type"`
 	CareerStartYear int                     `json:"career_start_year"`
 	CareerEndYear   int                     `json:"career_end_year"`
-	Tattos          []StashBodyModification `json:"tattoos"`
+	Tattoos         []StashBodyModification `json:"tattoos"`
 	Piercings       []StashBodyModification `json:"piercings"`
 	Images          []Image                 `json:"images"`
 	Deleted         bool                    `json:"deleted"`

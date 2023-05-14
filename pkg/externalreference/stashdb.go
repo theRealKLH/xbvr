@@ -264,14 +264,14 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 	changed = changed || checkAndSetStringActorField(&actor.BreastType, "breast_type", performer.BreastType, actor.ID)
 	changed = changed || checkAndSetIntActorField(&actor.StartYear, "start_year", performer.CareerStartYear, actor.ID)
 	changed = changed || checkAndSetIntActorField(&actor.EndYear, "end_year", performer.CareerEndYear, actor.ID)
-	jsonstring := convertBodyModArrayToJson(performer.Tattos)
+	jsonstring := convertBodyModArrayToJson(performer.Tattoos)
 	if actor.Tattoos != jsonstring {
-		actor.Tattoos = convertBodyModArrayToJson(performer.Tattos)
+		actor.Tattoos = convertBodyModArrayToJson(performer.Tattoos)
 		changed = true
 	}
 	jsonstring = convertBodyModArrayToJson(performer.Piercings)
 	if actor.Piercings != jsonstring {
-		actor.Piercings = convertBodyModArrayToJson(performer.Tattos)
+		actor.Piercings = convertBodyModArrayToJson(performer.Piercings)
 		changed = true
 	}
 	for _, img := range performer.Images {
