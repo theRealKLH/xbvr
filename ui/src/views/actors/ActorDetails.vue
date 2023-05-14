@@ -219,6 +219,24 @@
                     </div>
                   </div>
                 </b-tab-item>
+                <b-tab-item  :label="`Scrapers (${extrefs.length})`" v-show="extrefs.length !=0">
+                  <div v-show="activeTab == 5">
+                    <div >                    
+                      <b-field label="Actor Scrapers" >
+                        <div >                       
+                          <div v-for="(extref, idx) in extrefs" :key="idx">
+                            <b-field grouped>
+                              <a @click="refreshScraper(extref.external_reference.external_url)" :title="'Rescrape Actor Details now'">
+                                <b-icon pack="mdi" icon="refresh" size="is-small" style="margin-right: 1em;"/>
+                              </a>
+                            <a class="tag is-info" :href="extref.external_reference.external_url" target="_blank" rel="noreferrer" style="margin-bottom: .5em;">{{extref.external_source}} - Updated: {{format(parseISO(extref.external_reference.external_date), "yyyy-MM-dd") }}</a>                            
+                            </b-field>
+                          </div>                        
+                        </div>
+                      </b-field>
+                    </div>
+                  </div>
+                </b-tab-item>
               </b-tabs>
             </div>
 
@@ -263,6 +281,7 @@ export default {
       sortMultiple: true,
       countries: [],
       akas: [],
+      extrefs: [],
       colleagues: [],
     }
   },
@@ -281,6 +300,11 @@ export default {
         .json()
         .then(list => {          
           this.colleagues = list
+        })
+        ky.get(`/api/actor/extrefs/${actor.id}`)
+        .json()
+        .then(list => {          
+          this.extrefs = list          
         })
       return actor
     },
@@ -614,6 +638,34 @@ export default {
         }
       }      
       return true
+    },
+    refreshScraper(url){
+      if (url.includes('stashdb')) {
+        this.$store.state.actorList.isLoading = true
+        const lastSlashIndex = url.lastIndexOf('/');
+        ky.get('/api/extref/stashdb/refresh_performer/'+url.substring(lastSlashIndex + 1)).then(data => {
+          ky.get('/api/actor/'+this.actor.id).json().then(data => {          
+            if (data.id != 0){
+              this.$store.state.overlay.actordetails.actor = data
+              this.$store.state.actorList.isLoading = false
+              this.$store.dispatch('actorList/load', { offset: this.$store.state.actorList.offset - this.$store.state.actorList.limit })
+            }
+          })
+        })
+      } else {
+        this.$store.state.actorList.isLoading = true
+        ky.post('/api/extref/generic/scrape_single', { json: {id: this.actor.id,url: url}})
+          .then(data => {
+            ky.get('/api/actor/'+this.actor.id).json().then(data => {
+              if (data.id != 0){
+                this.$store.state.overlay.actordetails.actor = data
+                this.$store.state.actorList.isLoading = false
+                this.$store.dispatch('actorList/load', { offset: this.$store.state.actorList.offset - this.$store.state.actorList.limit })
+              }
+            })
+          })
+      }
+      this.$store.state.actorList.isLoading = false
     },
     format,
     parseISO,

@@ -101,6 +101,9 @@
           <b-tab-item :label="$t('Images')">
             <ListEditor :list="this.actor.imageArray" type="image_arr" :blurFn="() => blur('image_arr')" :showUrl="true"/>
           </b-tab-item>
+          <b-tab-item :label="$t('Actor Scraper')">
+            <ListEditor :list="this.extrefsArray" type="extrefs_arr" :blurFn="() => extrefBlur()" :showUrl="true"/>
+          </b-tab-item>
         </b-tabs>
 
       </section>
@@ -169,10 +172,13 @@ export default {
       // A shallow copy won't work, need a deep copy
       source: JSON.parse(JSON.stringify(actor)),
       changesMade: false,
+      extrefsChangesMade: false,
       countryList: [],
       countries: [],
       selectedCountry: '',
       filteredCountries: [],
+      extrefsArray: [],
+      extrefsSource: '',
     }
   },
   computed: {
@@ -197,17 +203,29 @@ export default {
       return this.$store.state.optionsAdvanced.advanced.useImperialEntry
     },
   },
-  mounted () {    
-        ky.get('/api/actor/countrylist')
-        .json()
-        .then(list => {
-          this.countryList = list
-          this.convertCountryCodeToName()
-        })  
+  mounted () {
+    ky.get('/api/actor/countrylist')
+    .json()
+    .then(list => {
+      this.countryList = list
+      this.convertCountryCodeToName()
+    })  
+
+  ky.get(`/api/actor/extrefs/${this.actor.id}`)
+    .json()
+    .then(list => {
+      this.extrefsArray = []
+      list.forEach(extref => {
+        this.extrefsArray.push(extref.external_reference.external_url)
+      }      
+      )
+      this.extrefsSource = JSON.parse(JSON.stringify(this.extrefsArray))
+      this.extrefsChangesMade=false
+    })
   },
   methods: {
     close () {
-      if (this.changesMade) {
+      if (this.changesMade || this.extrefsChangesMade) {
         this.$buefy.dialog.confirm({
           title: 'Close without saving',
           message: 'Are you sure you want to close before saving your changes?',
@@ -220,7 +238,8 @@ export default {
       }
       this.$store.commit('overlay/hideActorEditDetails')
     },
-    save () {
+    async save () {
+      this.$store.state.actorList.isLoading = true
       if (this.useImperialEntry) {
         this.actor.height = Math.round(((this.actor.feet * 12) + this.actor.inches) * 2.54)
         this.actor.weight = Math.round(this.actor.lbs * 453592 / 1000000);
@@ -245,9 +264,18 @@ export default {
 
       this.actor.image_arr = JSON.stringify(this.actor.imageArray)  
 
-      ky.post(`/api/actor/edit/${this.actor.id}`, { json: { ...this.actor } })
-      this.$store.commit('actorList/updateActor', this.actor)
+      await ky.post(`/api/actor/edit/${this.actor.id}`, { json: { ...this.actor } })
+      await ky.post(`/api/actor/edit_extrefs/${this.actor.id}`, { json: this.extrefsArray  })      
+      await ky.get('/api/actor/'+this.actor.id).json().then(data => {
+        if (data.id != 0){
+          this.$store.state.overlay.actordetails.actor = data          
+        }          
+      })
+
+      this.$store.dispatch('actorList/load', { offset: this.$store.state.actorList.offset - this.$store.state.actorList.limit })
       this.changesMade = false
+      this.extrefsChangesMade = false
+      this.$store.state.actorList.isLoading = false
       this.close()
     },
     blur (field) {
@@ -266,6 +294,20 @@ export default {
         }
       } else if (this.actor[field] !== this.source[field]) {       
         this.changesMade = true
+      }      
+    },
+    extrefBlur () {      
+      if (this.extrefsChangesMade) return // Changes have already been made. No point to check any further         
+      if (this.extrefsArray.length !== this.extrefsSource.length) {
+        this.extrefsChangesMade = true
+      } else {
+        // change to actor and use foreah 
+        for (let i = 0; i < this.extrefsArray.length; i++) {
+          if (this.extrefsArray[i] !== this.extrefsSource[i]) {
+            this.extrefsChangesMade = true
+            break
+          }
+        }
       }      
     },
     getFilteredCountries (text) {

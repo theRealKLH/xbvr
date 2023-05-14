@@ -76,6 +76,13 @@ func (i ActorResource) WebService() *restful.WebService {
 		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes([]models.Actor{}))
 
+	ws.Route(ws.GET("/extrefs/{actor-id}").To(i.getActorExtRefs).
+		Metadata(restfulspec.KeyOpenAPITags, tags).
+		Writes(models.ExternalReferenceLink{}))
+
+	ws.Route(ws.POST("/edit_extrefs/{id}").To(i.editActorExtRefs).
+		Metadata(restfulspec.KeyOpenAPITags, tags).
+		Writes(models.ExternalReferenceLink{}))
 	return ws
 }
 
@@ -263,7 +270,6 @@ type RequestSetActorRating struct {
 	Rating float64 `json:"rating"`
 }
 
-// ****************************************
 type RequestEditActorDetails struct {
 	Name         string    `json:"name"`
 	ImageArr     string    `json:"image_arr"`
@@ -289,6 +295,10 @@ type RequestEditActorDetails struct {
 	Aliases   string `json:"aliases"`
 	Gender    string `json:"gender"`
 	URLs      string `json:"urls"`
+}
+
+type RequestEditActorExtRefs struct {
+	URLs []string
 }
 
 type ResponseGetActorFilters struct {
@@ -733,4 +743,115 @@ func (i ActorResource) getActorColleagues(req *restful.Request, resp *restful.Re
 		colleagues[idx] = actor
 	}
 	resp.WriteHeaderAndEntity(http.StatusOK, colleagues)
+}
+func (i ActorResource) getActorExtRefs(req *restful.Request, resp *restful.Response) {
+	u64, _ := strconv.ParseUint(req.PathParameter("actor-id"), 10, 32)
+	actor_id := uint(u64)
+	resp.WriteHeaderAndEntity(http.StatusOK, readExtRefs(actor_id))
+}
+
+func readExtRefs(actor_id uint) []models.ExternalReferenceLink {
+	var extrefs []models.ExternalReferenceLink
+	db, _ := models.GetDB()
+	defer db.Close()
+
+	db.Preload("ExternalReference").Where("internal_table = 'actors' and internal_db_id = ?", actor_id).Find(&extrefs)
+	return extrefs
+}
+
+func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Response) {
+	u64, err := strconv.ParseUint(req.PathParameter("id"), 10, 32)
+	id := uint(u64)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	var actor models.Actor
+	actor.GetIfExistByPK(id)
+
+	var urls []string
+	err = req.ReadEntity(&urls)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	var links []models.ExternalReferenceLink
+
+	db, _ := models.GetDB()
+	defer db.Close()
+
+	// find any links that were removed
+	db.Preload("ExternalReference").Where("internal_table = 'actors' and internal_db_id = ?", id).Find(&links)
+	for _, link := range links {
+		found := false
+		for _, url := range urls {
+			if url == link.ExternalReference.ExternalURL {
+				found = true
+				continue
+			}
+		}
+		if !found {
+			db.Delete(&link)
+			models.AddActionActor(actor.Name, "edit_actor", "delete", "external_reference_link", link.ExternalReference.ExternalURL)
+		}
+	}
+
+	// add new links
+	for _, url := range urls {
+		var extref models.ExternalReference
+		extref.FindExternalUrl(determinExternSourceFromUrl(url), url)
+		if extref.ID == 0 {
+			// create new extref + link
+			extref.ExternalSource = determinExternSourceFromUrl(url)
+			if extref.ExternalSource == "stashdb performer" {
+				extref.ExternalId = strings.ReplaceAll(url, "https://stashdb.org/performers/", "")
+			} else {
+				extref.ExternalId = url
+			}
+			extref.ExternalURL = url
+
+			extref.XbvrLinks = append(extref.XbvrLinks, models.ExternalReferenceLink{InternalTable: "actors", InternalDbId: id, InternalNameId: actor.Name,
+				ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId, MatchType: 0})
+			extref.Save()
+			models.AddActionActor(actor.Name, "edit_actor", "add", "external_reference_link", url)
+		} else {
+			// external reference exists, but check it is linked to this actor
+			found := false
+			for _, link := range extref.XbvrLinks {
+				if link.InternalDbId == id {
+					found = true
+					continue
+				}
+			}
+			if !found {
+				//add a link to the actor
+				newLink := models.ExternalReferenceLink{InternalTable: "actors", InternalDbId: id, InternalNameId: actor.Name,
+					ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId, MatchType: 0}
+				newLink.Save()
+				models.AddActionActor(actor.Name, "edit_actor", "add", "external_reference_link", url)
+			}
+		}
+	}
+	resp.WriteHeaderAndEntity(http.StatusOK, readExtRefs(id))
+}
+func determinExternSourceFromUrl(url string) string {
+	url = strings.ToLower(url)
+	re := regexp.MustCompile(`^(https?:\/\/)?(www\.)?([a-zA-Z0-9\-]+)\.[a-zA-Z]{2,}(\/.*)?`)
+	match := re.FindStringSubmatch(url)
+	if len(match) < 3 {
+		return ""
+	}
+
+	switch match[3] {
+	case "stashdb":
+		return "stashdb performer"
+	case "sexlikereal":
+		return "slr scrape"
+	case "virtualporn":
+		return "bvr scrape"
+	default:
+		return match[3] + " scrape"
+	}
 }

@@ -143,6 +143,26 @@ func (o *ExternalReference) AddUpdateWithId() {
 		log.Fatal("Failed to save ", err)
 	}
 }
+
+func (o *ExternalReferenceLink) Save() {
+	db, _ := GetDB()
+	defer db.Close()
+
+	err := retry.Do(
+		func() error {
+			err := db.Save(&o).Error
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+
+	if err != nil {
+		log.Fatal("Failed to save ", err)
+	}
+}
+
 func FormatInternalDbId(input uint) string {
 	if input == 0 {
 		return ""
