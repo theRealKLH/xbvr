@@ -351,6 +351,7 @@ func (i SceneResource) getFilters(req *restful.Request, resp *restful.Response) 
 	outAttributes = append(outAttributes, "VRCA220")
 	outAttributes = append(outAttributes, "POVR Scraper")
 	outAttributes = append(outAttributes, "SLR Scraper")
+	outAttributes = append(outAttributes, "Has Image")
 	outAttributes = append(outAttributes, "VRPHub Scraper")
 	outAttributes = append(outAttributes, "VRPorn Scraper")
 	type Results struct {

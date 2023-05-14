@@ -3,7 +3,7 @@
     <div class="columns">
 
       <div class="column is-one-fifth">
-        <Filters/>
+         <Filters/> 
 
         <a id="toTop">
           <b-icon pack="mdi" icon="navigation" />
@@ -15,6 +15,7 @@
       </div>
 
     </div>
+    
   </div>
 </template>
 
@@ -23,8 +24,8 @@ import Filters from './Filters'
 import List from './List'
 
 export default {
-  name: 'Scenes',
-  components: { Filters, List },
+  name: 'Actors',  
+  components: { Filters, List},
   mounted () {
     const toTop = document.getElementById('toTop')
     addEventListener('scroll', function () {
@@ -47,20 +48,22 @@ export default {
   beforeRouteEnter (to, from, next) {
     next(vm => {
       if (to.query !== undefined) {
-        vm.$store.commit('sceneList/stateFromQuery', to.query)
+        vm.$store.commit('actorList/stateFromQuery', to.query)
       }
       vm.$store.dispatch('optionsWeb/load')
-      vm.$store.dispatch('sceneList/load', { offset: 0 })
+      vm.$store.dispatch('actorList/load', { offset: 0 })
       vm.$store.dispatch('optionsAdvanced/load')
     })
   },
   beforeRouteUpdate (to, from, next) {
     if (to.query !== undefined) {
-      this.$store.commit('sceneList/stateFromQuery', to.query)
+      this.$store.commit('actorList/stateFromQuery', to.query)
     }
-    this.$store.dispatch('sceneList/load', { offset: 0 })
+    this.$store.dispatch('actorList/load', { offset: 0 })
     next()
   },
+  computed: {
+  }
 }
 </script>
 

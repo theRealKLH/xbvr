@@ -55,3 +55,28 @@ func AddActionActor(actorId uint, source string, actionType string, changedColum
 
 	action.Save()
 }
+
+func Find(actorName string, actionType string, source string, changed_column string, newValue string) []ActionActor {
+	db, _ := GetDB()
+	defer db.Close()
+
+	tx := db.Model(&ActionActor{})
+	if actorName != "" {
+		tx.Where("actor_name = ?", actorName)
+	}
+	if actionType != "" {
+		tx.Where("action_type = ?", actionType)
+	}
+	if source != "" {
+		tx.Where("source = ?", source)
+	}
+	if changed_column != "" {
+		tx.Where("changed_column = ?", changed_column)
+	}
+	if newValue != "" {
+		tx.Where("new_value = ?", newValue)
+	}
+	var results []ActionActor
+	db.Find(&results)
+	return results
+}

@@ -119,9 +119,9 @@
               <div v-for="(image, idx) in castimages" :key="idx" class="image-wrapper">
                 <b-tooltip  type="is-light" :label="image.actor_name"  :delay=100>
                   <vue-load-image>                                    
-                    <img slot="image" :src="getImageURL(image.src)" alt="Image" class="thumbnail" @mouseover="showTooltip(idx)" @mouseout="hideTooltip(idx)" @click='showCastScenes([image.actor_name])' />                    
+                    <img slot="image" :src="getImageURL(image.src)" alt="Image" class="thumbnail" @mouseover="showTooltip(idx)" @mouseout="hideTooltip(idx)" @click='showActorDetail([image.actor_id])' />                    
                     <img slot="preloader" :src="getImageURL('https://i.stack.imgur.com/kOnzy.gif')" style="height: 50px;display: block;margin-left:auto;margin-right: auto;" @click='showCastScenes([image.actor_name])' />
-                    <img slot="error" src="/ui/images/blank_female_profile.png" width="80" @click='showCastScenes([image.actor_name])' />
+                    <img slot="error" src="/ui/images/blank_female_profile.png" width="80" @click='showActorDetail([image.actor_id])' />
                   </vue-load-image>
                 </b-tooltip>
                 
@@ -417,7 +417,7 @@ export default {
         if (actor.name.startsWith("aka:")) {
           img = ""
         }
-        return {src: img, visible: false, actor_name: actor.name};
+        return {src: img, visible: false, actor_name: actor.name, actor_id: actor.id};
       });
 
       this.castimages =  imgs.filter((img) => {
@@ -586,6 +586,14 @@ export default {
         query: { q: this.$store.getters['sceneList/filterQueryParams'] }
       })
       this.close()
+    },
+    showActorDetail (actor_id) {
+      ky.get('/api/actor/'+actor_id).json().then(data => {
+        if (data.id != 0){
+          this.$store.commit('overlay/showActorDetails', { actor: data })
+          this.close()
+        }          
+      })
     },
     playPreview () {
       this.activeMedia = 1
