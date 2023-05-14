@@ -71,10 +71,15 @@ func matchOnSceneUrl() {
 	defer db.Close()
 
 	var stashScenes []models.ExternalReference
+	var unmatchedXbvrScenes []models.Scene
 
 	db.Joins("Left JOIN external_reference_links erl on erl.external_reference_id = external_references.id").
 		Where("external_references.external_source = ? and erl.internal_db_id is null", "stashdb scene").
 		Find(&stashScenes)
+
+	db.Joins("left join external_reference_links erl on erl.internal_db_id = scenes.id and external_source='stashdb scene'").
+		Where("erl.id is null").
+		Find(&unmatchedXbvrScenes)
 
 	for _, stashScene := range stashScenes {
 		var scene models.StashScene
@@ -87,7 +92,11 @@ func matchOnSceneUrl() {
 			if url.Type == "STUDIO" {
 				var xbvrScene models.Scene
 				url_no_slash := strings.TrimRight(url.URL, "/")
-				db.Where("scene_url like ? or scene_url like ?", url_no_slash, url_no_slash+"/").Preload("Cast").Find(&xbvrScene)
+				for _, scene := range unmatchedXbvrScenes {
+					if strings.EqualFold(scene.SceneURL, url_no_slash) || strings.EqualFold(scene.SceneURL, url_no_slash+"/") {
+						xbvrScene = scene
+					}
+				}
 				if xbvrScene.ID != 0 {
 					xbvrId = xbvrScene.ID
 					xbvrSceneId = xbvrScene.SceneID
