@@ -27,6 +27,7 @@ type StashPerformer struct {
 	Country         string                  `json:"country"`
 	Ethnicity       string                  `json:"ethnicity"`
 	Height          int                     `json:"height"`
+	Weight          int                     `json:"weight"`
 	EyeColor        string                  `json:"eye_color"`
 	HairColor       string                  `json:"hair_color"`
 	CupSize         string                  `json:"cup_size"`

@@ -260,6 +260,12 @@ export default {
           type: ''          
         })
       })
+      
+      this.actor.height = parseInt(this.actor.height)
+      this.actor.weight = parseInt(this.actor.weight)
+      this.actor.start_year = parseInt(this.actor.start_year)
+      this.actor.end_year = parseInt(this.actor.end_year)
+
       this.actor.urls = JSON.stringify(dataArray)
 
       this.actor.image_arr = JSON.stringify(this.actor.imageArray)  
