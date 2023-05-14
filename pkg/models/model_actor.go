@@ -551,6 +551,9 @@ func (i *Actor) AddToImageArray(newValue string) bool {
 	return true
 }
 func (i *Actor) AddToActorUrlArray(newValue ActorLink) bool {
+	if newValue.Url == "" {
+		return false
+	}
 	var array []ActorLink
 	if i.URLs == "" {
 		i.URLs = "[]"
@@ -567,13 +570,24 @@ func (i *Actor) AddToActorUrlArray(newValue ActorLink) bool {
 	return true
 }
 func (i *Actor) AddToTattoos(newValue string) bool {
-	var updated bool
-	i.Tattoos, updated = addToStringArray(i.Tattoos, newValue)
+	updated := false
+	if newValue != "" {
+		i.Tattoos, updated = addToStringArray(i.Tattoos, newValue)
+	}
 	return updated
 }
 func (i *Actor) AddToPiercings(newValue string) bool {
-	var updated bool
-	i.Piercings, updated = addToStringArray(i.Piercings, newValue)
+	updated := false
+	if newValue != "" {
+		i.Piercings, updated = addToStringArray(i.Piercings, newValue)
+	}
+	return updated
+}
+func (i *Actor) AddToAliases(newValue string) bool {
+	updated := false
+	if newValue != "" {
+		i.Aliases, updated = addToStringArray(i.Aliases, newValue)
+	}
 	return updated
 }
 func addToStringArray(inputArray string, newValue string) (string, bool) {

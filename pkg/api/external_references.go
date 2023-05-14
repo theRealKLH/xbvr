@@ -32,5 +32,10 @@ func (i ExternalReference) WebService() *restful.WebService {
 	ws.Route(ws.GET("/stashdb/refresh_performer/{performerid}").To(i.refreshStashPerformer).
 		Metadata(restfulspec.KeyOpenAPITags, tags))
 
+	ws.Route(ws.GET("/generic/scrape_all").To(i.genericActorScraper).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
+
+	ws.Route(ws.POST("/generic/scrape_single").To(i.genericSingleActorScraper).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
 	return ws
 }

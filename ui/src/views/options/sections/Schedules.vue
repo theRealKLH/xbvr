@@ -8,6 +8,7 @@
             <b-tab-item label="Rescrape"/>
             <b-tab-item label="Rescan"/>
             <b-tab-item label="Preview Generation"/>
+            <b-tab-item label="Actor Rescrape"/>
             <b-tab-item label="Stashdb Rescrape"/>
       </b-tabs>
       <div class="columns">
@@ -132,6 +133,43 @@
                 BETA NOTE: Please note this is CPU-heavy process, if approriate limit the Time of Day the task runs                  
               </p>                  
             </div>
+           <div v-if="activeTab == 3">            
+              <b-field>
+                <b-switch v-model="actorRescrapeEnabled">Enable schedule</b-switch>
+              </b-field>
+              <b-field v-if="actorRescrapeEnabled">
+                <b-slider v-model="actorRescrapeHourInterval" :min="1" :max="23" :step="1" ></b-slider>
+                <div class="column is-one-third" style="margin-left:.75em">{{`Run every ${this.actorRescrapeHourInterval} hour${this.actorRescrapeHourInterval > 1 ? 's': ''}`}}</div>
+              </b-field>
+              <b-field>
+                <b-switch v-if="actorRescrapeEnabled" v-model="useActorRescrapeTimeRange">Limit time of day</b-switch>
+              </b-field>
+              <div v-if="useActorRescrapeTimeRange && actorRescrapeEnabled">
+                <b-field>
+                  <b-slider v-model="actorRescrapeTimeRange" :min="0" :max="48" :step="1" :custom-formatter="val => timeRange[val]" @input="restrictActorRescrapeTo24Hours">
+                    <b-slider-tick :value="0">00:00</b-slider-tick>
+                    <b-slider-tick :value="6">06:00</b-slider-tick>
+                    <b-slider-tick :value="12">12:00</b-slider-tick>
+                    <b-slider-tick :value="18">18:00</b-slider-tick>
+                    <b-slider-tick :value="24">Midnight</b-slider-tick>
+                    <b-slider-tick :value="30">06:00</b-slider-tick>
+                    <b-slider-tick :value="36">12:00</b-slider-tick>
+                    <b-slider-tick :value="42">18:00</b-slider-tick>
+                    <b-slider-tick :value="48">00:00</b-slider-tick>
+                  </b-slider>
+                  <div class="column is-one-third" style="margin-left:.75em">{{`${this.timeRange[this.actorRescrapeTimeRange[0]]} - ${this.timeRange[this.actorRescrapeTimeRange[1]]}`}}</div>
+                </b-field>
+                <b-field>
+                  <b-slider v-model="actorRescrapeMinuteStart" :min="0" :max="60" :step="1" ></b-slider>
+                  <div class="column is-one-third" style="margin-left:.75em">{{ minutesStartMsg(actorRescrapeMinuteStart) }}</div>
+                </b-field>
+              </div>
+              <br/>
+              <b-field label="Startup">
+                  <b-slider v-model="actorRescrapeStartDelay" :min="0" :max="60" :step="1" ></b-slider>
+                  <div class="column is-one-third" style="margin-left:.75em">{{ delayStartMsg(actorRescrapeStartDelay) }}</div>
+              </b-field>
+            </div>
            <div v-if="activeTab == 4">            
               <b-field>
                 <b-switch v-model="stashdbRescrapeEnabled">Enable schedule</b-switch>
@@ -217,6 +255,13 @@ export default {
       rescrapeStartDelay: 0,
       rescanStartDelay: 0,
       previewStartDelay: 0,
+      actorRescrapeEnabled: false,
+      actorRescrapeTimeRange:[0,23],
+      actorRescrapeHourInterval: 0,
+      actorRescrapeMinuteStart: 0,
+      lastActorRescrapeTimeRange: [0,23],
+      useActorRescrapeTimeRange: false,      
+      actorRescrapeStartDelay: 0,
       stashdbRescrapeEnabled: false,
       stashdbRescrapeTimeRange:[0,23],
       stashdbRescrapeHourInterval: 0,
@@ -247,6 +292,10 @@ export default {
     restrictPreviewTo24Hours () {
       this.previewTimeRange = this.restrictTo24Hours(this.previewTimeRange, this.lastPreviewTimeRange)
       this.lastPreviewTimeRange = this.previewTimeRange
+    },
+    restrictActorRescrapeTo24Hours () {
+      this.actorRescrapeTimeRange = this.restrictTo24Hours(this.actorRescrapeTimeRange, this.lastActorRescrapeTimeRange)
+      this.lastActorRescrapeTimeRange = this.actorRescrapeTimeRange
     },
     restrictStashdbRescrapeTo24Hours () {
       this.stashdbRescrapeTimeRange = this.restrictTo24Hours(this.stashdbRescrapeTimeRange, this.lastStashdbRescrapeTimeRange)
@@ -285,6 +334,10 @@ export default {
           this.previewHourInterval = data.config.cron.previewSchedule.hourInterval
           this.usePreviewTimeRange = data.config.cron.previewSchedule.useRange
           this.previewMinuteStart = data.config.cron.previewSchedule.minuteStart
+          this.actorRescrapeEnabled = data.config.cron.actorRescrapeSchedule.enabled
+          this.actorRescrapeHourInterval = data.config.cron.actorRescrapeSchedule.hourInterval
+          this.useActorRescrapeTimeRange = data.config.cron.actorRescrapeSchedule.useRange
+          this.actorRescrapeMinuteStart = data.config.cron.actorRescrapeSchedule.minuteStart          
           this.stashdbRescrapeEnabled = data.config.cron.stashdbRescrapeSchedule.enabled
           this.stashdbRescrapeHourInterval = data.config.cron.stashdbRescrapeSchedule.hourInterval
           this.useStashdbRescrapeTimeRange = data.config.cron.stashdbRescrapeSchedule.useRange
@@ -304,6 +357,12 @@ export default {
           } else {
             this.previewTimeRange = [data.config.cron.previewSchedule.hourStart, data.config.cron.previewSchedule.hourEnd]            
           }
+          if (data.config.cron.actorRescrapeSchedule.hourStart > data.config.cron.actorRescrapeSchedule.hourEnd) {
+            this.actorRescrapeTimeRange = [data.config.cron.actorRescrapeSchedule.hourStart, data.config.cron.actorRescrapeSchedule.hourEnd + 24]
+          } else {
+            this.actorRescrapeTimeRange = [data.config.cron.actorRescrapeSchedule.hourStart, data.config.cron.actorRescrapeSchedule.hourEnd]            
+          }
+          
           if (data.config.cron.stashdbRescrapeSchedule.hourStart > data.config.cron.stashdbRescrapeSchedule.hourEnd) {
             this.stashdbRescrapeTimeRange = [data.config.cron.stashdbRescrapeSchedule.hourStart, data.config.cron.stashdbRescrapeSchedule.hourEnd + 24]
           } else {
@@ -313,6 +372,7 @@ export default {
           this.rescrapeStartDelay = data.config.cron.rescrapeSchedule.runAtStartDelay
           this.rescanStartDelay = data.config.cron.rescanSchedule.runAtStartDelay          
           this.previewStartDelay = data.config.cron.previewSchedule.runAtStartDelay
+          this.actorRescrapeStartDelay = data.config.cron.actorRescrapeSchedule.runAtStartDelay          
           this.stashdbRescrapeStartDelay = data.config.cron.stashdbRescrapeSchedule.runAtStartDelay          
           this.isLoading = false
         })
@@ -362,6 +422,13 @@ export default {
           previewHourStart: this.previewTimeRange[0],
           previewHourEnd: this.previewTimeRange[1],
           previewStartDelay:this.previewStartDelay,
+          actorRescrapeEnabled: this.actorRescrapeEnabled,
+          actorRescrapeHourInterval: this.actorRescrapeHourInterval,
+          actorRescrapeUseRange: this.useActorRescrapeTimeRange,
+          actorRescrapeMinuteStart: this.actorRescrapeMinuteStart,
+          actorRescrapeHourStart: this.actorRescrapeTimeRange[0],
+          actorRescrapeHourEnd: this.actorRescrapeTimeRange[1],
+          actorRescrapeStartDelay:this.actorRescrapeStartDelay          ,
           stashdbRescrapeEnabled: this.stashdbRescrapeEnabled,
           stashdbRescrapeHourInterval: this.stashdbRescrapeHourInterval,
           stashdbRescrapeUseRange: this.useStashdbRescrapeTimeRange,

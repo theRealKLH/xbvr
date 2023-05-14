@@ -135,6 +135,14 @@ type RequestSaveOptionsTaskSchedule struct {
 	PreviewHourEnd       int  `json:"previewHourEnd"`
 	PreviewStartDelay    int  `json:"previewStartDelay"`
 
+	ActorRescrapeEnabled      bool `json:"actorRescrapeEnabled"`
+	ActorRescrapeHourInterval int  `json:"actorRescrapeHourInterval"`
+	ActorRescrapeUseRange     bool `json:"actorRescrapeUseRange"`
+	ActorRescrapeMinuteStart  int  `json:"actorRescrapeMinuteStart"`
+	ActorRescrapeHourStart    int  `json:"actorRescrapeHourStart"`
+	ActorRescrapeHourEnd      int  `json:"actorRescrapeHourEnd"`
+	ActorRescrapeStartDelay   int  `json:"actorRescrapeStartDelay"`
+
 	StashdbRescrapeEnabled      bool `json:"stashdbRescrapeEnabled"`
 	StashdbRescrapeHourInterval int  `json:"stashdbRescrapeHourInterval"`
 	StashdbRescrapeUseRange     bool `json:"stashdbRescrapeUseRange"`
@@ -764,6 +772,14 @@ func (i ConfigResource) saveOptionsTaskSchedule(req *restful.Request, resp *rest
 	config.Config.Cron.PreviewSchedule.HourStart = r.PreviewHourStart
 	config.Config.Cron.PreviewSchedule.HourEnd = r.PreviewHourEnd
 	config.Config.Cron.PreviewSchedule.RunAtStartDelay = r.PreviewStartDelay
+
+	config.Config.Cron.ActorRescrapeSchedule.Enabled = r.ActorRescrapeEnabled
+	config.Config.Cron.ActorRescrapeSchedule.HourInterval = r.ActorRescrapeHourInterval
+	config.Config.Cron.ActorRescrapeSchedule.UseRange = r.ActorRescrapeUseRange
+	config.Config.Cron.ActorRescrapeSchedule.MinuteStart = r.ActorRescrapeMinuteStart
+	config.Config.Cron.ActorRescrapeSchedule.HourStart = r.ActorRescrapeHourStart
+	config.Config.Cron.ActorRescrapeSchedule.HourEnd = r.ActorRescrapeHourEnd
+	config.Config.Cron.ActorRescrapeSchedule.RunAtStartDelay = r.ActorRescrapeStartDelay
 
 	config.Config.Cron.StashdbRescrapeSchedule.Enabled = r.StashdbRescrapeEnabled
 	config.Config.Cron.StashdbRescrapeSchedule.HourInterval = r.StashdbRescrapeHourInterval
