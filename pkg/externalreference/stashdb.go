@@ -131,8 +131,11 @@ func matchSceneOnRules(sitename string) {
 	var stashScenes []models.ExternalReference
 	stashId := config.Sites[sitename].StashId
 	if stashId == "" {
-		stashId = "do not read anything"
+		return
 	}
+
+	var xbrScenes []models.Scene
+	db.Preload("Cast").Where("scraper_id = ?", sitename).Find(&xbrScenes)
 
 	db.Joins("Left JOIN external_reference_links erl on erl.external_reference_id = external_references.id").
 		Where("external_references.external_source = ? and erl.internal_db_id is null and external_data like ?", "stashdb scene", "%"+stashId+"%").
@@ -154,9 +157,19 @@ func matchSceneOnRules(sitename string) {
 							var xbvrScene models.Scene
 							switch rule.XbvrField {
 							case "scene_id":
-								db.Preload("Cast").Where("scene_id like ? and scraper_id = ?", "%"+match[rule.StashMatchResultPosition], sitename).First(&xbvrScene)
+								for _, scene := range xbrScenes {
+									if strings.HasPrefix(scene.SceneID, match[rule.StashMatchResultPosition]) {
+										xbvrScene = scene
+										break
+									}
+								}
 							case "scene_url":
-								db.Preload("Cast").Where("scene_url like ? and scraper_id = ?", "%"+match[rule.StashMatchResultPosition]+"%", sitename).First(&xbvrScene)
+								for _, scene := range xbrScenes {
+									if strings.Contains(strings.ToLower(scene.SceneID), strings.ToLower(match[rule.StashMatchResultPosition])) {
+										xbvrScene = scene
+										break
+									}
+								}
 							default:
 								log.Errorf("Unkown xbvr field %s", rule.XbvrField)
 							}
@@ -359,7 +372,6 @@ func matchPerformerName(scene models.StashScene, xbvrScene models.Scene, matchLe
 						if len(data.Images) > 0 {
 							actor.ImageUrl = data.Images[0].URL
 							actor.Save()
-							//models.AddActionActor(actor.Name, "stash", "add", "image_url", actor.ImageUrl)
 						}
 					}
 				}
