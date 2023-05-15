@@ -73,6 +73,9 @@ type Image struct {
 var ExtRefConfig externalreference.ExtRefConfig
 
 func StashDb() {
+	if config.Config.Advanced.StashApiKey == "" {
+		return
+	}
 	scraperID := "stashdb"
 	siteID := "stashdb"
 	logScrapeStart(scraperID, siteID)
@@ -227,7 +230,7 @@ func getScenes(studioId string, parentId string, tagId string) QueryScenesResult
 	defer db.Close()
 	var lastUpdate models.ExternalReference
 	db.Where("external_source = ? and external_data like ?", "stashdb scene", "%"+studioId+"%").Order("external_date DESC").First(&lastUpdate)
-	const count = 100
+	const count = 25
 
 	page := 1
 	var sceneList QueryScenesResult
@@ -362,7 +365,10 @@ func saveScenesToExternalReferences(scenes QueryScenesResult, studioId string) {
 	db, _ := models.GetDB()
 	defer db.Close()
 
-	for idx, scene := range scenes.Data.QueryScenes.Scenes {
+	// loop in reverse, we only get scenes since the last update, so we must process from the oldest to the newest
+	// in case the user shuts down while processing
+	for idx := len(scenes.Data.QueryScenes.Scenes) - 1; idx >= 0; idx-- {
+		scene := scenes.Data.QueryScenes.Scenes[idx]
 		var xbvrId uint
 		var xbvrSceneId string
 
@@ -430,6 +436,9 @@ func updatePerformer(newPerformer models.StashPerformer) {
 }
 
 func RefreshPerformer(performerId string) {
+	if config.Config.Advanced.StashApiKey == "" {
+		return
+	}
 	var ext models.ExternalReference
 	ext.FindExternalId("stashdb performer", performerId)
 	fullDetails := getStashPerformer(performerId).Data.Performer

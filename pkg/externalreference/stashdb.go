@@ -10,7 +10,7 @@ import (
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
-func UpdateAllPerformerImages() {
+func UpdateAllPerformerData() {
 	log.Infof("Starting Updating Actor Images")
 	db, _ := models.GetDB()
 	defer db.Close()
@@ -260,10 +260,10 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 	db.Where(&actor).First(&actor)
 
 	if len(performer.Images) > 0 {
-		if actor.ImageUrl != performer.Images[0].URL {
+		if actor.ImageUrl != performer.Images[0].URL && !checkForSetImage(actor.ID) {
 			changed = true
+			actor.ImageUrl = performer.Images[0].URL
 		}
-		actor.ImageUrl = performer.Images[0].URL
 	}
 	for _, alias := range performer.Aliases {
 		changed = actor.AddToAliases(alias) || changed
@@ -286,21 +286,28 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 	changed = checkAndSetStringActorField(&actor.BreastType, "breast_type", performer.BreastType, actor.ID) || changed
 	changed = checkAndSetIntActorField(&actor.StartYear, "start_year", performer.CareerStartYear, actor.ID) || changed
 	changed = checkAndSetIntActorField(&actor.EndYear, "end_year", performer.CareerEndYear, actor.ID) || changed
-	jsonstring := convertBodyModArrayToJson(performer.Tattoos)
-	if actor.Tattoos != jsonstring {
-		actor.Tattoos = convertBodyModArrayToJson(performer.Tattoos)
-		changed = true
+
+	for _, tattoo := range performer.Tattoos {
+		tattooString := convertBodyModToString(tattoo)
+		if !checkForUserDeletes("tattoos", tattooString, actor.ID) {
+			changed = actor.AddToTattoos(tattooString) || changed
+		}
 	}
-	jsonstring = convertBodyModArrayToJson(performer.Piercings)
-	if actor.Piercings != jsonstring {
-		actor.Piercings = convertBodyModArrayToJson(performer.Piercings)
-		changed = true
+	for _, piercing := range performer.Piercings {
+		piercingString := convertBodyModToString(piercing)
+		if !checkForUserDeletes("piercings", piercingString, actor.ID) {
+			changed = actor.AddToPiercings(piercingString) || changed
+		}
 	}
 	for _, img := range performer.Images {
-		changed = actor.AddToImageArray(img.URL) || changed
+		if !checkForUserDeletes("image_arr", img.URL, actor.ID) {
+			changed = actor.AddToImageArray(img.URL) || changed
+		}
 	}
 	for _, url := range performer.URLs {
-		changed = actor.AddToActorUrlArray(models.ActorLink{Url: url.URL, Type: ""}) || changed
+		if !checkForUserDeletes("urls", url.URL, actor.ID) {
+			changed = actor.AddToActorUrlArray(models.ActorLink{Url: url.URL, Type: ""}) || changed
+		}
 	}
 	if changed {
 		actor.Save()
@@ -326,26 +333,19 @@ func addToArray(existingArray string, newValue string) string {
 
 }
 
-func convertBodyModArrayToJson(bodyMods []models.StashBodyModification) string {
+func convertBodyModToString(bodyMod models.StashBodyModification) string {
 
-	arr := []string{}
-	for _, mod := range bodyMods {
-		newMod := ""
-		if mod.Location != "" {
-			newMod = mod.Location
-		}
-		if mod.Description != "" {
-			if newMod != "" {
-				newMod += " "
-			}
-			newMod += mod.Description
-		}
-		arr = append(arr, newMod)
+	newMod := ""
+	if bodyMod.Location != "" {
+		newMod = bodyMod.Location
 	}
-
-	jsonBytes, _ := json.Marshal(arr)
-	return string(jsonBytes)
-
+	if bodyMod.Description != "" {
+		if newMod != "" {
+			newMod += " "
+		}
+		newMod += bodyMod.Description
+	}
+	return newMod
 }
 
 func matchPerformerName(scene models.StashScene, xbvrScene models.Scene, matchLevl int) {
@@ -556,14 +556,14 @@ func GetExternalReferenceConfig() ExtRefConfig {
 
 	db.Where(models.KV{Key: "stashdb"}).First(&kv)
 	if kv.Value == "" {
-		config = initaliseConfig()
+		config = initalizeConfig()
 	} else {
 		json.Unmarshal([]byte(kv.Value), &config)
 	}
 	return config
 }
 
-func initaliseConfig() ExtRefConfig {
+func initalizeConfig() ExtRefConfig {
 	db, _ := models.GetDB()
 	defer db.Close()
 
@@ -801,4 +801,24 @@ func checkAndSetDateActorField(actor_field *time.Time, fieldName string, newValu
 
 	*actor_field = bd
 	return true
+}
+func checkForUserDeletes(fieldName string, newValue string, actor_id uint) bool {
+	// check if the field was deleted by the user,
+	db, _ := models.GetDB()
+	defer db.Close()
+	var action models.ActionActor
+	db.Debug().Where("source = 'edit_actor' and actor_id = ? and changed_column = ? and new_value = ?", actor_id, fieldName, newValue).Order("ID desc").First(&action)
+	if action.ID != 0 && action.ActionType == "delete" {
+		return true
+	}
+	return false
+}
+
+func checkForSetImage(actor_id uint) bool {
+	// check if the field was deleted by the user,
+	db, _ := models.GetDB()
+	defer db.Close()
+	var action models.ActionActor
+	db.Debug().Where("source = 'edit_actor' and actor_id = ? and changed_column = 'image_url' and action_type = 'setimage'", actor_id).Order("ID desc").First(&action)
+	return action.ID != 0
 }

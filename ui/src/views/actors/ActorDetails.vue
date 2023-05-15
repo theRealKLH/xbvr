@@ -516,8 +516,10 @@ export default {
       json: {
         actor_id: this.actor.id,
         url: this.images[this.carouselSlide]
-      }}).json().then(data => {
+      }}).json().then(data => {        
         this.$store.state.overlay.actordetails.actor = data
+        this.carouselSlide=0
+        this.$store.dispatch('actorList/load', { offset: this.$store.state.actorList.offset - this.$store.state.actorList.limit })
       })    
     },
     deleteActorImage (val) {

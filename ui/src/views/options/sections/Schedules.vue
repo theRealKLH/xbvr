@@ -172,7 +172,9 @@
             </div>
            <div v-if="activeTab == 4">            
               <b-field>
-                <b-switch v-model="stashdbRescrapeEnabled">Enable schedule</b-switch>
+                <b-tooltip :active="stashApiKey==''" :label="$t('Enter a StashApi key to enable')" >
+                  <b-switch v-model="stashdbRescrapeEnabled" :disabled="stashApiKey==''">Enable schedule</b-switch>
+                </b-tooltip>
               </b-field>
               <b-field v-if="stashdbRescrapeEnabled">
                 <b-slider v-model="stashdbRescrapeHourInterval" :min="1" :max="23" :step="1" ></b-slider>
@@ -279,6 +281,15 @@ export default {
     await this.loadState()
   },
   computed: {
+    stashApiKey: {
+      get () {        
+        return this.$store.state.optionsAdvanced.advanced.stashApiKey
+      },
+      set (value) {
+        this.$store.state.optionsAdvanced.advanced.stashApiKey = value
+
+      }
+    },
   },
   methods: {
     restrictRescrapTo24Hours () {

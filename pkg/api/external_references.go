@@ -23,7 +23,7 @@ func (i ExternalReference) WebService() *restful.WebService {
 	ws.Route(ws.GET("/stashdb/match_akas").To(i.matchAkaPerformers).
 		Metadata(restfulspec.KeyOpenAPITags, tags))
 
-	ws.Route(ws.GET("/stashdb/update_images").To(i.stashDbUpdateImages).
+	ws.Route(ws.GET("/stashdb/update_performer_data").To(i.stashDbUpdateData).
 		Metadata(restfulspec.KeyOpenAPITags, tags))
 
 	ws.Route(ws.GET("/stashdb/run_all").To(i.stashRunAll).

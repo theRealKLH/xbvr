@@ -22,8 +22,8 @@ func (i ExternalReference) matchAkaPerformers(req *restful.Request, resp *restfu
 	go externalreference.MatchAkaPerformers()
 
 }
-func (i ExternalReference) stashDbUpdateImages(req *restful.Request, resp *restful.Response) {
-	go externalreference.UpdateAllPerformerImages()
+func (i ExternalReference) stashDbUpdateData(req *restful.Request, resp *restful.Response) {
+	go externalreference.UpdateAllPerformerData()
 
 }
 func (i ExternalReference) stashRunAll(req *restful.Request, resp *restful.Response) {
@@ -36,6 +36,6 @@ func StashdbRunAll() {
 
 		externalreference.ApplySceneRules()
 		externalreference.MatchAkaPerformers()
-		externalreference.UpdateAllPerformerImages()
+		externalreference.UpdateAllPerformerData()
 	}()
 }

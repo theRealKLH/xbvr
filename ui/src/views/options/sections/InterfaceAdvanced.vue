@@ -51,7 +51,9 @@
               <b-input v-model="stashApiKey" placeholder="Visit https://discord.com/invite/2TsNFKt to sign up to Stashdb" type="password"></b-input>
             </b-field>
             <b-field>
-              <b-button type="is-primary" @click="stashdb">{{ $t('Scrape StashDB') }}</b-button>
+              <b-tooltip :active="stashApiKey==''" :label="$t('Enter a StashApi key to enable')" >
+                <b-button type="is-primary" :disabled="stashApiKey==''" @click="stashdb">{{ $t('Scrape StashDB') }}</b-button>
+              </b-tooltip>
             </b-field>
             <b-field>
               <b-button type="is-primary" @click="scrapeXbvrActors">{{ $t('Scrape Actor Detals from XBVR Sites') }}</b-button>
@@ -157,7 +159,7 @@ export default {
         this.$store.state.optionsAdvanced.advanced.showHSPApiLink = value
       },
     },
-      stashApiKey: {
+    stashApiKey: {
       get () {
         return this.$store.state.optionsAdvanced.advanced.stashApiKey
       },

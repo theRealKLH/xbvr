@@ -124,7 +124,7 @@ type ObjectConfig struct {
 			RunAtStartDelay int  `default:"0" json:"runAtStartDelay"`
 		} `json:"previewSchedule"`
 		ActorRescrapeSchedule struct {
-			Enabled         bool `default:"true" json:"enabled"`
+			Enabled         bool `default:"false" json:"enabled"`
 			HourInterval    int  `default:"12" json:"hourInterval"`
 			UseRange        bool `default:"false" json:"useRange"`
 			MinuteStart     int  `default:"0" json:"minuteStart"`
@@ -133,7 +133,7 @@ type ObjectConfig struct {
 			RunAtStartDelay int  `default:"0" json:"runAtStartDelay"`
 		} `json:"actorRescrapeSchedule"`
 		StashdbRescrapeSchedule struct {
-			Enabled         bool `default:"true" json:"enabled"`
+			Enabled         bool `default:"false" json:"enabled"`
 			HourInterval    int  `default:"12" json:"hourInterval"`
 			UseRange        bool `default:"false" json:"useRange"`
 			MinuteStart     int  `default:"0" json:"minuteStart"`
