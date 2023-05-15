@@ -120,6 +120,7 @@ func applyRules(actorPage string, source string, rules GenericScraperRuleSet, ac
 					if assignField(rule.XbvrField, result, actor) {
 						actorChanged = true
 					}
+					log.Infof("set %s to %s", rule.XbvrField, result)
 					if data[rule.XbvrField] == "" {
 						data[rule.XbvrField] = result
 					} else {
@@ -221,7 +222,16 @@ func assignField(field string, value string, actor *models.Actor) bool {
 		}
 	case "ethnicity":
 		if actor.Ethnicity == "" && value > "" {
+			switch strings.ToLower(value) {
+			case "white":
+				value = "Caucasian"
+			}
 			actor.Ethnicity = value
+			changed = true
+		}
+	case "gender":
+		if actor.Gender == "" && value > "" {
+			actor.Gender = value
 			changed = true
 		}
 	case "band_size":
@@ -271,13 +281,20 @@ func assignField(field string, value string, actor *models.Actor) bool {
 			changed = true
 		}
 	case "images":
-		if actor.AddToImageArray(value) {
+		if !actor.CheckForUserDeletes("images", value) && actor.AddToImageArray(value) {
 			changed = true
 		}
 	case "aliases":
 		array := strings.Split(value, ",")
 		for _, item := range array {
-			if actor.AddToAliases(strings.TrimSpace(item)) {
+			if !actor.CheckForUserDeletes("aliases", strings.TrimSpace(item)) && actor.AddToAliases(strings.TrimSpace(item)) {
+				changed = true
+			}
+		}
+	case "urls":
+		array := strings.Split(value, ",")
+		for _, item := range array {
+			if actor.AddToActorUrlArray(models.ActorLink{Url: strings.TrimSpace(item)}) {
 				changed = true
 			}
 		}
@@ -285,7 +302,7 @@ func assignField(field string, value string, actor *models.Actor) bool {
 		log.Infof("piercings %s", value)
 		array := strings.Split(value, ",")
 		for _, item := range array {
-			if actor.AddToPiercings(strings.TrimSpace(item)) {
+			if !actor.CheckForUserDeletes("piercings", strings.TrimSpace(item)) && actor.AddToPiercings(strings.TrimSpace(item)) {
 				changed = true
 			}
 		}
@@ -293,7 +310,7 @@ func assignField(field string, value string, actor *models.Actor) bool {
 		log.Infof("tattoos %s", value)
 		array := strings.Split(value, ",")
 		for _, item := range array {
-			if actor.AddToTattoos(strings.TrimSpace(item)) {
+			if !actor.CheckForUserDeletes("tattoos", strings.TrimSpace(item)) && actor.AddToTattoos(strings.TrimSpace(item)) {
 				changed = true
 			}
 		}
@@ -320,7 +337,7 @@ func postProcessing(rule GenericActorScraperRule, value string, htmlElement *col
 		case "Lookup Country":
 			value = getCountryCode(value)
 		case "Parse Date":
-			t, err := time.Parse(postprocessing.Params[0], strings.Replace(strings.Replace(strings.Replace(strings.Replace(value, "st", "", -1), "nd", "", -1), "rd", "", -1), "th", "", -1))
+			t, err := time.Parse(postprocessing.Params[0], strings.Replace(strings.Replace(strings.Replace(strings.Replace(value, "1st", "1", -1), "nd", "", -1), "rd", "", -1), "th", "", -1))
 			if err != nil {
 				return ""
 			}
@@ -338,6 +355,10 @@ func postProcessing(rule GenericActorScraperRule, value string, htmlElement *col
 				num := float64(feet*12+inches) * 2.54
 				value = strconv.Itoa(int(math.Round(num)))
 			}
+		case "lbs to kg":
+			num, _ := strconv.ParseFloat(value, 64)
+			const conversionFactor float64 = 0.453592
+			value = strconv.Itoa(int(math.Round(float64(num) * conversionFactor)))
 		case "jsonString":
 			value = strings.TrimSpace(html.UnescapeString(gjson.Get(value, postprocessing.Params[0]).String()))
 		case "RegexString":
@@ -439,6 +460,8 @@ func structToMap(obj interface{}) map[string]interface{} {
 
 func (siteActorScrapeRules ActorScraperRules) BuildRules() {
 
+	// To understand the regex used, sign up to chat.openai.com and just ask something like Explain (.*, )?(.*)$
+	// To test regex I use https://regex101.com/
 	siteDetails := GenericScraperRuleSet{}
 	siteDetails.Domain = "zexyvr.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `li:contains("Birth date") > b`, PostProcessing: []PostProcessing{{Function: "Parse Date", Params: []string{"Jan 2, 2006"}}}})
@@ -594,6 +617,61 @@ func (siteActorScrapeRules ActorScraperRules) BuildRules() {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "weight", Selector: `.girlDetails-info`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3}) kg`, "1"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "biography", Selector: `.girlDetails-bio`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`Biography:\s*(.*)`, "1"}}}})
 	siteActorScrapeRules.Rules["realitylovers scrape"] = siteDetails
+
+	siteDetails = GenericScraperRuleSet{}
+	siteDetails.Domain = "vrphub.com"
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `.model-thumb img`, ResultType: "attr", Attribute: "src"})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "aliases", Selector: `span.details:contains("Aliases:") + span.details-value`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "ethnicity", Selector: `span.details:contains("Ethnicity:") + span.details-value`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "band_size", Selector: `span.details:contains("Measurements:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3}).{1,2}-\d{2,3}-\d{2,3}`, "1"}},
+			{Function: "inch to cm"}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "cup_size", Selector: `span.details:contains("Measurements:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d{2,3}(.{1,2})-\d{2,3}-\d{2,3}`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "waist_size", Selector: `span.details:contains("Measurements:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d{2,3}.{1,2}-(\d{2,3})-\d{2,3}`, "1"}},
+			{Function: "inch to cm"}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "hip_size", Selector: `span.details:contains("Measurements:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d{2,3}.{1,2}-\d{2,3}-(\d{2,3})`, "1"}},
+			{Function: "inch to cm"}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "band_size", Selector: `span.details:contains("Bra cup size:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3}).{1,2}`, "1"}},
+			{Function: "inch to cm"}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "cup_size", Selector: `span.details:contains("Bra cup size:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d{2,3}(.{1,2})`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "tattoos", Selector: `span.tattoo-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(No Tattoos)?(.*)`, "2"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "piercings", Selector: `span.details:contains("Piercings:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(No Piercings)?(.*)`, "2"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "biography", Selector: `span.bio-details`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `span.details:contains("Date of birth:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "Parse Date", Params: []string{"January 2, 2006"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "nationality", Selector: `span.details:contains("Birthplace:") + span.details-value`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(.*, )?(.*)$`, "2"}},
+			{Function: "Lookup Country"}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "hair_color", Selector: `span.details:contains("Hair Color:") + span.details-value`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "eye_color", Selector: `span.details:contains("Eye Color:") + span.details-value`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `span.details:contains("Height:") + span.details-value`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3}) cm`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "weight", Selector: `span.details:contains("Weight:") + span.details-value`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3}) kg`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "urls", Selector: `.model-info-block2 a`, ResultType: "attr", Attribute: "href"})
+	siteActorScrapeRules.Rules["vrphub scrape"] = siteDetails
+
+	siteDetails = GenericScraperRuleSet{}
+	siteDetails.Domain = "vrhush.com"
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `img[id="model-thumbnail"]`, ResultType: "attr", Attribute: "src", PostProcessing: []PostProcessing{{Function: "AbsoluteUrl"}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "biography", Selector: `div[id="model-info-block"] p`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "ethnicity", Selector: `ul.model-attributes li:contains("Ethnicity")`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`Ethnicity (.*)`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "eye_color", Selector: `ul.model-attributes li:contains("Eye Color")`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`Eye Color (.*)`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `ul.model-attributes li:contains("Height")`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`^(Height )(.+)`, "2"}}, {Function: "Feet+Inches to cm"}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "gender", Selector: `ul.model-attributes li:contains("Gender")`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`Gender (.*)`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "hair_color", Selector: `ul.model-attributes li:contains("Hair Color")`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`Hair Color (.*)`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "weight", Selector: `ul.model-attributes li:contains("Weight")`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`^(Weight )(.+)`, "2"}}, {Function: "lbs to kg"}}})
+	siteActorScrapeRules.Rules["vrhush scrape"] = siteDetails
+
+	siteDetails.Domain = "vrallure.com"
+	siteActorScrapeRules.Rules["vrallure scrape"] = siteDetails
 
 	siteActorScrapeRules.GetCustomRules()
 }

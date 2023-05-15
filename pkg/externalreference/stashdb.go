@@ -260,7 +260,7 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 	db.Where(&actor).First(&actor)
 
 	if len(performer.Images) > 0 {
-		if actor.ImageUrl != performer.Images[0].URL && !checkForSetImage(actor.ID) {
+		if actor.ImageUrl != performer.Images[0].URL && !actor.CheckForSetImage() {
 			changed = true
 			actor.ImageUrl = performer.Images[0].URL
 		}
@@ -289,23 +289,23 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 
 	for _, tattoo := range performer.Tattoos {
 		tattooString := convertBodyModToString(tattoo)
-		if !checkForUserDeletes("tattoos", tattooString, actor.ID) {
+		if !actor.CheckForUserDeletes("tattoos", tattooString) {
 			changed = actor.AddToTattoos(tattooString) || changed
 		}
 	}
 	for _, piercing := range performer.Piercings {
 		piercingString := convertBodyModToString(piercing)
-		if !checkForUserDeletes("piercings", piercingString, actor.ID) {
+		if !actor.CheckForUserDeletes("piercings", piercingString) {
 			changed = actor.AddToPiercings(piercingString) || changed
 		}
 	}
 	for _, img := range performer.Images {
-		if !checkForUserDeletes("image_arr", img.URL, actor.ID) {
+		if !actor.CheckForUserDeletes("image_arr", img.URL) {
 			changed = actor.AddToImageArray(img.URL) || changed
 		}
 	}
 	for _, url := range performer.URLs {
-		if !checkForUserDeletes("urls", url.URL, actor.ID) {
+		if !actor.CheckForUserDeletes("urls", url.URL) {
 			changed = actor.AddToActorUrlArray(models.ActorLink{Url: url.URL, Type: ""}) || changed
 		}
 	}
@@ -801,24 +801,4 @@ func checkAndSetDateActorField(actor_field *time.Time, fieldName string, newValu
 
 	*actor_field = bd
 	return true
-}
-func checkForUserDeletes(fieldName string, newValue string, actor_id uint) bool {
-	// check if the field was deleted by the user,
-	db, _ := models.GetDB()
-	defer db.Close()
-	var action models.ActionActor
-	db.Debug().Where("source = 'edit_actor' and actor_id = ? and changed_column = ? and new_value = ?", actor_id, fieldName, newValue).Order("ID desc").First(&action)
-	if action.ID != 0 && action.ActionType == "delete" {
-		return true
-	}
-	return false
-}
-
-func checkForSetImage(actor_id uint) bool {
-	// check if the field was deleted by the user,
-	db, _ := models.GetDB()
-	defer db.Close()
-	var action models.ActionActor
-	db.Debug().Where("source = 'edit_actor' and actor_id = ? and changed_column = 'image_url' and action_type = 'setimage'", actor_id).Order("ID desc").First(&action)
-	return action.ID != 0
 }

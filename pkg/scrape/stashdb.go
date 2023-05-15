@@ -76,6 +76,7 @@ func StashDb() {
 	if config.Config.Advanced.StashApiKey == "" {
 		return
 	}
+	tlog := log.WithField("task", "scrape")
 	scraperID := "stashdb"
 	siteID := "stashdb"
 	logScrapeStart(scraperID, siteID)
@@ -88,7 +89,7 @@ func StashDb() {
 	db.Where(&models.Site{IsEnabled: true}).Order("id").Find(&sites)
 
 	for _, site := range sites {
-		log.Infof("Scraping stash studio %s", site.Name)
+		tlog.Infof("Scraping stash studio %s", site.Name)
 		sitename := site.Name
 		if i := strings.Index(sitename, " ("); i != -1 {
 			sitename = sitename[:i]
@@ -144,7 +145,7 @@ func StashDb() {
 		} else {
 			log.Infof("No Stash Studio matching %v", site.Name)
 		}
-		log.Info("Scrape of Stashdb completed")
+		tlog.Info("Scrape of Stashdb completed")
 	}
 	return
 }
@@ -359,6 +360,7 @@ func getScenePage(variables string) QueryScenesResult {
 }
 
 func saveScenesToExternalReferences(scenes QueryScenesResult, studioId string) {
+	tlog := log.WithField("task", "scrape")
 	startTime := time.Now()
 	nextProgressTime := startTime.Add(1 * time.Minute)
 
@@ -376,7 +378,7 @@ func saveScenesToExternalReferences(scenes QueryScenesResult, studioId string) {
 		scene.Studio.ID = studioId
 		// check if it's time to print a progress message
 		if time.Now().After(nextProgressTime) {
-			log.Infof("processing scene %v or %v", idx, len(scenes.Data.QueryScenes.Scenes))
+			tlog.Infof("Processing scene %v or %v for StashDb %s", len(scenes.Data.QueryScenes.Scenes)-idx, len(scenes.Data.QueryScenes.Scenes), scene.Studio.Name)
 			nextProgressTime = nextProgressTime.Add(1 * time.Minute)
 		}
 		var existingRef models.ExternalReference

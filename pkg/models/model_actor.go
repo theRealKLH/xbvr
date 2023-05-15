@@ -605,3 +605,24 @@ func addToStringArray(inputArray string, newValue string) (string, bool) {
 	jsonString, _ := json.Marshal(array)
 	return string(jsonString), true
 }
+
+func (a *Actor) CheckForSetImage() bool {
+	// check if the field was deleted by the user,
+	db, _ := GetDB()
+	defer db.Close()
+	var action ActionActor
+	db.Debug().Where("source = 'edit_actor' and actor_id = ? and changed_column = 'image_url' and action_type = 'setimage'", a.ID).Order("ID desc").First(&action)
+	return action.ID != 0
+}
+
+func (a *Actor) CheckForUserDeletes(fieldName string, newValue string) bool {
+	// check if the field was deleted by the user,
+	db, _ := GetDB()
+	defer db.Close()
+	var action ActionActor
+	db.Debug().Where("source = 'edit_actor' and actor_id = ? and changed_column = ? and new_value = ?", a.ID, fieldName, newValue).Order("ID desc").First(&action)
+	if action.ID != 0 && action.ActionType == "delete" {
+		return true
+	}
+	return false
+}
