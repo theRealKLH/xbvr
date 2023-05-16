@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gocolly/colly/v2"
@@ -31,45 +30,59 @@ func GenericActorScrapers() {
 	siteRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
 	siteRules.BuildRules()
 
-	maxConcurrent := 10                             // limit the number of tasks running at the same time
-	semaphore := make(chan struct{}, maxConcurrent) // create a semaphore with capacity `maxConcurrent`
-	var wg sync.WaitGroup
-
 	var actors []models.Actor
 	db.Preload("Scenes").
+		Where("id =1").
 		Find(&actors)
-	for _, actor := range actors {
-		wg.Add(1)
-		go func(actor models.Actor) {
-			semaphore <- struct{}{} // acquire a semaphore
-			var actorLink []models.ActorLink
-			json.Unmarshal([]byte(actor.URLs), &actorLink)
-			for _, link := range actorLink {
-				for source, rule := range siteRules.Rules {
-					if link.Type == source {
-						var extRefLink models.ExternalReferenceLink
-						db.Preload("ExternalReference").
-							Where(&models.ExternalReferenceLink{ExternalSource: source, InternalDbId: actor.ID}).
-							First(&extRefLink)
-						if extRefLink.ID == 0 {
-							applyRules(link.Url, link.Type, rule, &actor)
-						} else {
-							for _, scene := range actor.Scenes {
-								if scene.ReleaseDate.After(extRefLink.ExternalReference.ExternalDate) {
-									applyRules(link.Url, link.Type, rule, &actor)
-									break
-								}
-							}
 
-						}
-					}
-				}
-			}
-			<-semaphore // release the semaphore
-			wg.Done()
-		}(actor)
+	sqlcmd := ""
+
+	type outputList struct {
+		Id       uint
+		Url      string
+		Linktype string
 	}
-	wg.Wait()
+	var output []outputList
+	switch db.Dialect().GetName() {
+	// gets the list of an actors Urls for scraper and join to external_reference_links to see if the haven't been linked
+	case "mysql":
+		sqlcmd = `
+		WITH actorlist AS (
+			SELECT actors.id, JSON_EXTRACT(json_each.value, '$.url') AS url, JSON_EXTRACT(json_each.value, '$.type') AS linktype
+			FROM actors
+			CROSS JOIN JSON_TABLE(actors.urls, '$[*]' COLUMNS(value JSON PATH '$')) AS json_each
+			WHERE JSON_TYPE(actors.urls) = 'ARRAY'    
+		)
+		SELECT actorlist.id, url, trim('"' from linktype) linktype
+		FROM actorlist
+		LEFT JOIN external_reference_links erl ON erl.internal_db_id = actorlist.id AND external_source = linktype
+		WHERE linktype like '"% scrape"' and erl.id IS NULL
+			`
+	case "sqlite3":
+		sqlcmd = `
+		with actorlist as (
+			SELECT actors.id, json_extract(json_each.value, '$.url') as url, json_extract(json_each.value, '$.type') as linktype
+			FROM actors, json_each(urls)
+			WHERE json_type(urls) = 'array'
+			and json_extract(json_each.value, '$.type') like '% scrape'
+		)
+		select actorlist.id, url, linktype from actorlist
+		left join external_reference_links erl on erl.internal_db_id = actorlist.id and external_source = linktype
+		where erl.id is null
+			`
+	}
+	db.Raw(sqlcmd).Scan(&output)
+	for _, row := range output {
+		var actor models.Actor
+		actor.GetIfExistByPK(row.Id)
+		for source, rule := range siteRules.Rules {
+			// this handles examples like 'vrphub-vrhush scrape' needing to match 'vrphub scrape'
+			if strings.HasPrefix(row.Linktype, strings.TrimSuffix(source, " scrape")) {
+				applyRules(row.Url, row.Linktype, rule, &actor)
+			}
+		}
+	}
+
 	log.Infof("Scraping Actors Completed")
 }
 func GenericSingleActorScraper(actorId uint, actorPage string) {
@@ -120,7 +133,7 @@ func applyRules(actorPage string, source string, rules GenericScraperRuleSet, ac
 					if assignField(rule.XbvrField, result, actor) {
 						actorChanged = true
 					}
-					log.Infof("set %s to %s", rule.XbvrField, result)
+					//log.Infof("set %s to %s", rule.XbvrField, result)
 					if data[rule.XbvrField] == "" {
 						data[rule.XbvrField] = result
 					} else {
@@ -618,6 +631,9 @@ func (siteActorScrapeRules ActorScraperRules) BuildRules() {
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "biography", Selector: `.girlDetails-bio`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`Biography:\s*(.*)`, "1"}}}})
 	siteActorScrapeRules.Rules["realitylovers scrape"] = siteDetails
 
+	siteDetails.Domain = "tsvirtuallovers.com"
+	siteActorScrapeRules.Rules["tsvirtuallovers scrape"] = siteDetails
+
 	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "vrphub.com"
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `.model-thumb img`, ResultType: "attr", Attribute: "src"})
@@ -672,6 +688,23 @@ func (siteActorScrapeRules ActorScraperRules) BuildRules() {
 
 	siteDetails.Domain = "vrallure.com"
 	siteActorScrapeRules.Rules["vrallure scrape"] = siteDetails
+
+	siteDetails = GenericScraperRuleSet{}
+	siteDetails.Domain = "vrlatina.com"
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `div.model-avatar img`, ResultType: "attr", Attribute: "src"})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "aliases", Selector: `ul.model-list>li:contains("Aka:")>span+span`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `ul.model-list>li:contains("Dob:")>span+span`, PostProcessing: []PostProcessing{{Function: "Parse Date", Params: []string{"2006-01-02"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `ul.model-list>li:contains("Height:")>span+span`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3})`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "weight", Selector: `ul.model-list>li:contains("Weight:")>span+span`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3})`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "band_size", Selector: `ul.model-list>li:contains("Measurements:")>span+span`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3}).{1,2}`, "1"}},
+			{Function: "inch to cm"}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "cup_size", Selector: `ul.model-list>li:contains("Measurements:")>span+span`,
+		PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`\d{2,3}(.{1,2})`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "hair_color", Selector: `ul.model-list>li:contains("Hair:")>span+span`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "eye_color", Selector: `ul.model-list>li:contains("Eyes:")>span+span`})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "biography", Selector: `ul.model-list>li:contains("Biography:")>span+span`})
+	siteActorScrapeRules.Rules["vrlatina scrape"] = siteDetails
 
 	siteActorScrapeRules.GetCustomRules()
 }

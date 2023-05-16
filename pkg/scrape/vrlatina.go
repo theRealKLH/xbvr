@@ -47,10 +47,12 @@ func VRLatina(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out cha
 			sc.Gallery = append(sc.Gallery, e.Attr("href"))
 		})
 
-		// Cast
+		//
+		sc.ActorDetails = make(map[string]models.ActorDetails)
 		e.ForEach(`div.content-links.-models a`, func(id int, e *colly.HTMLElement) {
 			if strings.TrimSpace(e.Text) != "" {
 				sc.Cast = append(sc.Cast, strings.TrimSpace(strings.ReplaceAll(e.Text, "!", "")))
+				sc.ActorDetails[e.Text] = models.ActorDetails{Source: sc.ScraperID + " scrape", ProfileUrl: e.Attr("href")}
 			}
 		})
 
