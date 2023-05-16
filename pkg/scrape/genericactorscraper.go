@@ -163,6 +163,7 @@ func GenericActorScrapersBySite(site string) {
 
 func applyRules(actorPage string, source string, rules GenericScraperRuleSet, actor *models.Actor, overwrite bool) {
 	actorCollector := CreateCollector(rules.Domain)
+
 	data := make(map[string]string)
 	actorChanged := false
 	if rules.isJson {

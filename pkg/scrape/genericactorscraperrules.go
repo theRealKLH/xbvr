@@ -246,7 +246,11 @@ func (siteActorScrapeRules ActorScraperRules) BuildRules() {
 
 	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "vrlatina.com"
-	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `div.model-avatar img`, ResultType: "attr", Attribute: "src"})
+	// The data-pagespeed-lazy-src attribute holds the URL of the image that should be loaded lazily, the PageSpeed module dynamically replaces the data-pagespeed-lazy-src attribute with the standard src attribute, triggering the actual loading of the image.
+	// In my testing sometime, I got the data-pagespeed-lazy-src with a blank image in the src attribute (with a relative url) and other times I just got src with the correct url
+	// The following will first load the data-pagespeed-lazy-src then the src attribute.  The check for thehttp prefix, stops the blank image been processed with the relative url
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `div.model-avatar img`, ResultType: "attr", Attribute: "data-pagespeed-lazy-src", PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(http.*)`, "1"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `div.model-avatar img`, ResultType: "attr", Attribute: "src", PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(http.*)`, "1"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "aliases", Selector: `ul.model-list>li:contains("Aka:")>span+span`})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `ul.model-list>li:contains("Dob:")>span+span`, PostProcessing: []PostProcessing{{Function: "Parse Date", Params: []string{"2006-01-02"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "height", Selector: `ul.model-list>li:contains("Height:")>span+span`, PostProcessing: []PostProcessing{{Function: "RegexString", Params: []string{`(\d{2,3})`, "1"}}}})
