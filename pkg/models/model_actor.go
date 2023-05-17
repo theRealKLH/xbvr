@@ -524,6 +524,7 @@ func (i *Actor) AddToImageArray(newValue string) bool {
 	if newValue == "" {
 		return false
 	}
+	newValue = strings.TrimSuffix(newValue, "/")
 	if i.ImageArr == "" {
 		i.ImageArr = "[]"
 	}
@@ -554,6 +555,7 @@ func (i *Actor) AddToActorUrlArray(newValue ActorLink) bool {
 	if newValue.Url == "" {
 		return false
 	}
+	newValue.Url = strings.TrimSuffix(newValue.Url, "/")
 	var array []ActorLink
 	if i.URLs == "" {
 		i.URLs = "[]"
