@@ -479,7 +479,7 @@ func QueryActors(r RequestActorList, enablePreload bool) ResponseActorList {
 	(select AVG(s.star_rating) scene_avg from scene_cast sc join scenes s on s.id=sc.scene_id where sc.actor_id =actors.id and s.star_rating > 0 ) as scene_rating_average	
 	`)
 
-	tx.Debug().Limit(limit).
+	tx.Limit(limit).
 		Offset(offset).
 		Find(&out.Actors)
 
@@ -531,9 +531,9 @@ func (i *Actor) AddToImageArray(newValue string) bool {
 
 	json.Unmarshal([]byte(i.ImageArr), &array)
 	for idx, item := range array {
-		if item == newValue {
+		if strings.EqualFold(item, newValue) {
 			// if we are adding an image that is the main actor image, put it at the begining
-			if newValue == i.ImageUrl && idx > 0 {
+			if strings.EqualFold(newValue, i.ImageUrl) && idx > 0 {
 				array = append(array[:idx], array[idx+1:]...)
 				array = append([]string{item}, array...)
 				jsonString, _ := json.Marshal(array)
@@ -562,7 +562,7 @@ func (i *Actor) AddToActorUrlArray(newValue ActorLink) bool {
 	}
 	json.Unmarshal([]byte(i.URLs), &array)
 	for _, item := range array {
-		if item.Url == newValue.Url {
+		if strings.EqualFold(item.Url, newValue.Url) {
 			return false
 		}
 	}
@@ -599,7 +599,7 @@ func addToStringArray(inputArray string, newValue string) (string, bool) {
 	}
 	json.Unmarshal([]byte(inputArray), &array)
 	for _, item := range array {
-		if item == newValue {
+		if strings.EqualFold(item, newValue) {
 			return inputArray, false
 		}
 	}
@@ -613,7 +613,7 @@ func (a *Actor) CheckForSetImage() bool {
 	db, _ := GetDB()
 	defer db.Close()
 	var action ActionActor
-	db.Debug().Where("source = 'edit_actor' and actor_id = ? and changed_column = 'image_url' and action_type = 'setimage'", a.ID).Order("ID desc").First(&action)
+	db.Where("source = 'edit_actor' and actor_id = ? and changed_column = 'image_url' and action_type = 'setimage'", a.ID).Order("ID desc").First(&action)
 	return action.ID != 0
 }
 
@@ -622,7 +622,7 @@ func (a *Actor) CheckForUserDeletes(fieldName string, newValue string) bool {
 	db, _ := GetDB()
 	defer db.Close()
 	var action ActionActor
-	db.Debug().Where("source = 'edit_actor' and actor_id = ? and changed_column = ? and new_value = ?", a.ID, fieldName, newValue).Order("ID desc").First(&action)
+	db.Where("source = 'edit_actor' and actor_id = ? and changed_column = ? and new_value = ?", a.ID, fieldName, newValue).Order("ID desc").First(&action)
 	if action.ID != 0 && action.ActionType == "delete" {
 		return true
 	}

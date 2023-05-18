@@ -849,6 +849,10 @@ func determinExternSourceFromUrl(url string) string {
 		return "stashdb performer"
 	case "sexlikereal":
 		return "slr scrape"
+	case "xsinsvr":
+		return "sinsvr scrape"
+	case "naughtyamerica":
+		return "naughtyamericavr scrape"
 	case "virtualporn":
 		return "bvr scrape"
 	default:

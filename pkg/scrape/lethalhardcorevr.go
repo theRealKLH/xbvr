@@ -90,11 +90,23 @@ func LethalHardcoreSite(wg *sync.WaitGroup, updateSite bool, knownScenes []strin
 		})
 
 		// Cast
+		sc.ActorDetails = make(map[string]models.ActorDetails)
 		r := strings.NewReplacer("(", "", ")", "")
-		e.ForEach(`div.item-page-details .overlay small`, func(id int, e *colly.HTMLElement) {
-			if id <= 1 {
-				sc.Cast = append(sc.Cast, strings.TrimSpace(r.Replace(e.Text)))
-			}
+		e.ForEach(`div.item-page-details a[data-target="#bodyShotModal"]`, func(id int, e *colly.HTMLElement) {
+			img := ""
+			e.ForEach(`img`, func(id int, e *colly.HTMLElement) {
+				style := e.Attr("style")
+				regexPattern := `url\((.*?)\)`
+				regex, _ := regexp.Compile(regexPattern)
+				matches := regex.FindStringSubmatch(style)
+				img = matches[1]
+			})
+			e.ForEach(`.overlay small`, func(id int, e *colly.HTMLElement) {
+				if id <= 1 {
+					sc.Cast = append(sc.Cast, strings.TrimSpace(r.Replace(e.Text)))
+					sc.ActorDetails[strings.TrimSpace(r.Replace(e.Text))] = models.ActorDetails{ImageUrl: img}
+				}
+			})
 		})
 
 		// Tags

@@ -91,6 +91,9 @@ func VRPorn(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<
 			var src string
 			e.ForEach(`.avatar_pornstar img`, func(id int, e *colly.HTMLElement) {
 				src = e.Attr("src")
+				if strings.HasSuffix(src, "black1.gif") {
+					src = e.Attr("data-wpfc-original-src")
+				}
 			})
 			name := e.Attr("title")
 			profileUrl := e.Attr("href")

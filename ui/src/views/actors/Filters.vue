@@ -87,7 +87,7 @@
         </b-taginput>
       </b-field>
 
-      <b-tooltip position="is-top" label="Allows searching a variety of attributes such as: Possible Aka actors, Cup Size, Eye/Hair Color, Has Tattoo, Has Piercing, Breat Type, Nationailty, Ethnicity, Aka, Has Images" multilined :delay="1000" style="width:100%">
+      <b-tooltip position="is-top" label="Allows searching a variety of attributes such as: Possible Aka actors, Cup Size, Eye/Hair Color, Has Tattoo, Has Piercing, Breast Type, Nationailty, Ethnicity, Aka, Has Images" multilined :delay="1000" style="width:100%">
         <b-field label="Attributes" label-position="on-border" class="field-extra">
           <b-taginput v-model="attributes" autocomplete :data="filteredAttributes" @typing="getFilteredAttributes">
             <template slot-scope="props">{{ props.option }}</template>
