@@ -99,7 +99,16 @@ func LethalHardcoreSite(wg *sync.WaitGroup, updateSite bool, knownScenes []strin
 				regexPattern := `url\((.*?)\)`
 				regex, _ := regexp.Compile(regexPattern)
 				matches := regex.FindStringSubmatch(style)
-				img = matches[1]
+				if len(matches) > 1 {
+					img = matches[1]
+				} else {
+					if e.Attr("src") != "https://imgs1cdn.adultempire.com/res/pm/pixel.gif" {
+						img = e.Attr("src")
+					} else {
+						log.Infof("% lethalhardcore %s style, %v ", matches)
+					}
+				}
+
 			})
 			e.ForEach(`.overlay small`, func(id int, e *colly.HTMLElement) {
 				if id <= 1 {

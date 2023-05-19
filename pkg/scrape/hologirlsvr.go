@@ -74,7 +74,9 @@ func HoloGirlsVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 				ad.ProfileUrl = e.Response.Request.AbsoluteURL(e.Attr("href"))
 			})
 			e.ForEach(`img.img-responsive`, func(id int, e *colly.HTMLElement) {
-				ad.ImageUrl = e.Response.Request.AbsoluteURL(e.Attr("src"))
+				if !strings.HasPrefix(e.Attr("src"), "/missing.jpg") {
+					ad.ImageUrl = e.Response.Request.AbsoluteURL(e.Attr("src"))
+				}
 			})
 			e.ForEach(`strong`, func(id int, e *colly.HTMLElement) {
 				sc.ActorDetails[strings.TrimSpace(e.Text)] = ad
