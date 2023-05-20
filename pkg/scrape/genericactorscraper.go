@@ -47,12 +47,12 @@ func GenericActorScrapers() {
 	case "mysql":
 		sqlcmd = `
 		WITH actorlist AS (
-			SELECT actors.id, JSON_EXTRACT(json_each.value, '$.url') AS url, JSON_EXTRACT(json_each.value, '$.type') AS linktype
+			SELECT actors.id, trim('"' from JSON_EXTRACT(json_each.value, '$.url')) AS url, trim('"' from JSON_EXTRACT(json_each.value, '$.type')) AS linktype
 			FROM actors
 			CROSS JOIN JSON_TABLE(actors.urls, '$[*]' COLUMNS(value JSON PATH '$')) AS json_each
 			WHERE urls like '% scrape%' and JSON_TYPE(actors.urls) = 'ARRAY'    
 		)
-		SELECT actorlist.id, url, trim('"' from linktype) linktype
+		SELECT actorlist.id, url, linktype
 		FROM actorlist
 		LEFT JOIN external_reference_links erl ON erl.internal_db_id = actorlist.id AND external_source = linktype
 		WHERE linktype like '"% scrape"' and erl.id IS NULL
