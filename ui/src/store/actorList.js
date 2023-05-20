@@ -13,8 +13,6 @@ const defaultFilterState = {
   cardSize: '1',
 
   lists: [],
-  isAvailable: true,
-  isHidden: false,
   cast: [],
   sites: [],
   tags: [],
@@ -44,11 +42,6 @@ const state = {
   offset: 0,
   total: 0,
   limit: 18,
-  counts: {
-    any: 0,
-    available: 0,
-    hidden: 0
-  },
   show_actor_id: '',
   filterOpts: {
     cast: [],
@@ -109,9 +102,6 @@ const mutations = {
         if (payload.list === 'needs_update') {
           obj.needs_update = !obj.needs_update
         }
-        if (payload.list === 'is_hidden') {
-          obj.is_hidden = !obj.is_hidden
-        }        
       }
       return obj
     })
@@ -176,16 +166,9 @@ const actions = {
       commit('setActors', [])
     }
 
-    //commit('setActors', state.actors.concat(data.actors))
     commit('setActors', state.actors=data.actors)
     state.offset = iOffset + state.limit
-    state.total = data.results
-
-    state.counts.any = data.count_any
-    state.counts.available = data.count_available
-    state.counts.downloaded = data.count_downloaded
-    state.counts.not_downloaded = data.count_not_downloaded
-    state.counts.hidden = data.count_hidden
+    state.total = data.results    
   }
 }
 

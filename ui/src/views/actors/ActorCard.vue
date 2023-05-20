@@ -34,15 +34,6 @@
       </b-tag>
       </b-tooltip>
 
-
-        <!--
-        <hidden-button :actor="actor"/>
-       
-      <trailerlist-button :item="item" v-if="this.$store.state.optionsWeb.web.sceneTrailerlist"/>
-      
-      <watched-button :item="item" v-if="this.$store.state.optionsWeb.web.sceneWatched"/>
-      <edit-button :item="item" v-if="this.$store.state.optionsWeb.web.sceneEdit" />
- -->
       <span class="is-pulled-right" style="font-size:11px;text-align:right;">                
         <b-field grouped v-if="actor.birth_date != '0001-01-01T00:00:00Z'">
           {{format(parseISO(actor.birth_date), "yyyy-MM-dd")}}
@@ -62,14 +53,10 @@ import ActorWatchlistButton from '../../components/ActorWatchlistButton'
 import ActorEditButton from '../../components/ActorEditButton'
 import VueLoadImage from 'vue-load-image'
 import { tr } from 'date-fns/locale'
-/* 
-import EditButton from '../../components/EditButton'
-import HiddenButton from '../../components/HiddenButton' */
 
 export default {
   name: 'ActorCard',
   props: { actor: Object, colleague: String },
-  // components: { WatchlistButton, FavouriteButton, WatchedButton, EditButton, TrailerlistButton, HiddenButton },
    components: {ActorFavouriteButton, ActorWatchlistButton, VueLoadImage, ActorEditButton},
   data () {
     return {

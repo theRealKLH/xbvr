@@ -18,10 +18,10 @@
 
           <b-tab-item :label="$t('Information')">
             <b-field grouped group-multiline style="margin-bottom: 2em;">
-              <b-field label="Nationality" label-position="on-border" class="field-extra">
+              <b-field :label="$t('Nationality')" label-position="on-border" class="field-extra">
                 <b-taginput v-model="countries" autocomplete :data="filteredCountries" @typing="getFilteredCountries" maxtags="1" :open-on-focus=true :has-counter="false">
                   <template slot-scope="props">{{ props.option }}</template>
-                  <template slot="empty">No matching country</template>
+                  <template slot="empty">{{ $t('No matching country') }}</template>
                   <template #selected="props">
                       <b-tag v-for="(tag, index) in props.tags"                
                         :key="tag+index" :tabstop="false" closable @close="countries=countries.filter(e => e !== tag)" >
@@ -34,7 +34,7 @@
                 <b-input type="text" v-model="actor.ethnicity" @blur="blur('ethnicity')"/>
               </b-field>
                <b-datepicker v-model="birthdate" icon="calendar-today" @blur="blur('birth_date')">
-                 <b-button label="Clear" type="is-danger" icon-left="close" outlined @click="birthdate = null" />
+                 <b-button :label="$t('Clear')" type="is-danger" icon-left="close" outlined @click="birthdate = null" />
                </b-datepicker>
             </b-field>
             <b-field grouped group-multiline style="margin-bottom: 2em;">

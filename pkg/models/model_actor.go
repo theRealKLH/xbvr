@@ -463,11 +463,6 @@ func QueryActors(r RequestActorList, enablePreload bool) ResponseActorList {
 		tx = tx.Order("name asc")
 	}
 
-	//tx.Where("scenes.scraper_id = 'badoinkvr'")
-	// Count totals for selection
-	//tx.Group("actors.id").Count(&out.CountAny)
-	//tx.Group("actors.id").Where("is_hidden = ?", false).Count(&out.CountAny)
-	//tx.Group("scenes.scene_id").Where("is_hidden = ?", true).Count(&out.CountHidden)
 	tx.Group("actors.id").
 		Count(&out.Results)
 

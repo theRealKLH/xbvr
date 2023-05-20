@@ -50,10 +50,10 @@
     <div class="is-divider" data-content="Actor Filters"></div>
 
     <div v-if="Object.keys(filters).length !== 0">
-      <b-field label="Cast" label-position="on-border" class="field-extra">
+      <b-field :label="$t('Cast')" label-position="on-border" class="field-extra">
         <b-taginput v-model="cast" autocomplete :data="filteredCast" @typing="getFilteredCast">
           <template slot-scope="props">{{ props.option }}</template>
-          <template slot="empty">No matching cast</template>
+          <template slot="empty">{{ $t("No matching cast") }}</template>
           <template #selected="props">
               <b-tag v-for="(tag, index) in props.tags"
                 :type="tag.charAt(0)=='!' ? 'is-danger': (tag.charAt(0)=='&' ? 'is-success' : '')"
@@ -69,10 +69,10 @@
         </b-taginput>
       </b-field>
 
-      <b-field label="Site" label-position="on-border" class="field-extra">
+      <b-field :label="$t('Site')" label-position="on-border" class="field-extra">
         <b-taginput v-model="sites" autocomplete :data="filteredSites" @typing="getFilteredSites">
           <template slot-scope="props">{{ props.option }}</template>
-          <template slot="empty">No matching sites</template>
+          <template slot="empty">{{ $t("No matching sites") }}No matching sites</template>
           <template #selected="props">
             <b-tag v-for="(tag, index) in props.tags"
               :type="tag.charAt(0)=='!' ? 'is-danger': (tag.charAt(0)=='&' ? 'is-success' : '')"
@@ -87,11 +87,11 @@
         </b-taginput>
       </b-field>
 
-      <b-tooltip position="is-top" label="Allows searching a variety of attributes such as: Possible Aka actors, Cup Size, Eye/Hair Color, Has Tattoo, Has Piercing, Breast Type, Nationailty, Ethnicity, Aka, Has Images" multilined :delay="1000" style="width:100%">
-        <b-field label="Attributes" label-position="on-border" class="field-extra">
+      <b-tooltip position="is-top" :label="$t('Allows searching a variety of attributes such as: Possible Aka actors, Cup Size, Eye/Hair Color, Has Tattoo, Has Piercing, Breast Type, Nationailty, Ethnicity, Aka, Has Images')" multilined :delay="1000" style="width:100%">
+        <b-field :label="$t('Attributes')" label-position="on-border" class="field-extra">
           <b-taginput v-model="attributes" autocomplete :data="filteredAttributes" @typing="getFilteredAttributes">
             <template slot-scope="props">{{ props.option }}</template>
-            <template slot="empty">No matching attributes</template>
+            <template slot="empty">{{ $t("No matching attributes") }}</template>
             <template #selected="props">
               <b-tag v-for="(tag, index) in props.tags"
                 :type="tag.charAt(0)=='!' ? 'is-danger': (tag.charAt(0)=='&' ? 'is-success' : '')"
@@ -107,53 +107,53 @@
 
       <table width="100%">
         <tr>
-          <td class="slider-title"><strong><small>Age:</small></strong></td>
+          <td class="slider-title"><strong><small>{{ $t("Age") }}:</small></strong></td>
           <td ><b-slider :min="0" :max="100" :step="1" :tooltip="true" v-model="ages" lazy class="slider"></b-slider></td>
         </tr>
         <tr>
-          <td class="slider-title"><strong><small>Height:</small></strong></td>
+          <td class="slider-title"><strong><small>{{ $t("Height") }}:</small></strong></td>
           <td><b-slider :min="120" :max="220" :step="1" :tooltip="true" v-model="heights" lazy class="slider"></b-slider></td>
         </tr>
         <tr>
-          <td class="slider-title"><strong><small>Weight:</small></strong></td>
+          <td class="slider-title"><strong><small>{{ $t("Weight") }}:</small></strong></td>
           <td><b-slider :min="25" :max="150" :step="1" :tooltip="true" v-model="weights" lazy class="slider"></b-slider></td>
         </tr>
         <tr>
-          <td class="slider-title"><strong><small>Scenes:</small></strong></td>
+          <td class="slider-title"><strong><small>{{ $t("Scenes") }}:</small></strong></td>
           <td><b-slider :min="0" :max="150" :step="1" :tooltip="true" v-model="scenecounts" lazy class="slider" ></b-slider></td>
         </tr>
         <tr>
-          <td class="slider-title"><strong><small>Available:</small></strong></td>
+          <td class="slider-title"><strong><small>{{ $t("Available") }}:</small></strong></td>
           <td><b-slider :min="0" :max="150" :step="1" :tooltip="true" v-model="avails" lazy class="slider" ></b-slider></td>
         </tr>
         <tr>
-          <td class="slider-title"><strong><small>Rating:</small></strong></td>
+          <td class="slider-title"><strong><small>{{ $t("Rating") }}:</small></strong></td>
           <td><b-slider :min="0" :max="5" :step=".5" :tooltip="true" v-model="ratings" lazy class="slider" ></b-slider></td>
         </tr>
         <tr>
-          <td class="slider-title"><strong><small>Scene Rating:</small></strong></td>
+          <td class="slider-title"><strong><small>{{ $t("Scene Rating") }}:</small></strong></td>
           <td><b-slider :min="0" :max="5" :step=".25" :tooltip="true" v-model="sceneratings" lazy class="slider" ></b-slider></td>
         </tr>   
       </table>
     </div>
     <div class="is-divider" data-content="Actor Also Known As groups"></div>
     <b-field>
-      <b-tooltip position="is-right" label="New Aka Group. Select 2 or more actors in the Cast filter" multilined :delay="200">
+      <b-tooltip position="is-right" :label="$t('New Aka Group. Select 2 or more actors in the Cast filter')" multilined :delay="200">
         <button class="button is-small is-outlined" @click="createAkaGroup" :disabled="disableNewAkaGroup">
           <b-icon pack="mdi" icon="account-multiple-plus-outline"></b-icon>
         </button>
       </b-tooltip>
-      <b-tooltip position="is-right" label="Select the Aka Group to delete in the Cast Filter" multilined :delay="200">
+      <b-tooltip position="is-right" :label="$t('Select the Aka Group to delete in the Cast Filter')" multilined :delay="200">
         <button class="button is-small is-outlined" @click="deleteAkaGroup" :disabled="disableDeleteAkaGroup">
           <b-icon pack="mdi" icon="delete-outline"></b-icon>
         </button>
       </b-tooltip>
-      <b-tooltip position="is-bottom" label="Add Cast to Aka Group. Select the Aka group and Actors to add in the Cast Filter" multilined :delay="200">
+      <b-tooltip position="is-bottom" :label="$t('Add Cast to Aka Group. Select the Aka group and Actors to add in the Cast Filter')" multilined :delay="200">
         <button class="button is-small is-outlined" @click="addToAkaGroup" :disabled="disableAddToAkaGroup">
           <b-icon pack="mdi" icon="account-plus-outline"></b-icon>
         </button>
       </b-tooltip>
-      <b-tooltip position="is-bottom" label="Remove Cast from Aka Group. Select the Aka group and Actors to remove in the Cast Filter" multilined :delay="200">
+      <b-tooltip position="is-bottom" :label="$t('Remove Cast from Aka Group. Select the Aka group and Actors to remove in the Cast Filter')" multilined :delay="200">
         <button class="button is-small is-outlined" @click="removeFromAkaGroup" :disabled="disableRemoveFromAkaGroup">
           <b-icon pack="mdi" icon="account-minus-outline"></b-icon>
         </button>

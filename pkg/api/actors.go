@@ -8,10 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mozillazg/go-slugify"
-	"github.com/xbapps/xbvr/pkg/tasks"
-
-	"github.com/blevesearch/bleve/v2"
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/xbapps/xbvr/pkg/models"
@@ -43,11 +39,11 @@ func (i ActorResource) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/rate/{actor-id}").To(i.rateActor).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
-		Writes(models.Scene{}))
+		Writes(models.Actor{}))
 
 	ws.Route(ws.POST("/toggle").To(i.toggleList).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
-		Writes(ResponseGetScenes{}))
+		Writes(ResponseGetActors{}))
 
 	ws.Route(ws.GET("/{actor-id}").To(i.getActor).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
@@ -55,7 +51,7 @@ func (i ActorResource) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/edit/{id}").To(i.editActor).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
-		Writes(models.Scene{}))
+		Writes(models.Actor{}))
 
 	ws.Route(ws.POST("/setimage").To(i.setActorImage).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
@@ -89,7 +85,7 @@ func (i ActorResource) WebService() *restful.WebService {
 func (i ActorResource) getFilters(req *restful.Request, resp *restful.Response) {
 	db, _ := models.GetDB()
 	defer db.Close()
-	// Get all accessible scenes
+
 	var actors []models.Actor
 	db.Model(&actors).Order("name").Find(&actors)
 
@@ -307,60 +303,6 @@ type ResponseGetActorFilters struct {
 	Attributes []string `json:"attributes"`
 }
 
-func (i ActorResource) createCustomScenexxx(req *restful.Request, resp *restful.Response) {
-	db, _ := models.GetDB()
-	defer db.Close()
-
-	//Get request data
-	var r RequestCustomScene
-	err := req.ReadEntity(&r)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	//Get scene id
-	currentTime := time.Now()
-	if r.SceneID == "" {
-		log.Info("SceneID missing from request!")
-		r.SceneID = "Custom-" + currentTime.Format("2006010215040506")
-	}
-	r.SceneID = slugify.Slugify(r.SceneID)
-
-	//Construct custom scene
-	var scene models.ScrapedScene
-	scene.SceneID = r.SceneID
-	scene.SceneType = "VR"
-	scene.Title = r.SceneTitle
-	scene.Studio = "Custom"
-	scene.Site = "CustomVR"
-	scene.HomepageURL = "http://localhost/" + scene.SceneID
-	scene.Covers = append(scene.Covers, "http://localhost/dont_cause_errors")
-	scene.Released = currentTime.Format("2006-01-02")
-	if r.Filename != "" {
-		scene.Filenames = append(scene.Filenames, r.Filename)
-	}
-
-	log.Infof("Creating custom scene: \"%v\" \"%v\"", scene.SceneID, scene.Title)
-
-	//Create custom scene
-	models.SceneCreateUpdateFromExternal(db, scene)
-
-	//Return resulting scene
-	var resultingScene models.Scene
-	err = resultingScene.GetIfExist(scene.SceneID)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	// Update search index with new scene
-	scenes := []models.Scene{resultingScene}
-	tasks.IndexScenes(&scenes)
-
-	resp.WriteHeaderAndEntity(http.StatusOK, resultingScene)
-}
-
 func (i ActorResource) toggleList(req *restful.Request, resp *restful.Response) {
 	var r RequestToggleActorList
 	err := req.ReadEntity(&r)
@@ -394,48 +336,6 @@ func (i ActorResource) toggleList(req *restful.Request, resp *restful.Response) 
 		// 	actor.IsHidden = !actor.IsHidden
 	}
 	actor.Save()
-}
-
-func (i ActorResource) searchSceneIndex(req *restful.Request, resp *restful.Response) {
-	q := req.QueryParameter("q")
-
-	db, _ := models.GetDB()
-	defer db.Close()
-
-	idx, err := tasks.NewIndex("scenes")
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	defer idx.Bleve.Close()
-	query := bleve.NewQueryStringQuery(q)
-
-	searchRequest := bleve.NewSearchRequest(query)
-	searchRequest.Fields = []string{"Id", "title", "cast", "site", "description"}
-	searchRequest.IncludeLocations = true
-	searchRequest.From = 0
-	searchRequest.Size = 25
-	searchRequest.SortBy([]string{"-_score"})
-
-	searchResults, err := idx.Bleve.Search(searchRequest)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	var scenes []models.Scene
-	for _, v := range searchResults.Hits {
-		var scene models.Scene
-		err := scene.GetIfExist(v.ID)
-		if err != nil {
-			continue
-		}
-
-		scene.Score = v.Score
-		scenes = append(scenes, scene)
-	}
-
-	resp.WriteHeaderAndEntity(http.StatusOK, ResponseGetScenes{Results: len(scenes), Scenes: scenes})
 }
 
 func (i ActorResource) editActor(req *restful.Request, resp *restful.Response) {

@@ -14,24 +14,7 @@
         <strong>{{total}} results</strong>
       </div>
       <div class="column">
-        <div class="columns is-gapless" v-if="1==0">
-          <b-radio-button v-model="dlState" native-value="any" size="is-small">
-            {{$t("Any")}} ({{counts.any}})
-          </b-radio-button>
-          <b-radio-button v-model="dlState" native-value="available" size="is-small">
-            {{$t("Available right now")}} ({{counts.available}})
-          </b-radio-button>
-          <b-radio-button v-model="dlState" native-value="downloaded" size="is-small">
-            {{$t("Downloaded")}} ({{counts.downloaded}})
-          </b-radio-button>
-          <b-radio-button v-model="dlState" native-value="missing" size="is-small">
-            {{$t("Not downloaded")}} ({{counts.not_downloaded}})
-          </b-radio-button>
-          <b-radio-button v-model="dlState" native-value="hidden" size="is-small">
-            {{$t("Hidden")}} ({{counts.hidden}})
-          </b-radio-button>
-        </div>
-        <b-tooltip :label="$t('Press k to page back, l to page forward')" :delay="500" position="is-top">
+        <b-tooltip :label="$t('Press o/left arrow to page back, p/right arrow to page forward')" :delay="500" position="is-top">
           <b-pagination
               :total="total"
               v-model="current"
@@ -219,44 +202,6 @@ export default {
           return 'is-2'
       }
     },
-    dlState: {
-      get () {
-        return this.$store.state.actorList.filters.dlState
-      },
-      set (value) {
-        this.$store.state.actorList.filters.dlState = value
-
-        switch (this.$store.state.actorList.filters.dlState) {
-          case 'any':
-            this.$store.state.actorList.filters.isAvailable = null
-            this.$store.state.actorList.filters.isAccessible = null
-            this.$store.state.actorList.filters.isHidden = false
-            break
-          case 'available':
-            this.$store.state.actorList.filters.isAvailable = true
-            this.$store.state.actorList.filters.isAccessible = true
-            this.$store.state.actorList.filters.isHidden = false
-            break
-          case 'downloaded':
-            this.$store.state.actorList.filters.isAvailable = true
-            this.$store.state.actorList.filters.isAccessible = null
-            this.$store.state.actorList.filters.isHidden = false
-            break
-          case 'missing':
-            this.$store.state.actorList.filters.isAvailable = false
-            this.$store.state.actorList.filters.isAccessible = null
-            this.$store.state.actorList.filters.isHidden = false
-            break
-          case 'hidden':
-            this.$store.state.actorList.filters.isAvailable = null
-            this.$store.state.actorList.filters.isAccessible = null
-            this.$store.state.actorList.filters.isHidden = true
-            break
-        }
-
-        this.reloadList()
-      }
-    },
     isLoading () {
       this.current = this.$store.state.actorList.offset / this.$store.state.actorList.limit
       return this.$store.state.actorList.isLoading
@@ -266,9 +211,6 @@ export default {
     },
     total () {
       return this.$store.state.actorList.total
-    },
-    counts () {
-      return this.$store.state.actorList.counts
     },
     show_actor_id() {
       if (this.$store.state.actorList.show_actor_id != undefined && this.$store.state.actorList.show_actor_id !='')

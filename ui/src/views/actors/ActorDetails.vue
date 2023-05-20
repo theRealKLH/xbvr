@@ -21,7 +21,7 @@
 
           <div class="column is-half">
             <b-tabs v-model="activeMedia" position="is-centered" :animated="false">
-              <b-tab-item label="Gallery">
+              <b-tab-item :label="$t('Gallery')">
                 <b-carousel v-model="carouselSlide" @change="scrollToActiveIndicator" :autoplay="false" :indicator-inside="false">
                   <b-carousel-item v-for="(carousel, i) in images" :key="i">
                     <div class="image is-1by1 is-full"
@@ -51,12 +51,12 @@
                 <h3>
                   <span>
                     {{ actor.name }}
-                    <b-tooltip position="is-right" label="Delete Aka Group" multilined :delay="200" v-if="actor.name.startsWith('aka:')">
+                    <b-tooltip position="is-right" :label="$t('Delete Aka Group')" multilined :delay="200" v-if="actor.name.startsWith('aka:')">
                       <button class="button is-small is-outlined" @click="deleteAkaGroup" >
                         <b-icon pack="mdi" icon="delete-outline"></b-icon>
                       </button>
                     </b-tooltip>
-                    <b-tooltip v-if="enableNewAkaGroup()" position="is-right" label="Create a new Aka Group" multilined :delay="200">
+                    <b-tooltip v-if="enableNewAkaGroup()" position="is-right" :label="$t('Create a new Aka Group')" multilined :delay="200">
                       <button class="button is-small is-outlined" @click="createAkaGroup">
                         <b-icon pack="mdi" icon="account-multiple-plus-outline"></b-icon>
                       </button>
@@ -73,7 +73,7 @@
                 <div class="columns is-vcentered">
                   <div class="column pt-0">
                     <b-field>
-                      <strong style="width: 8em;">Your Rating</strong>
+                      <strong style="width: 8em;">{{ $t('Your Rating') }}</strong>
                       <star-rating :key="actor.id" v-model="actor.star_rating" :rating="actor.star_rating" @rating-selected="setRating"
                                    :increment="0.5" :star-size="20" :show-rating="true" />
                       <b-tooltip :label="$t('Reset Rating')" position="is-right" :delay="250">
@@ -81,7 +81,7 @@
                       </b-tooltip>
                     </b-field>
                     <b-field>
-                      <strong style="width: 8em;">Scene Average</strong>
+                      <strong style="width: 8em;">{{ $t('Scene Average') }}</strong>
                     <star-rating :key="actor.id" :rating="Math.round(actor.scene_rating_average * 4) / 4" read-only :increment="0.25" :star-size="20" :show-rating="true" active-color="#7957d5"/>
                     </b-field>
 
@@ -99,16 +99,16 @@
                         
             <div class="block-opts block">
               <b-tabs v-model="activeTab" :animated="false">
-                <b-tab-item label="Details">
+                <b-tab-item :label="$t('Details')">
                   <div class="attribute-container">
                     <b-field v-if="actor.birth_date != '0001-01-01T00:00:00Z'">
-                      <strong class="attribute-heading">Age:</strong><span class="attribute-data">{{ calcAge(actor.birth_date) }}</span>
+                      <strong class="attribute-heading">{{ $t('Age') }}:</strong><span class="attribute-data">{{ calcAge(actor.birth_date) }}</span>
                     </b-field>
                     <b-field v-if="actor.start_year + actor.end_year  != 0">
-                      <strong class="attribute-heading">Active:</strong><span class="attribute-data">{{ getYearsActive() }}</span>
+                      <strong class="attribute-heading">{{ $t('Active') }}:</strong><span class="attribute-data">{{ getYearsActive() }}</span>
                     </b-field>
                     <b-field v-if="actor.nationality">
-                      <strong class="attribute-heading">Nationality:</strong>
+                      <strong class="attribute-heading">{{ $t('Nationality') }}:</strong>
                       <b-field grouped class="attribute-data">
                         <vue-load-image>
                             <img slot="image" :src="getImageURL(this.getCountryFlag(actor.nationality))" style="height:15px;border: 1px solid black;margin-right:0.5em;"/>
@@ -117,34 +117,34 @@
                       </b-field>
                     </b-field>
                     <b-field v-if="actor.ethnicity">
-                      <strong class="attribute-heading">Ethnicity:</strong><small  class="attribute-data">{{ actor.ethnicity }}</small>
+                      <strong class="attribute-heading">{{ $t('Ethnicity') }}:</strong><small  class="attribute-data">{{ actor.ethnicity }}</small>
                     </b-field>
                     <b-field v-if="actor.hair_color">
-                      <strong class="attribute-heading">Hair Color:</strong> <small class="attribute-data">{{ actor.hair_color }}</small>
+                      <strong class="attribute-heading">{{ $t('Hair Color') }}:</strong> <small class="attribute-data">{{ actor.hair_color }}</small>
                     </b-field>
                     <b-field v-if="actor.eye_color">
-                      <strong class="attribute-heading">Eye Color:</strong> <small class="attribute-data">{{ actor.eye_color }}</small>
+                      <strong class="attribute-heading">{{ $t('Eye Color') }}:</strong> <small class="attribute-data">{{ actor.eye_color }}</small>
                     </b-field>
                     <b-field v-if="actor.height">
-                      <strong class="attribute-heading">Height:</strong> <small class="attribute-data">{{ getHeight(actor.height) }}</small>
+                      <strong class="attribute-heading">{{ $t('Height') }}:</strong> <small class="attribute-data">{{ getHeight(actor.height) }}</small>
                     </b-field>
                     <b-field v-if="actor.weight">
-                      <strong class="attribute-heading">Weight:</strong> <small class="attribute-data">{{ getWeight(actor.weight) }}</small>
+                      <strong class="attribute-heading">{{ $t('Weight') }}:</strong> <small class="attribute-data">{{ getWeight(actor.weight) }}</small>
                     </b-field>
                     <b-field v-if="measurements() != ''">
-                      <strong class="attribute-heading">Measurements:</strong> <small class="attribute-data">{{ measurements() }}</small>
+                      <strong class="attribute-heading">{{ $t('Measurements') }}:</strong> <small class="attribute-data">{{ measurements() }}</small>
                     </b-field>
                     <b-field v-if="actor.breast_type != ''">
-                      <strong class="attribute-heading">Breast Type:</strong> <small class="attribute-data">{{ actor.breast_type }}</small>
+                      <strong class="attribute-heading">{{ $t('Breast Type') }}:</strong> <small class="attribute-data">{{ actor.breast_type }}</small>
                     </b-field>
                     <b-field v-if="actor.aliases != '' && actor.aliases != '[]'">
-                      <strong class="attribute-heading">Aliases:</strong> <small class="attribute-long-data">{{ joinArray(actor.aliases) }}</small>
+                      <strong class="attribute-heading">{{ $t('Aliases') }}:</strong> <small class="attribute-long-data">{{ joinArray(actor.aliases) }}</small>
                     </b-field>
                     <b-field v-if="actor.tattoos != '' && actor.tattoos != '[]'">
-                      <strong class="attribute-heading">Tattoos:</strong> <small class="attribute-long-data">{{ joinArray(actor.tattoos) }}</small>
+                      <strong class="attribute-heading">{{ $t('Tattoos') }}:</strong> <small class="attribute-long-data">{{ joinArray(actor.tattoos) }}</small>
                     </b-field>
                     <b-field v-if="actor.piercings != '' && actor.piercings != '[]'">
-                      <strong class="attribute-heading">Piercings:</strong> <small class="attribute-long-data">{{ joinArray(actor.piercings) }}</small>
+                      <strong class="attribute-heading">{{ $t('Piercings') }}:</strong> <small class="attribute-long-data">{{ joinArray(actor.piercings) }}</small>
                     </b-field>
                   </div>
                   <b-message  v-if="actor.biography != ''">
@@ -159,9 +159,9 @@
                     </div>
                   </div>
                 </b-tab-item>
-                <b-tab-item label="Akas" :visible="akas.aka_groups != null || akas.actors != null || akas.possible_akas != null">
+                <b-tab-item :label="$t('Akas')" :visible="akas.aka_groups != null || akas.actors != null || akas.possible_akas != null">
                   <div v-show="activeTab == 2">
-                    <b-field label="Aka Groups" v-if="akas.aka_groups != null &&  akas.aka_groups.length!=0">
+                    <b-field :label="$t('Aka Groups')" v-if="akas.aka_groups != null &&  akas.aka_groups.length!=0">
                       <div  class="columns is-multiline">
                         <div :class="['column', 'is-multiline', 'is-one-third']"
                           v-for="(akaactor, idx) in akas.aka_groups" :key="idx" class="image-wrapper">
@@ -169,12 +169,12 @@
                         </div>
                       </div>
                     </b-field>
-                    <b-field label="Other Actors In Groups" v-if="akas.actors != null &&  akas.actors.length!=0">
+                    <b-field :label="$t('Other Actors In Groups')" v-if="akas.actors != null &&  akas.actors.length!=0">
                       <div  class="columns is-multiline">
                         <div :class="['column', 'is-multiline', 'is-one-third']"
                           v-for="(akaactor, idx) in akas.actors" :key="idx" class="image-wrapper">
                           <ActorCard :actor="akaactor"/>
-                          <b-tooltip position="is-bottom" label="Remove Cast from Aka Group. Select the Aka group and Actors to remove in the Cast Filter" multilined :delay="200">
+                          <b-tooltip position="is-bottom" :label="$t('Remove Cast from Aka Group. Select the Aka group and Actors to remove in the Cast Filter')" multilined :delay="200">
                             <button class="button is-small is-outlined" @click="removeFromAkaGroup(akaactor.name)" v-if="actor.name.startsWith('aka:')">
                               <b-icon pack="mdi" icon="account-minus-outline"></b-icon>
                             </button>
@@ -182,12 +182,12 @@
                         </div>
                       </div>
                     </b-field>
-                    <b-field label="Possible Matches" v-if="akas.possible_akas != null &&  akas.possible_akas.length!=0">
+                    <b-field :label="$t('Possible Matches')" v-if="akas.possible_akas != null &&  akas.possible_akas.length!=0">
                       <div class="columns is-multiline">
                         <div :class="['column', 'is-multiline', 'is-one-third']"
                           v-for="(akaactor, idx) in akas.possible_akas" :key="idx" class="image-wrapper">
                           <ActorCard :actor="akaactor"/>
-                          <b-tooltip position="is-bottom" label="Add Cast to Aka Group. Select the Aka group and Actors to add in the Cast Filter" multilined :delay="200">
+                          <b-tooltip position="is-bottom" :label="$t('Add Cast to Aka Group. Select the Aka group and Actors to add in the Cast Filter')" multilined :delay="200">
                             <button class="button is-small is-outlined" @click="addToAkaGroup(akaactor.name)" v-if='actor.name.startsWith("aka:")'>
                               <b-icon pack="mdi" icon="account-plus-outline"></b-icon>
                             </button>
@@ -208,7 +208,7 @@
                 <b-tab-item :label="`Links (${getActorUrls().length})`" v-show="getActorUrls().length !=0">
                   <div v-show="activeTab == 4">
                     <div >                    
-                      <b-field label="Links" >
+                      <b-field :label="$t('Links')" >
                         <div >                       
                           <div 
                             v-for="(urllink, idx) in getActorUrls()" :key="idx">
@@ -222,7 +222,7 @@
                 <b-tab-item  :label="`Scrapers (${extrefs.length})`" v-show="extrefs.length !=0">
                   <div v-show="activeTab == 5">
                     <div >                    
-                      <b-field label="Actor Scrapers" >
+                      <b-field :label="$t('Actor Scrapers')" >
                         <div >                       
                           <div v-for="(extref, idx) in extrefs" :key="idx">
                             <b-field grouped>
@@ -256,21 +256,19 @@
 import ky from 'ky'
 import videojs from 'video.js'
 import 'videojs-vr/dist/videojs-vr.min.js'
-import { format, formatDistance, parseISO } from 'date-fns'
-import prettyBytes from 'pretty-bytes'
+import { format, parseISO } from 'date-fns'
 import VueLoadImage from 'vue-load-image'
 import GlobalEvents from 'vue-global-events'
 import StarRating from 'vue-star-rating'
 import ActorFavouriteButton from '../../components/ActorFavouriteButton'
 import ActorWatchlistButton from '../../components/ActorWatchlistButton'
 import ActorEditButton from '../../components/ActorEditButton'
-import HiddenButton from '../../components/HiddenButton'
 import SceneCard from '../scenes/SceneCard'
 import ActorCard from './ActorCard'
 
 export default {
   name: 'ActorDetails',
-  components: { VueLoadImage, GlobalEvents, StarRating, ActorWatchlistButton, ActorFavouriteButton, SceneCard, ActorEditButton,  HiddenButton, ActorCard },
+  components: { VueLoadImage, GlobalEvents, StarRating, ActorWatchlistButton, ActorFavouriteButton, SceneCard, ActorEditButton,  ActorCard },
   data () {
     return {
       index: 1,
@@ -332,39 +330,6 @@ export default {
       }
     },  
     methods: {
-    showCastScenes (actor) {
-      this.$store.state.sceneList.filters.cast = actor
-      this.$store.state.sceneList.filters.sites = []
-      this.$store.state.sceneList.filters.tags = []
-      this.$store.state.sceneList.filters.attributes = []
-      this.$router.push({
-        name: 'scenes',
-        query: { q: this.$store.getters['sceneList/filterQueryParams'] }
-      })
-      this.close()
-    },
-    showTagScenes (tag) {
-      this.$store.state.sceneList.filters.cast = []
-      this.$store.state.sceneList.filters.sites = []
-      this.$store.state.sceneList.filters.tags = tag
-      this.$store.state.sceneList.filters.attributes = []
-      this.$router.push({
-        name: 'scenes',
-        query: { q: this.$store.getters['sceneList/filterQueryParams'] }
-      })
-      this.close()
-    },
-    showSiteScenes (site) {
-      this.$store.state.sceneList.filters.cast = []
-      this.$store.state.sceneList.filters.sites = site
-      this.$store.state.sceneList.filters.tags = []
-      this.$store.state.sceneList.filters.attributes = []
-      this.$router.push({
-        name: 'scenes',
-        query: { q: this.$store.getters['sceneList/filterQueryParams'] }
-      })
-      this.close()
-    },
     getImageURL (u, size) {
       if (u.startsWith('http') || u.startsWith('https')) {
         return '/img/' + size + '/' + u.replace('://', ':/')
@@ -448,13 +413,6 @@ export default {
         left: active.offsetLeft + active.offsetWidth / 2 - indicators.offsetWidth / 2,
         behavior: 'smooth'
       })
-    },
-    timeFormatter(time) {        
-       return new Intl.DateTimeFormat('en', { hourCycle: 'h23', hour: "2-digit", minute: "2-digit", second: "2-digit", fractionalSecondDigits: 1 }).format(time)
-    },
-    timeParser(inputString) {
-      let items = inputString.split(":")
-      return new Date(0, 0, 0, items[0],items[1], 0, items[2]*1000)
     },
     calcAge(birthdate){       
       const birthdateObj = new Date(birthdate);
@@ -670,9 +628,7 @@ export default {
       this.$store.state.actorList.isLoading = false
     },
     format,
-    parseISO,
-    prettyBytes,
-    formatDistance
+    parseISO
   }
 }
 </script>
