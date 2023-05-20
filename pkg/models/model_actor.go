@@ -467,7 +467,7 @@ func QueryActors(r RequestActorList, enablePreload bool) ResponseActorList {
 		Count(&out.Results)
 
 	tx = tx.Preload("Scenes", func(db *gorm.DB) *gorm.DB {
-		return db.Order("release_date DESC")
+		return db.Order("release_date DESC").Where("is_hidden = 0")
 	})
 
 	tx = tx.Select(`distinct actors.*, 
@@ -486,7 +486,9 @@ func (o *Actor) GetIfExist(id string) error {
 	defer db.Close()
 
 	return db.
-		Preload("Scenes").
+		Preload("Scenes", func(db *gorm.DB) *gorm.DB {
+			return db.Where("is_hidden = 0")
+		}).
 		Where(&Actor{Name: id}).First(o).Error
 }
 
@@ -495,7 +497,9 @@ func (o *Actor) GetIfExistByPK(id uint) error {
 	defer db.Close()
 
 	return db.
-		Preload("Scenes").
+		Preload("Scenes", func(db *gorm.DB) *gorm.DB {
+			return db.Where("is_hidden = 0")
+		}).
 		Where(&Actor{ID: id}).First(o).Error
 }
 
@@ -509,7 +513,7 @@ func (o *Actor) GetIfExistByPKWithSceneAvg(id uint) error {
 
 	return tx.
 		Preload("Scenes", func(db *gorm.DB) *gorm.DB {
-			return db.Order("release_date DESC")
+			return db.Order("release_date DESC").Where("is_hidden = 0")
 		}).
 		Where(&Actor{ID: id}).First(o).Error
 }
