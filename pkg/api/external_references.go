@@ -37,5 +37,7 @@ func (i ExternalReference) WebService() *restful.WebService {
 
 	ws.Route(ws.POST("/generic/scrape_single").To(i.genericSingleActorScraper).
 		Metadata(restfulspec.KeyOpenAPITags, tags))
+	ws.Route(ws.GET("/generic/scrape_by_site/{site-id}").To(i.genericActorScraperBySite).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
 	return ws
 }

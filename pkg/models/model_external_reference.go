@@ -1,7 +1,9 @@
 package models
 
 import (
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/avast/retry-go/v4"
@@ -175,4 +177,54 @@ func InternalDbId2Uint(input string) uint {
 	}
 	val, _ := strconv.Atoi(input)
 	return uint(val)
+}
+
+func (o *ExternalReference) DetermineActorScraperByUrl(url string) string {
+	url = strings.ToLower(url)
+	site := url
+	re := regexp.MustCompile(`^(https?:\/\/)?(www\.)?([a-zA-Z0-9\-]+)\.[a-zA-Z]{2,}(\/.*)?`)
+	match := re.FindStringSubmatch(url)
+	if len(match) >= 3 {
+		site = match[3]
+	}
+
+	switch site {
+	case "stashdb":
+		return "stashdb performer"
+	case "sexlikereal":
+		return "slr scrape"
+	case "xsinsvr":
+		return "sinsvr scrape"
+	case "naughtyamerica":
+		return "naughtyamericavr scrape"
+	case "virtualporn":
+		return "bvr scrape"
+	default:
+		return site + " scrape"
+	}
+}
+
+func (o *ExternalReference) DetermineActorScraperBySiteId(siteId string) string {
+	db, _ := GetDB()
+	defer db.Close()
+
+	var site Site
+	db.Where("id = ?", siteId).First(&site)
+	if site.Name == "" {
+		return siteId
+	}
+
+	if strings.HasSuffix(site.Name, "POVR)") {
+		return "povr scrape"
+	}
+	if strings.HasSuffix(site.Name, "SLR)") {
+		return "slr scrape"
+	}
+	if strings.HasSuffix(site.Name, "VRP Hub)") {
+		return "vrphub scrape"
+	}
+	if strings.HasSuffix(site.Name, "VRPorn)") {
+		return "slr scrape"
+	}
+	return siteId + " scrape"
 }

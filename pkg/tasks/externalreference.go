@@ -8,3 +8,6 @@ func ScrapeActors() {
 func ScrapeActor(actorId uint, url string) {
 	scrape.GenericSingleActorScraper(actorId, url)
 }
+func ScrapeActorBySite(site string) {
+	scrape.GenericActorScrapersBySite(site)
+}

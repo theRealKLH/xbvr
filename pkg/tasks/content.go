@@ -1272,11 +1272,19 @@ func RestoreExternalRefs(extRefs []models.ExternalReference, overwrite bool, db 
 		}
 
 		var found models.ExternalReference
-		db.Where(&models.ExternalReference{ExternalSource: extRef.ExternalSource, ExternalId: extRef.ExternalId}).First(&found)
+		db.Preload("XbvrLinks").Where(&models.ExternalReference{ExternalSource: extRef.ExternalSource, ExternalId: extRef.ExternalId}).First(&found)
 
 		if found.ID == 0 || overwrite {
 			extRef.ID = found.ID // use the Id from the existing db record or 0
 			for idx, link := range extRef.XbvrLinks {
+				if found.ID != 0 {
+					// get the existing ID so we don't add a new, duplicate link
+					for _, existingLink := range found.XbvrLinks {
+						if existingLink.InternalTable == link.InternalTable && existingLink.InternalNameId == link.InternalNameId {
+							extRef.XbvrLinks[idx].ID = existingLink.ID
+						}
+					}
+				}
 				switch link.InternalTable {
 				//				case "sites":
 				//					extRef.XbvrLinks[idx].InternalDbId = link.InternalNameId
@@ -1304,6 +1312,41 @@ func RestoreExternalRefs(extRefs []models.ExternalReference, overwrite bool, db 
 					addedCnt++
 				}
 			}
+		} else {
+			if found.ID != 0 && !overwrite {
+				// only add new links to existing extref
+				linksAdded := false
+				for _, newLink := range extRef.XbvrLinks {
+					linkFound := false
+					for _, existinglink := range found.XbvrLinks {
+						if existinglink.InternalTable == newLink.InternalTable && existinglink.InternalNameId == newLink.InternalNameId {
+							linkFound = true
+						}
+					}
+					if !linkFound {
+						switch newLink.InternalTable {
+						//				case "sites":
+						//					extRef.XbvrLinks[idx].InternalDbId = link.InternalNameId
+						case "scenes":
+							var scene models.Scene
+							scene.GetIfExist(newLink.InternalNameId)
+							newLink.InternalDbId = scene.ID
+						case "actors":
+							var actor models.Actor
+							db.Where("name = ?", newLink.InternalNameId).First(&actor)
+							newLink.InternalDbId = actor.ID
+						}
+						newLink.ExternalReferenceID = found.ID
+						newLink.ExternalSource = found.ExternalSource
+						newLink.ExternalId = found.ExternalId
+						found.XbvrLinks = append(found.XbvrLinks, newLink)
+						linksAdded = true
+					}
+				}
+				if linksAdded {
+					models.SaveWithRetry(db, &found)
+				}
+			}
 		}
 	}
 	tlog.Info("%Refreshing Actor Image Urls")
@@ -1315,16 +1358,14 @@ func RestoreActors(actorList []models.Actor, overwrite bool, db *gorm.DB) {
 	tlog := log.WithField("task", "scrape")
 	tlog.Infof("Restoring Actors")
 
-	addedCnt := 0
-	go func(addedCnt int, total int) {
-		for {
-			tlog.Infof("Processing %v of %v actors", addedCnt, total)
-			time.Sleep(30 * time.Second)
-		}
-	}(addedCnt, len(actorList))
+	updatedCnt := 0
+	lastMessage := time.Now()
 
-	for _, bundleActor := range actorList {
-		addedCnt += 1
+	for cnt, bundleActor := range actorList {
+		if time.Since(lastMessage) > 30*time.Second {
+			tlog.Infof("Processing %v of %v actors", cnt, len(actorList))
+			lastMessage = time.Now()
+		}
 		var actor models.Actor
 		db.Where("name = ?", bundleActor.Name).Find(&actor)
 		if actor.ID != 0 {
@@ -1403,9 +1444,11 @@ func RestoreActors(actorList []models.Actor, overwrite bool, db *gorm.DB) {
 			if overwrite || actor.BreastType == "" {
 				actor.URLs = bundleActor.URLs
 			}
+			updatedCnt += 1
+			actor.Save()
 		}
-		actor.Save()
 	}
+	tlog.Infof("Updated %v of %v actors", updatedCnt, len(actorList))
 }
 
 func RestoreActionActors(actionActorsList []BackupActionActor, overwrite bool, db *gorm.DB) {

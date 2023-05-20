@@ -27,3 +27,8 @@ func (i ExternalReference) genericSingleActorScraper(req *restful.Request, resp 
 	tasks.ScrapeActor(uint(r.ActorId), r.URL)
 	resp.WriteHeader(http.StatusOK)
 }
+
+func (i ExternalReference) genericActorScraperBySite(req *restful.Request, resp *restful.Response) {
+	siteId := req.PathParameter("site-id")
+	go tasks.ScrapeActorBySite(siteId)
+}

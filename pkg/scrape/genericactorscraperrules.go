@@ -37,7 +37,7 @@ func (siteActorScrapeRules ActorScraperRules) BuildRules() {
 
 	siteDetails = GenericScraperRuleSet{}
 	siteDetails.Domain = "www.sexlikereal.com"
-	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url ", Selector: `script[type="application/ld+json"]:contains("\/schema.org\/\",\"@type\": \"Person")`, PostProcessing: []PostProcessing{{Function: "jsonString", Params: []string{"image"}}}})
+	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "image_url", Selector: `script[type="application/ld+json"]:contains("\/schema.org\/\",\"@type\": \"Person")`, PostProcessing: []PostProcessing{{Function: "jsonString", Params: []string{"image"}}}})
 	siteDetails.SiteRules = append(siteDetails.SiteRules, GenericActorScraperRule{XbvrField: "birth_date", Selector: `script[type="application/ld+json"]:contains("\/schema.org\/\",\"@type\": \"Person")`,
 		PostProcessing: []PostProcessing{
 			{Function: "jsonString", Params: []string{"birthDate"}},

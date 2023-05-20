@@ -81,7 +81,7 @@ func StasyQVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out cha
 			e.ForEach(`img`, func(id int, e *colly.HTMLElement) {
 				imgUrl = e.Attr("src")
 			})
-			sc.ActorDetails[name] = models.ActorDetails{Source: sc.ScraperID + " scrape", ProfileUrl: e.Request.AbsoluteURL(e.Attr("href")), ImageUrl: imgUrl}
+			sc.ActorDetails[name] = models.ActorDetails{ProfileUrl: e.Request.AbsoluteURL(e.Attr("href")), ImageUrl: imgUrl}
 		})
 
 		// Date

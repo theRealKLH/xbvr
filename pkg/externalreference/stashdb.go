@@ -5,7 +5,6 @@ import (
 	"math"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/xbapps/xbvr/pkg/models"
 )
@@ -272,20 +271,20 @@ func UpdateXbvrActor(performer models.StashPerformer, xbvrActorID uint) {
 		changed = actor.AddToAliases(performer.Name) || changed
 	}
 
-	changed = checkAndSetStringActorField(&actor.Gender, "gender", performer.Gender, actor.ID) || changed
-	changed = checkAndSetDateActorField(&actor.BirthDate, "birth_date", performer.BirthDate, actor.ID) || changed
-	changed = checkAndSetStringActorField(&actor.Nationality, "nationality", performer.Country, actor.ID) || changed
-	changed = checkAndSetStringActorField(&actor.Ethnicity, "ethnicity", performer.Ethnicity, actor.ID) || changed
-	changed = checkAndSetIntActorField(&actor.Height, "height", performer.Height, actor.ID) || changed
-	changed = checkAndSetStringActorField(&actor.EyeColor, "eye_color", performer.EyeColor, actor.ID) || changed
-	changed = checkAndSetStringActorField(&actor.HairColor, "eye_color", performer.HairColor, actor.ID) || changed
-	changed = checkAndSetStringActorField(&actor.CupSize, "cup_size", performer.CupSize, actor.ID) || changed
-	changed = checkAndSetIntActorField(&actor.BandSize, "band_size", int(math.Round(float64(performer.BandSize)*2.54)), actor.ID) || changed
-	changed = checkAndSetIntActorField(&actor.HipSize, "hip_size", int(math.Round(float64(performer.HipSize)*2.54)), actor.ID) || changed
-	changed = checkAndSetIntActorField(&actor.WaistSize, "waist_size", int(math.Round(float64(performer.WaistSize)*2.54)), actor.ID) || changed
-	changed = checkAndSetStringActorField(&actor.BreastType, "breast_type", performer.BreastType, actor.ID) || changed
-	changed = checkAndSetIntActorField(&actor.StartYear, "start_year", performer.CareerStartYear, actor.ID) || changed
-	changed = checkAndSetIntActorField(&actor.EndYear, "end_year", performer.CareerEndYear, actor.ID) || changed
+	changed = CheckAndSetStringActorField(&actor.Gender, "gender", performer.Gender, actor.ID) || changed
+	changed = CheckAndSetDateActorField(&actor.BirthDate, "birth_date", performer.BirthDate, actor.ID) || changed
+	changed = CheckAndSetStringActorField(&actor.Nationality, "nationality", performer.Country, actor.ID) || changed
+	changed = CheckAndSetStringActorField(&actor.Ethnicity, "ethnicity", performer.Ethnicity, actor.ID) || changed
+	changed = CheckAndSetIntActorField(&actor.Height, "height", performer.Height, actor.ID) || changed
+	changed = CheckAndSetStringActorField(&actor.EyeColor, "eye_color", performer.EyeColor, actor.ID) || changed
+	changed = CheckAndSetStringActorField(&actor.HairColor, "eye_color", performer.HairColor, actor.ID) || changed
+	changed = CheckAndSetStringActorField(&actor.CupSize, "cup_size", performer.CupSize, actor.ID) || changed
+	changed = CheckAndSetIntActorField(&actor.BandSize, "band_size", int(math.Round(float64(performer.BandSize)*2.54)), actor.ID) || changed
+	changed = CheckAndSetIntActorField(&actor.HipSize, "hip_size", int(math.Round(float64(performer.HipSize)*2.54)), actor.ID) || changed
+	changed = CheckAndSetIntActorField(&actor.WaistSize, "waist_size", int(math.Round(float64(performer.WaistSize)*2.54)), actor.ID) || changed
+	changed = CheckAndSetStringActorField(&actor.BreastType, "breast_type", performer.BreastType, actor.ID) || changed
+	changed = CheckAndSetIntActorField(&actor.StartYear, "start_year", performer.CareerStartYear, actor.ID) || changed
+	changed = CheckAndSetIntActorField(&actor.EndYear, "end_year", performer.CareerEndYear, actor.ID) || changed
 
 	for _, tattoo := range performer.Tattoos {
 		tattooString := convertBodyModToString(tattoo)
@@ -434,6 +433,9 @@ func MatchAkaPerformers() {
 						ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId}
 					extref.XbvrLinks = append(extref.XbvrLinks, xbvrLink)
 					extref.Save()
+					var data models.StashPerformer
+					json.Unmarshal([]byte(extref.ExternalData), &data)
+					UpdateXbvrActor(data, actor.ID)
 				}
 			}
 			if len(extref.XbvrLinks) == 0 {
@@ -447,6 +449,10 @@ func MatchAkaPerformers() {
 								ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId}
 							extref.XbvrLinks = append(extref.XbvrLinks, xbvrLink)
 							extref.Save()
+							var data models.StashPerformer
+							json.Unmarshal([]byte(extref.ExternalData), &data)
+							UpdateXbvrActor(data, actor.ID)
+
 						}
 					}
 				}
@@ -728,77 +734,4 @@ func LinkOnXbvrAkaGroups() {
 
 		}
 	}
-}
-
-// check if the field was modified by the user, if so don't change it
-func checkAndSetStringActorField(actor_field *string, fieldName string, newValue string, actor_id uint) bool {
-	if *actor_field == newValue {
-		return false
-	}
-	if *actor_field == "" {
-		*actor_field = newValue
-		return true
-	}
-
-	// check if the field was modified by the user, if so don't change it
-	db, _ := models.GetDB()
-	defer db.Close()
-	var action models.ActionActor
-	db.Where("source = 'edit_actor' and actor_id = ? and changed_column = ?", actor_id, fieldName).Order("ID desc").First(&action)
-	if action.NewValue != "" && action.NewValue != "0" {
-		return false
-	}
-
-	*actor_field = newValue
-	return true
-}
-
-// check if the field was modified by the user, if so don't change it
-func checkAndSetIntActorField(actor_field *int, fieldName string, newValue int, actor_id uint) bool {
-	if *actor_field == newValue {
-		return false
-	}
-	if *actor_field == 0 {
-		*actor_field = newValue
-		return true
-	}
-
-	// check if the field was modified by the user, if so don't change it
-	db, _ := models.GetDB()
-	defer db.Close()
-	var action models.ActionActor
-	db.Where("source = 'edit_actor' and actor_id = ? and changed_column = ?", actor_id, fieldName).Order("ID desc").First(&action)
-	if action.NewValue != "" && action.NewValue != "0" {
-		return false
-	}
-
-	*actor_field = newValue
-	return true
-}
-
-// check if the field was modified by the user, if so don't change it
-func checkAndSetDateActorField(actor_field *time.Time, fieldName string, newValue string, actor_id uint) bool {
-	bd, err := time.Parse("2006-01-02", newValue)
-	if err != nil {
-		return false
-	}
-	if bd.Equal(*actor_field) {
-		return false
-	}
-	if actor_field.IsZero() {
-		*actor_field = bd
-		return true
-	}
-
-	// check if the field was modified by the user, if so don't change it
-	db, _ := models.GetDB()
-	defer db.Close()
-	var action models.ActionActor
-	db.Where("source = 'edit_actor' and actor_id = ? and changed_column = ?", actor_id, fieldName).Order("ID desc").First(&action)
-	if action.NewValue != "" && action.NewValue != "0001-01-01T00:00:00Z" {
-		return false
-	}
-
-	*actor_field = bd
-	return true
 }

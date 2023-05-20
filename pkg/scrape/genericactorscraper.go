@@ -15,11 +15,14 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/markphelps/optional"
 	"github.com/tidwall/gjson"
+	"github.com/xbapps/xbvr/pkg/externalreference"
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
 func GenericActorScrapers() {
-	log.Infof("Scraping Actors Started")
+	tlog := log.WithField("task", "scrape")
+	tlog.Infof("Scraping Actor Details from Sites")
+
 	db, _ := models.GetDB()
 	defer db.Close()
 
@@ -67,19 +70,25 @@ func GenericActorScrapers() {
 		where erl.id is null
 			`
 	}
+
+	lastMessage := time.Now()
 	db.Raw(sqlcmd).Scan(&output)
-	for _, row := range output {
+	for idx, row := range output {
+		if time.Since(lastMessage) > 30*time.Second {
+			tlog.Infof("Scanned %v of %v Actors Links to Sites", idx, len(output))
+			lastMessage = time.Now()
+		}
 		var actor models.Actor
 		actor.GetIfExistByPK(row.Id)
 		for source, rule := range siteRules.Rules {
 			// this handles examples like 'vrphub-vrhush scrape' needing to match 'vrphub scrape'
 			if strings.HasPrefix(row.Linktype, strings.TrimSuffix(source, " scrape")) {
-				applyRules(row.Url, row.Linktype, rule, &actor)
+				applyRules(row.Url, row.Linktype, rule, &actor, false)
 			}
 		}
 	}
 
-	log.Infof("Scraping Actors Completed")
+	tlog.Infof("Scraping Actors Completed")
 }
 func GenericSingleActorScraper(actorId uint, actorPage string) {
 	log.Infof("Scraping Actor Details from %s", actorPage)
@@ -99,14 +108,60 @@ func GenericSingleActorScraper(actorId uint, actorPage string) {
 
 	for source, rule := range siteRules.Rules {
 		if extRefLink.ExternalSource == source {
-			applyRules(actorPage, source, rule, &actor)
+			applyRules(actorPage, source, rule, &actor, true)
 		}
 	}
 
 	log.Infof("Scraping Actor Details from %s Completed", actorPage)
 }
 
-func applyRules(actorPage string, source string, rules GenericScraperRuleSet, actor *models.Actor) {
+// scrapes all the actors for the site, will overwrite existing actor details
+func GenericActorScrapersBySite(site string) {
+	tlog := log.WithField("task", "scrape")
+	tlog.Infof("Scraping Actor Details from %s", site)
+
+	db, _ := models.GetDB()
+	defer db.Close()
+
+	siteRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
+	siteRules.BuildRules()
+
+	type outputList struct {
+		Id       uint
+		Url      string
+		Linktype string
+	}
+
+	er := models.ExternalReference{}
+	scrapeId := er.DetermineActorScraperBySiteId(site)
+
+	var actors []models.Actor
+	db.Debug().Select("DISTINCT actors.*").
+		Joins("JOIN scene_cast ON scene_cast.actor_id = actors.id").
+		Joins("JOIN scenes ON scenes.id = scene_cast.scene_id").
+		Where("scenes.scraper_id = ?", site).
+		Find(&actors)
+
+	lastMessage := time.Now()
+	for idx, actor := range actors {
+		if time.Since(lastMessage) > 30*time.Second {
+			tlog.Infof("Scanned %v of %v Actors", idx, len(actors))
+			lastMessage = time.Now()
+		}
+
+		// find the url for the actor for this site
+		var extreflink models.ExternalReferenceLink
+		db.Where(`internal_table = 'actors' and internal_db_id = ? and external_source = ?`, actor.ID, scrapeId).First(&extreflink)
+		for source, rule := range siteRules.Rules {
+			if source == scrapeId {
+				applyRules(extreflink.ExternalId, scrapeId, rule, &actor, true)
+			}
+		}
+	}
+	tlog.Infof("Scraping Actor Details Completed")
+}
+
+func applyRules(actorPage string, source string, rules GenericScraperRuleSet, actor *models.Actor, overwrite bool) {
 	actorCollector := CreateCollector(rules.Domain)
 	data := make(map[string]string)
 	actorChanged := false
@@ -122,7 +177,7 @@ func applyRules(actorPage string, source string, rules GenericScraperRuleSet, ac
 				if len(rule.PostProcessing) > 0 {
 					result = postProcessing(rule, result, nil)
 				}
-				if assignField(rule.XbvrField, result, actor) {
+				if assignField(rule.XbvrField, result, actor, overwrite) {
 					actorChanged = true
 				}
 				// log.Infof("set %s to %s", rule.XbvrField, result)
@@ -152,7 +207,7 @@ func applyRules(actorPage string, source string, rules GenericScraperRuleSet, ac
 						if len(rule.PostProcessing) > 0 {
 							result = postProcessing(rule, result, e)
 						}
-						if assignField(rule.XbvrField, result, actor) {
+						if assignField(rule.XbvrField, result, actor, overwrite) {
 							actorChanged = true
 						}
 						//log.Infof("set %s to %s", rule.XbvrField, result)
@@ -232,36 +287,36 @@ func checkActorUpdateRequired(linkUrl string, actor *models.Actor) bool {
 
 	return true
 }
-func assignField(field string, value string, actor *models.Actor) bool {
+func assignField(field string, value string, actor *models.Actor, overwrite bool) bool {
 	changed := false
 	switch field {
 	case "birth_date":
 		// check Birth date is not in the last 15 years, some sites just set the BirthDay to the current date when created
 		// also don't trust existing birth_dates on Jan 1, probably a site been lazy
 		t, err := time.Parse("2006-01-02", value)
-		if err == nil && (actor.BirthDate.IsZero() || (actor.BirthDate.Month() == 1 && actor.BirthDate.Day() == 1)) && t.Before(time.Now().AddDate(-15, 0, 0)) {
+		if err == nil && (overwrite || actor.BirthDate.IsZero() || (actor.BirthDate.Month() == 1 && actor.BirthDate.Day() == 1)) && t.Before(time.Now().AddDate(-15, 0, 0)) && externalreference.CheckAndSetDateActorField(&actor.BirthDate, field, value, actor.ID) {
 			actor.BirthDate = t
 			changed = true
 		}
 	case "height":
 		num, _ := strconv.Atoi(value)
-		if actor.Height == 0 && num > 0 {
+		if (overwrite || actor.Height == 0) && num > 0 && externalreference.CheckAndSetIntActorField(&actor.Height, field, num, actor.ID) {
 			actor.Height = num
 			changed = true
 		}
 	case "weight":
 		num, _ := strconv.Atoi(value)
-		if actor.Weight == 0 && num > 0 {
+		if (overwrite || actor.Weight == 0) && num > 0 && externalreference.CheckAndSetIntActorField(&actor.Weight, field, num, actor.ID) {
 			actor.Weight = num
 			changed = true
 		}
 	case "nationality":
-		if actor.Nationality == "" && value > "" {
+		if (overwrite || actor.Nationality == "") && value > "" && externalreference.CheckAndSetStringActorField(&actor.Nationality, field, value, actor.ID) {
 			actor.Nationality = value
 			changed = true
 		}
 	case "ethnicity":
-		if actor.Ethnicity == "" && value > "" {
+		if (overwrite || actor.Ethnicity == "") && value > "" && externalreference.CheckAndSetStringActorField(&actor.Ethnicity, field, value, actor.ID) {
 			switch strings.ToLower(value) {
 			case "white":
 				value = "Caucasian"
@@ -270,45 +325,45 @@ func assignField(field string, value string, actor *models.Actor) bool {
 			changed = true
 		}
 	case "gender":
-		if actor.Gender == "" && value > "" {
+		if (overwrite || actor.Gender == "") && value > "" && externalreference.CheckAndSetStringActorField(&actor.Gender, field, value, actor.ID) {
 			actor.Gender = value
 			changed = true
 		}
 	case "band_size":
 		num, _ := strconv.Atoi(value)
-		if actor.BandSize == 0 && num > 0 {
+		if (overwrite || actor.BandSize == 0) && num > 0 && externalreference.CheckAndSetIntActorField(&actor.BandSize, field, num, actor.ID) {
 			actor.BandSize = num
 			changed = true
 		}
 	case "waist_size":
 		num, _ := strconv.Atoi(value)
-		if actor.WaistSize == 0 && num > 0 {
+		if (overwrite || actor.WaistSize == 0) && num > 0 && externalreference.CheckAndSetIntActorField(&actor.WaistSize, field, num, actor.ID) {
 			actor.WaistSize = num
 			changed = true
 		}
 	case "hip_size":
 		num, _ := strconv.Atoi(value)
-		if actor.HipSize == 0 && num > 0 {
+		if (overwrite || actor.HipSize == 0) && num > 0 && externalreference.CheckAndSetIntActorField(&actor.HipSize, field, num, actor.ID) {
 			actor.HipSize = num
 			changed = true
 		}
 	case "cup_size":
-		if actor.CupSize == "" && value > "" {
+		if (overwrite || actor.CupSize == "") && value > "" && externalreference.CheckAndSetStringActorField(&actor.CupSize, field, value, actor.ID) {
 			actor.CupSize = value
 			changed = true
 		}
 	case "eye_color":
-		if actor.EyeColor == "" && value > "" {
+		if (overwrite || actor.EyeColor == "") && value > "" && externalreference.CheckAndSetStringActorField(&actor.EyeColor, field, value, actor.ID) {
 			actor.EyeColor = value
 			changed = true
 		}
 	case "hair_color":
-		if actor.HairColor == "" && value > "" {
+		if (overwrite || actor.HairColor == "") && value > "" && externalreference.CheckAndSetStringActorField(&actor.HairColor, field, value, actor.ID) {
 			actor.HairColor = value
 			changed = true
 		}
 	case "biography":
-		if actor.Biography == "" && value > "" {
+		if (overwrite || actor.Biography == "") && value > "" && externalreference.CheckAndSetStringActorField(&actor.Biography, field, value, actor.ID) {
 			actor.Biography = value
 			changed = true
 		}
@@ -316,7 +371,8 @@ func assignField(field string, value string, actor *models.Actor) bool {
 		if actor.AddToImageArray(value) {
 			changed = true
 		}
-		if actor.ImageUrl == "" && value != "" {
+		if value != "" && (actor.ImageUrl == "" || (overwrite && !actor.CheckForSetImage())) {
+			//if (overwrite || actor.ImageUrl == "" ) && value != ""  && !actor.CheckForSetImage() {
 			actor.ImageUrl = value
 			changed = true
 		}
@@ -359,13 +415,13 @@ func assignField(field string, value string, actor *models.Actor) bool {
 	case "start_year":
 		num, _ := strconv.Atoi(value)
 		// alow the start year to move back, as sites may only list when the actor started with them
-		if (actor.StartYear == 0 || actor.StartYear > num) && num > 0 {
+		if (overwrite || actor.StartYear == 0 || actor.StartYear > num) && num > 0 {
 			actor.StartYear = num
 			changed = true
 		}
 	case "end_year":
 		num, _ := strconv.Atoi(value)
-		if actor.StartYear == 0 && num > 0 {
+		if (overwrite || actor.StartYear == 0) && num > 0 {
 			actor.StartYear = num
 			changed = true
 		}

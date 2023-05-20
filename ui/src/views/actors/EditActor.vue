@@ -254,10 +254,17 @@ export default {
       }
 
       let  dataArray = []
-      this.actor.urlArray.forEach(url => {
+      const existingurls = JSON.parse(this.actor.urls)      
+      this.actor.urlArray.forEach(url => {        
+        let t = ''
+        existingurls.forEach(u => {
+          if (u.url==url) {
+            t=u.type
+          }
+        })
         dataArray.push({
           url,
-          type: ''          
+          type: t
         })
       })
       

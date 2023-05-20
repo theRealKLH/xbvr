@@ -559,6 +559,39 @@ func checkStringArrayChanged(field_name string, newValue *string, actorField *st
 	}
 }
 
+func checkURLArrayChanged(field_name string, newValue *string, actorField *string, actorId uint) {
+	if *actorField != *newValue {
+		var actorArray []models.ActorLink
+		var newArray []string
+		json.Unmarshal([]byte(*newValue), &newArray)
+		json.Unmarshal([]byte(*actorField), &actorArray)
+		for _, actorField := range actorArray {
+			exists := false
+			for _, newField := range newArray {
+				if newField == actorField.Url {
+					exists = true
+				}
+			}
+			if !exists {
+				models.AddActionActor(actorId, "edit_actor", "delete", field_name, actorField.Url)
+			}
+		}
+		for _, newField := range newArray {
+			exists := false
+			for _, actorField := range actorArray {
+				if newField == actorField.Url {
+					exists = true
+				}
+			}
+			if !exists {
+				models.AddActionActor(actorId, "edit_actor", "add", field_name, newField)
+			}
+		}
+
+		*actorField = *newValue
+	}
+}
+
 func (i ActorResource) setActorImage(req *restful.Request, resp *restful.Response) {
 	var r RequestSetActorImage
 	err := req.ReadEntity(&r)
@@ -610,14 +643,14 @@ func (i ActorResource) deleteActorImage(req *restful.Request, resp *restful.Resp
 		log.Error(err)
 		return
 	}
-	var currentImages []models.Image
-	var newImages []models.Image
+	var currentImages []string
+	var newImages []string
 	if actor.ImageArr == "" {
 		return
 	}
 	json.Unmarshal([]byte(actor.ImageArr), &currentImages)
 	for _, img := range currentImages {
-		if img.URL != r.Url {
+		if img != r.Url {
 			newImages = append(newImages, img)
 		}
 	}
@@ -627,12 +660,15 @@ func (i ActorResource) deleteActorImage(req *restful.Request, resp *restful.Resp
 		if len(newImages) == 0 {
 			actor.ImageUrl = ""
 		} else {
-			actor.ImageUrl = newImages[0].URL
+			actor.ImageUrl = newImages[0]
 		}
 	}
 
 	jsonarray, _ := json.Marshal(newImages)
 	actor.ImageArr = string(jsonarray)
+	if actor.ImageArr == "null" {
+		actor.ImageArr = "[]"
+	}
 	actor.Save()
 
 	aa := models.ActionActor{ActorID: actor.ID, ActionType: "delete", Source: "edit_actor", ChangedColumn: "image_arr", NewValue: r.Url}
@@ -801,10 +837,10 @@ func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Resp
 	// add new links
 	for _, url := range urls {
 		var extref models.ExternalReference
-		extref.FindExternalUrl(determinExternSourceFromUrl(url), url)
+		extref.FindExternalUrl(extref.DetermineActorScraperByUrl(url), url)
 		if extref.ID == 0 {
 			// create new extref + link
-			extref.ExternalSource = determinExternSourceFromUrl(url)
+			extref.ExternalSource = extref.DetermineActorScraperByUrl(url)
 			if extref.ExternalSource == "stashdb performer" {
 				extref.ExternalId = strings.ReplaceAll(url, "https://stashdb.org/performers/", "")
 			} else {
@@ -835,27 +871,4 @@ func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Resp
 		}
 	}
 	resp.WriteHeaderAndEntity(http.StatusOK, readExtRefs(id))
-}
-func determinExternSourceFromUrl(url string) string {
-	url = strings.ToLower(url)
-	re := regexp.MustCompile(`^(https?:\/\/)?(www\.)?([a-zA-Z0-9\-]+)\.[a-zA-Z]{2,}(\/.*)?`)
-	match := re.FindStringSubmatch(url)
-	if len(match) < 3 {
-		return ""
-	}
-
-	switch match[3] {
-	case "stashdb":
-		return "stashdb performer"
-	case "sexlikereal":
-		return "slr scrape"
-	case "xsinsvr":
-		return "sinsvr scrape"
-	case "naughtyamerica":
-		return "naughtyamericavr scrape"
-	case "virtualporn":
-		return "bvr scrape"
-	default:
-		return match[3] + " scrape"
-	}
 }
