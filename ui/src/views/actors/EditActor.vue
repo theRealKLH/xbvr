@@ -254,20 +254,21 @@ export default {
       }
 
       let  dataArray = []
-      const existingurls = JSON.parse(this.actor.urls)      
-      this.actor.urlArray.forEach(url => {        
-        let t = ''
-        existingurls.forEach(u => {
-          if (u.url==url) {
-            t=u.type
-          }
+      if (this.actor.urls != "") {
+        const existingurls = JSON.parse(this.actor.urls)      
+        this.actor.urlArray.forEach(url => {        
+          let t = ''
+          existingurls.forEach(u => {
+            if (u.url==url) {
+              t=u.type
+            }
+          })
+          dataArray.push({
+            url,
+            type: t
+          })
         })
-        dataArray.push({
-          url,
-          type: t
-        })
-      })
-      
+      }
       this.actor.height = parseInt(this.actor.height)
       this.actor.weight = parseInt(this.actor.weight)
       this.actor.start_year = parseInt(this.actor.start_year)
@@ -278,7 +279,7 @@ export default {
       this.actor.image_arr = JSON.stringify(this.actor.imageArray)  
 
       await ky.post(`/api/actor/edit/${this.actor.id}`, { json: { ...this.actor } })
-      await ky.post(`/api/actor/edit_extrefs/${this.actor.id}`, { json: this.extrefsArray  })      
+      await ky.post(`/api/actor/edit_extrefs/${this.actor.id}`, { json: this.extrefsArray  })
       await ky.get('/api/actor/'+this.actor.id).json().then(data => {
         if (data.id != 0){
           this.$store.state.overlay.actordetails.actor = data          
