@@ -35,8 +35,8 @@
       </b-tooltip>
 
       <span class="is-pulled-right" style="font-size:11px;text-align:right;">                
-        <b-field grouped v-if="actor.birth_date != '0001-01-01T00:00:00Z'">
-          {{format(parseISO(actor.birth_date), "yyyy-MM-dd")}}
+        <b-field grouped>
+          <span v-if="actor.birth_date != '0001-01-01T00:00:00Z'">{{format(parseISO(actor.birth_date), "yyyy-MM-dd")}}</span>
         <vue-load-image>
           <img slot="image" :src="getImageURL('https://flagcdn.com/' + actor.nationality.toLowerCase() +'.svg')" style="height:10px;border: 1px solid black;margin-left:0.5em;" />
         </vue-load-image>
