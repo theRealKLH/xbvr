@@ -3,6 +3,7 @@ package externalreference
 import (
 	"encoding/json"
 	"math"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -47,7 +48,7 @@ func ApplySceneRules() {
 
 	matchOnSceneUrl()
 
-	config := GetExternalReferenceConfig()
+	config := GetSiteUrlMatchingRules()
 	for sitename, configSite := range config.Sites {
 		if len(configSite.Rules) > 0 {
 			if configSite.StashId == "" {
@@ -90,9 +91,12 @@ func matchOnSceneUrl() {
 		for _, url := range scene.URLs {
 			if url.Type == "STUDIO" {
 				var xbvrScene models.Scene
-				url_no_slash := strings.TrimRight(url.URL, "/")
 				for _, scene := range unmatchedXbvrScenes {
-					if strings.EqualFold(scene.SceneURL, url_no_slash) || strings.EqualFold(scene.SceneURL, url_no_slash+"/") {
+					sceneurl := removeQueryFromURL(scene.SceneURL)
+					tmpurl := removeQueryFromURL(url.URL)
+					sceneurl = simplifyUrl(sceneurl)
+					tmpurl = simplifyUrl(tmpurl)
+					if strings.EqualFold(sceneurl, tmpurl) {
 						xbvrScene = scene
 					}
 				}
@@ -110,6 +114,24 @@ func matchOnSceneUrl() {
 		}
 	}
 }
+func removeQueryFromURL(rawURL string) string {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+
+	parsedURL.RawQuery = ""
+	lastSlashIndex := strings.LastIndex(parsedURL.Path, "/")
+	if lastSlashIndex == -1 {
+		// No forward slash found, return the original input
+		return parsedURL.Path
+	}
+	cleanedURL := parsedURL.String()
+	return cleanedURL
+}
+func simplifyUrl(url string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(url, "http://", ""), "https://", ""), "www.", ""), "/", ""), "-", ""), "_", "")
+}
 
 // if an unmatched scene has a trailing number try to match on the  xbvr scene_id for that studio
 func matchSceneOnRules(sitename string) {
@@ -117,7 +139,7 @@ func matchSceneOnRules(sitename string) {
 	db, _ := models.GetDB()
 	defer db.Close()
 
-	config := GetExternalReferenceConfig()
+	config := GetSiteUrlMatchingRules()
 	if config.Sites[sitename].StashId == "" {
 		var ext models.ExternalReference
 		ext.FindExternalId("stashdb studios", sitename)
@@ -157,14 +179,14 @@ func matchSceneOnRules(sitename string) {
 							switch rule.XbvrField {
 							case "scene_id":
 								for _, scene := range xbrScenes {
-									if strings.HasPrefix(scene.SceneID, match[rule.StashMatchResultPosition]) {
+									if strings.HasSuffix(scene.SceneID, match[rule.StashMatchResultPosition]) {
 										xbvrScene = scene
 										break
 									}
 								}
 							case "scene_url":
 								for _, scene := range xbrScenes {
-									if strings.Contains(strings.ToLower(scene.SceneID), strings.ToLower(match[rule.StashMatchResultPosition])) {
+									if strings.Contains(strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(scene.SceneURL), "-", " "), "_", " "), strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(match[rule.StashMatchResultPosition]), "-", " "), "_", " ")) {
 										xbvrScene = scene
 										break
 									}
@@ -553,7 +575,7 @@ const (
 	RegexGroup MatchType = "regex_group"
 )
 
-func GetExternalReferenceConfig() ExtRefConfig {
+func GetSiteUrlMatchingRules() ExtRefConfig {
 	db, _ := models.GetDB()
 	defer db.Close()
 
@@ -594,11 +616,10 @@ func initalizeConfig() ExtRefConfig {
 	config.Sites["povcentralvr"] = ExtDbSiteConfig{StashId: "57391302-bac4-4f15-a64d-7cd9a9c152e0"}
 	config.Sites["realhotvr"] = ExtDbSiteConfig{StashId: "cf3510db-5fe5-4212-b5da-da27b5352d1c"}
 	config.Sites["realitylovers"] = ExtDbSiteConfig{StashId: "3463e72d-6af3-497f-b841-9119065d2916"}
-	config.Sites["realjamvr"] = ExtDbSiteConfig{StashId: "2059fbf9-94fe-4986-8565-2a7cc199636a"}
 	config.Sites["sinsvr"] = ExtDbSiteConfig{StashId: "805820d0-8fb2-4b04-8c0c-6e392842131b"}
 	config.Sites["squeeze-vr"] = ExtDbSiteConfig{StashId: "b2d048da-9180-4e43-b41a-bdb4d265c8ec"}
 	config.Sites["swallowbay"] = ExtDbSiteConfig{StashId: "17ff0143-3961-4d38-a80a-fe72407a274d"}
-	config.Sites["tonightsgirlfriend"] = ExtDbSiteConfig{StashId: "8c63244e-3ddb-4bb2-a44c-a8427e19cb5b"}
+	config.Sites["tonightsgirlfriend"] = ExtDbSiteConfig{StashId: "69a66a95-15de-4b0a-9537-7f15b358392f"}
 	config.Sites["virtualrealamateur"] = ExtDbSiteConfig{StashId: "cac0470b-7802-4946-b5ef-e101e166cdaf"}
 	config.Sites["virtualtaboo"] = ExtDbSiteConfig{StashId: "1e6defb1-d3a4-4f0c-8616-acd5c343ca2b"}
 	config.Sites["virtualxporn"] = ExtDbSiteConfig{StashId: "d55815ac-955f-45a0-a0fa-f6ad335e212d"}
@@ -637,6 +658,12 @@ func initalizeConfig() ExtRefConfig {
 	config.Sites["virtualrealporn"] = ExtDbSiteConfig{StashId: "191ba106-00d3-4f01-8c57-0cf0e88a2a50",
 		Rules: []MatchRule{{XbvrMatchType: RegexMatch, XbvrField: "scene_url", XbvrMatch: `virtualrealporn`, XbvrMatchResultPosition: 3, StashMatchType: RegexGroup, StashField: "", StashRule: `(\/[^\/]+)\/?$`, StashMatchResultPosition: 1},
 			{XbvrMatchType: RegexMatch, XbvrField: "scene_url", XbvrMatch: `virtualrealporn`, XbvrMatchResultPosition: 3, StashMatchType: RegexGroup, StashField: "", StashRule: `(\/[^\/]+)(-\d{3,10}?)\/?$`, StashMatchResultPosition: 1}}}
+	config.Sites["realjamvr"] = ExtDbSiteConfig{StashId: "2059fbf9-94fe-4986-8565-2a7cc199636a",
+		Rules: []MatchRule{{XbvrMatchType: RegexMatch, XbvrField: "scene_url", XbvrMatch: `(realjamvr.com)(.*)\/(\d*-?)([^\/]+)\/?$`, XbvrMatchResultPosition: 4, StashMatchType: RegexGroup, StashField: "", StashRule: `(realjamvr.com)(.*)\/(\d*-?)([^\/]+)\/?$`, StashMatchResultPosition: 4}}}
+	config.Sites["sexbabesvr"] = ExtDbSiteConfig{StashId: "b80d419c-4a81-44c9-ae79-d9614dd30351",
+		Rules: []MatchRule{{XbvrMatchType: RegexMatch, XbvrField: "scene_url", XbvrMatch: `(sexbabesvr.com)(.*)\/([^\/]+)\/?$`, XbvrMatchResultPosition: 3, StashMatchType: RegexGroup, StashField: "", StashRule: `(sexbabesvr.com)(.*)\/([^\/]+)\/?$`, StashMatchResultPosition: 3}}}
+	config.Sites["lethalhardcorevr"] = ExtDbSiteConfig{StashId: "3a9883f6-9642-4be1-9a65-d8d13eadbdf0",
+		Rules: []MatchRule{{XbvrMatchType: RegexMatch, XbvrField: "scene_url", XbvrMatch: `(lethalhardcorevr.com).*\/(\d{6,8})\/.*`, XbvrMatchResultPosition: 2, StashMatchType: RegexGroup, StashField: "", StashRule: `(lethalhardcorevr.com).*\/(\d{6,8})\/.*`, StashMatchResultPosition: 2}}}
 
 	db.Where(&models.Site{IsEnabled: true}).Order("id").Find(&sites)
 	for _, site := range sites {

@@ -172,8 +172,12 @@ func IndexScenes(scenes *[]models.Scene) {
 		tlog.Infof("Adding scraped scenes to search index...")
 
 		total := 0
-
+		lastMessage := time.Now()
 		for i := range *scenes {
+			if time.Since(lastMessage) > 30*time.Second {
+				tlog.Infof("Indexed %v of %v scenes", total, len(*scenes))
+				lastMessage = time.Now()
+			}
 			scene := (*scenes)[i]
 			if idx.Exist(scene.SceneID) {
 				// Remove old index, as data may have been updated

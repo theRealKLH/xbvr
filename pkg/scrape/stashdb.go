@@ -85,7 +85,7 @@ func StashDb() {
 	db, _ := models.GetDB()
 	defer db.Close()
 
-	ExtRefConfig = externalreference.GetExternalReferenceConfig()
+	ExtRefConfig = externalreference.GetSiteUrlMatchingRules()
 	db.Where(&models.Site{IsEnabled: true}).Order("id").Find(&sites)
 
 	for _, site := range sites {

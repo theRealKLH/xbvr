@@ -782,10 +782,6 @@ func RestoreBundle(request RequestRestore) {
 			if request.InclScenes || request.InclFileLinks {
 				UpdateSceneStatus(db)
 			}
-			if request.InclScenes {
-				CountTags()
-				IndexScenes(&(bundleData.Scenes))
-			}
 
 			if request.InclScenes || request.InclActorAkas {
 				var aka models.Aka
@@ -803,6 +799,11 @@ func RestoreBundle(request RequestRestore) {
 			}
 			if request.InclActorActions {
 				RestoreActionActors(bundleData.ActionActors, request.Overwrite, db)
+			}
+
+			if request.InclScenes {
+				CountTags()
+				IndexScenes(&(bundleData.Scenes))
 			}
 
 			tlog.Infof("Restore complete")

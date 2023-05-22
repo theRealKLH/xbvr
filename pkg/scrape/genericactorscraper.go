@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gocolly/colly/v2"
@@ -18,6 +19,15 @@ import (
 	"github.com/xbapps/xbvr/pkg/externalreference"
 	"github.com/xbapps/xbvr/pkg/models"
 )
+
+type outputList struct {
+	Id       uint
+	Url      string
+	Linktype string
+}
+
+var mutex sync.Mutex
+var semaphore chan struct{}
 
 func GenericActorScrapers() {
 	tlog := log.WithField("task", "scrape")
@@ -36,11 +46,6 @@ func GenericActorScrapers() {
 
 	sqlcmd := ""
 
-	type outputList struct {
-		Id       uint
-		Url      string
-		Linktype string
-	}
 	var output []outputList
 	switch db.Dialect().GetName() {
 	// gets the list of an actors Urls for scraper and join to external_reference_links to see if the haven't been linked
@@ -71,25 +76,61 @@ func GenericActorScrapers() {
 			`
 	}
 
+	processed := 0
 	lastMessage := time.Now()
 	db.Raw(sqlcmd).Scan(&output)
-	for idx, row := range output {
-		if time.Since(lastMessage) > 30*time.Second {
-			tlog.Infof("Scanned %v of %v Actors Links to Sites", idx, len(output))
-			lastMessage = time.Now()
-		}
-		var actor models.Actor
-		actor.GetIfExistByPK(row.Id)
-		for source, rule := range siteRules.Rules {
-			// this handles examples like 'vrphub-vrhush scrape' needing to match 'vrphub scrape'
-			if strings.HasPrefix(row.Linktype, strings.TrimSuffix(source, " scrape")) {
-				applyRules(row.Url, row.Linktype, rule, &actor, false)
+
+	var wg sync.WaitGroup
+	concurrentLimit := 20 // Maximum number of concurrent tasks
+
+	semaphore = make(chan struct{}, concurrentLimit)
+	actorSemMap := make(map[uint]chan struct{})
+
+	for _, row := range output {
+		wg.Add(1)
+		go func(row outputList) {
+
+			// Check if a semaphore exists for the actor (don't want to process 2 links for an actor at the same time)
+			mutex.Lock()
+			actorSem, exists := actorSemMap[row.Id]
+			if !exists {
+				// Create a new semaphore for the customer
+				actorSem = make(chan struct{}, 1)
+				actorSemMap[row.Id] = actorSem
 			}
+			mutex.Unlock()
+			actorSem <- struct{}{} // Acquire the semaphore
+			semaphore <- struct{}{}
+
+			processAuthorLink(row, siteRules, &wg)
+			processed += 1
+			<-actorSem
+
+			if time.Since(lastMessage) > 15*time.Second {
+				tlog.Infof("Scanned %v of %v Actors Links to Sites", processed, len(output))
+				lastMessage = time.Now()
+			}
+
+		}(row)
+	}
+	wg.Wait()
+	tlog.Infof("Scraping Actors Completed2")
+}
+
+func processAuthorLink(row outputList, siteRules ActorScraperRules, wg *sync.WaitGroup) {
+	defer wg.Done()
+	var actor models.Actor
+	actor.GetIfExistByPK(row.Id)
+	for source, rule := range siteRules.Rules {
+		// this handles examples like 'vrphub-vrhush scrape' needing to match 'vrphub scrape'
+		if strings.HasPrefix(row.Linktype, strings.TrimSuffix(source, " scrape")) {
+			applyRules(row.Url, row.Linktype, rule, &actor, false)
 		}
 	}
-
-	tlog.Infof("Scraping Actors Completed")
+	// Release the semaphore
+	<-semaphore
 }
+
 func GenericSingleActorScraper(actorId uint, actorPage string) {
 	log.Infof("Scraping Actor Details from %s", actorPage)
 	db, _ := models.GetDB()
