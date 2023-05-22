@@ -199,6 +199,8 @@ func (o *ExternalReference) DetermineActorScraperByUrl(url string) string {
 		return "naughtyamericavr scrape"
 	case "virtualporn":
 		return "bvr scrape"
+	case "fuckpassvr":
+		return "fuckpassvr-native scrape"
 	default:
 		return site + " scrape"
 	}

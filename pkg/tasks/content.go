@@ -1349,7 +1349,6 @@ func RestoreExternalRefs(extRefs []models.ExternalReference, overwrite bool, db 
 			}
 		}
 	}
-	tlog.Info("%Refreshing Actor Image Urls")
 	externalreference.UpdateAllPerformerData()
 	tlog.Infof("%v External References restored", addedCnt)
 }
