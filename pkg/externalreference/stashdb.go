@@ -384,6 +384,9 @@ func matchPerformerName(scene models.StashScene, xbvrScene models.Scene, matchLe
 						ExternalReferenceID: ref.ID, ExternalSource: ref.ExternalSource, ExternalId: ref.ExternalId}
 					ref.XbvrLinks = append(ref.XbvrLinks, xbvrLink)
 					ref.AddUpdateWithId()
+					var data models.StashPerformer
+					json.Unmarshal([]byte(ref.ExternalData), &data)
+					UpdateXbvrActor(data, xbvrActor.ID)
 
 					actor := models.Actor{ID: xbvrActor.ID}
 					db.Where(&actor).First(&actor)
@@ -521,6 +524,10 @@ func ReverseMatch() {
 							ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId}
 						extref.XbvrLinks = append(extref.XbvrLinks, xbvrLink)
 						extref.Save()
+						var data models.StashPerformer
+						json.Unmarshal([]byte(extref.ExternalData), &data)
+						UpdateXbvrActor(data, actor.ID)
+
 					} else {
 						log.Info("match no actor")
 					}
@@ -535,8 +542,13 @@ func ReverseMatch() {
 								ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId}
 							extref.XbvrLinks = append(extref.XbvrLinks, xbvrLink)
 							extref.Save()
+							var data models.StashPerformer
+							json.Unmarshal([]byte(extref.ExternalData), &data)
+							UpdateXbvrActor(data, actor.ID)
 						} else {
-							UpdateXbvrActor(performance.Performer, actor.ID)
+							var data models.StashPerformer
+							json.Unmarshal([]byte(extref.ExternalData), &data)
+							UpdateXbvrActor(data, actor.ID)
 							log.Info("match")
 						}
 						break sceneLoop

@@ -114,7 +114,7 @@ func GenericActorScrapers() {
 		}(row)
 	}
 	wg.Wait()
-	tlog.Infof("Scraping Actors Completed2")
+	tlog.Infof("Scraping Actors Completed")
 }
 
 func processAuthorLink(row outputList, siteRules ActorScraperRules, wg *sync.WaitGroup) {
