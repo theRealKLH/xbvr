@@ -40,7 +40,7 @@ func GetCountryList() []CountryDetails {
 	db, _ := GetDB()
 	defer db.Close()
 
-	var out []CountryDetails
+	out := []CountryDetails{}
 	var kvs KV
 
 	kvs.Key = "countries"

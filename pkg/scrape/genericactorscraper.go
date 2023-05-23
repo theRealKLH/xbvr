@@ -60,7 +60,7 @@ func GenericActorScrapers() {
 		SELECT actorlist.id, url, linktype
 		FROM actorlist
 		LEFT JOIN external_reference_links erl ON erl.internal_db_id = actorlist.id AND external_source = linktype
-		WHERE linktype like '"% scrape"' and erl.id IS NULL
+		where erl.id is null and linktype like '% scrape'
 			`
 	case "sqlite3":
 		sqlcmd = `
@@ -72,7 +72,7 @@ func GenericActorScrapers() {
 		)
 		select actorlist.id, url, linktype from actorlist
 		left join external_reference_links erl on erl.internal_db_id = actorlist.id and external_source = linktype
-		where erl.id is null
+		where erl.id is null and linktype like '% scrape'
 			`
 	}
 
