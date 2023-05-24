@@ -11,6 +11,16 @@ import (
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
+type ActorScraperRulesMap map[string]GenericScraperRuleSet
+type ActorScraperRules struct {
+	Rules ActorScraperRulesMap
+}
+type GenericScraperRuleSet struct {
+	SiteRules []GenericActorScraperRule `json:"rules"`
+	Domain    string                    `json:"domain"`
+	isJson    bool                      `json:"isJson"`
+}
+
 func (siteActorScrapeRules ActorScraperRules) BuildRules() {
 	db, _ := models.GetDB()
 	defer db.Close()

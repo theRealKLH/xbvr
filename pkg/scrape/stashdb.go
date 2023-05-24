@@ -70,7 +70,7 @@ type Image struct {
 	Height int    `json:"height"`
 }
 
-var ExtRefConfig externalreference.ExtRefConfig
+var StashConfig externalreference.StashConfig
 
 func StashDb() {
 	if config.Config.Advanced.StashApiKey == "" {
@@ -85,7 +85,7 @@ func StashDb() {
 	db, _ := models.GetDB()
 	defer db.Close()
 
-	ExtRefConfig = externalreference.GetSiteUrlMatchingRules()
+	StashConfig = externalreference.GetSiteUrlMatchingRules()
 	db.Where(&models.Site{IsEnabled: true}).Order("id").Find(&sites)
 
 	for _, site := range sites {
@@ -97,25 +97,25 @@ func StashDb() {
 		studio := findStudio(sitename, "name")
 
 		// check for a config entry if site not found
-		if studio.Data.Studio.ID == "" && ExtRefConfig.Sites[site.ID].StashId != "" {
-			studio = findStudio(ExtRefConfig.Sites[site.ID].StashId, "id")
+		if studio.Data.Studio.ID == "" && StashConfig.Sites[site.ID].StashId != "" {
+			studio = findStudio(StashConfig.Sites[site.ID].StashId, "id")
 		}
 
 		if studio.Data.Studio.ID != "" {
-			siteConfig := ExtRefConfig.Sites[site.ID]
+			siteConfig := StashConfig.Sites[site.ID]
 			if siteConfig.StashId == "" {
 				siteConfig.StashId = studio.Data.Studio.ID
-				ExtRefConfig.Sites[site.ID] = siteConfig
-				jsonData, _ := json.MarshalIndent(ExtRefConfig, "", "  ")
+				StashConfig.Sites[site.ID] = siteConfig
+				jsonData, _ := json.MarshalIndent(StashConfig, "", "  ")
 				kvs := models.KV{Key: "stashdb", Value: string(jsonData)}
 				kvs.Save()
 			}
 			if strings.HasSuffix(site.Name, "SLR)") {
 				if len(siteConfig.Rules) == 0 {
 					siteConfig.StashId = studio.Data.Studio.ID
-					siteConfig.Rules = append(siteConfig.Rules, externalreference.MatchRule{XbvrMatchType: externalreference.RegexMatch, XbvrField: "scene_id", XbvrMatch: `-\d+$`, XbvrMatchResultPosition: 0, StashMatchType: externalreference.RegexGroup, StashField: "", StashRule: `(sexlikereal).com\/[^0-9]*(-\d*)`, StashMatchResultPosition: 2})
-					ExtRefConfig.Sites[site.ID] = siteConfig
-					jsonData, _ := json.MarshalIndent(ExtRefConfig, "", "  ")
+					siteConfig.Rules = append(siteConfig.Rules, externalreference.SceneMatchRule{XbvrField: "scene_id", XbvrMatch: `-\d+$`, XbvrMatchResultPosition: 0, StashField: "", StashRule: `(sexlikereal).com\/[^0-9]*(-\d*)`, StashMatchResultPosition: 2})
+					StashConfig.Sites[site.ID] = siteConfig
+					jsonData, _ := json.MarshalIndent(StashConfig, "", "  ")
 					kvs := models.KV{Key: "stashdb", Value: string(jsonData)}
 					kvs.Save()
 				}
@@ -123,9 +123,9 @@ func StashDb() {
 			if strings.HasSuffix(site.Name, "POVR)") {
 				if len(siteConfig.Rules) == 0 {
 					siteConfig.StashId = studio.Data.Studio.ID
-					siteConfig.Rules = append(siteConfig.Rules, externalreference.MatchRule{XbvrMatchType: externalreference.RegexMatch, XbvrField: "scene_id", XbvrMatch: `-\d+$`, XbvrMatchResultPosition: 0, StashMatchType: externalreference.RegexGroup, StashField: "", StashRule: `(povr|wankzvr).com\/[^0-9]*(-\d*)`, StashMatchResultPosition: 2})
-					ExtRefConfig.Sites[site.ID] = siteConfig
-					jsonData, _ := json.MarshalIndent(ExtRefConfig, "", "  ")
+					siteConfig.Rules = append(siteConfig.Rules, externalreference.SceneMatchRule{XbvrField: "scene_id", XbvrMatch: `-\d+$`, XbvrMatchResultPosition: 0, StashField: "", StashRule: `(povr|wankzvr).com\/[^0-9]*(-\d*)`, StashMatchResultPosition: 2})
+					StashConfig.Sites[site.ID] = siteConfig
+					jsonData, _ := json.MarshalIndent(StashConfig, "", "  ")
 					kvs := models.KV{Key: "stashdb", Value: string(jsonData)}
 					kvs.Save()
 				}
