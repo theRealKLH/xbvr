@@ -70,7 +70,7 @@ type Image struct {
 	Height int    `json:"height"`
 }
 
-var StashConfig externalreference.StashConfig
+var Config models.ActorScraperConfig
 
 func StashDb() {
 	if config.Config.Advanced.StashApiKey == "" {
@@ -85,7 +85,7 @@ func StashDb() {
 	db, _ := models.GetDB()
 	defer db.Close()
 
-	StashConfig = externalreference.GetSiteUrlMatchingRules()
+	Config = models.BuildActorScraperRules()
 	db.Where(&models.Site{IsEnabled: true}).Order("id").Find(&sites)
 
 	for _, site := range sites {
@@ -97,46 +97,19 @@ func StashDb() {
 		studio := findStudio(sitename, "name")
 
 		// check for a config entry if site not found
-		if studio.Data.Studio.ID == "" && StashConfig.Sites[site.ID].StashId != "" {
-			studio = findStudio(StashConfig.Sites[site.ID].StashId, "id")
+		if studio.Data.Studio.ID == "" && Config.StashSceneMatching[site.ID].StashId != "" {
+			studio = findStudio(Config.StashSceneMatching[site.ID].StashId, "id")
 		}
 
 		if studio.Data.Studio.ID != "" {
-			siteConfig := StashConfig.Sites[site.ID]
-			if siteConfig.StashId == "" {
-				siteConfig.StashId = studio.Data.Studio.ID
-				StashConfig.Sites[site.ID] = siteConfig
-				jsonData, _ := json.MarshalIndent(StashConfig, "", "  ")
-				kvs := models.KV{Key: "stashdb", Value: string(jsonData)}
-				kvs.Save()
-			}
-			if strings.HasSuffix(site.Name, "SLR)") {
-				if len(siteConfig.Rules) == 0 {
-					siteConfig.StashId = studio.Data.Studio.ID
-					siteConfig.Rules = append(siteConfig.Rules, externalreference.SceneMatchRule{XbvrField: "scene_id", XbvrMatch: `-\d+$`, XbvrMatchResultPosition: 0, StashField: "", StashRule: `(sexlikereal).com\/[^0-9]*(-\d*)`, StashMatchResultPosition: 2})
-					StashConfig.Sites[site.ID] = siteConfig
-					jsonData, _ := json.MarshalIndent(StashConfig, "", "  ")
-					kvs := models.KV{Key: "stashdb", Value: string(jsonData)}
-					kvs.Save()
-				}
-			}
-			if strings.HasSuffix(site.Name, "POVR)") {
-				if len(siteConfig.Rules) == 0 {
-					siteConfig.StashId = studio.Data.Studio.ID
-					siteConfig.Rules = append(siteConfig.Rules, externalreference.SceneMatchRule{XbvrField: "scene_id", XbvrMatch: `-\d+$`, XbvrMatchResultPosition: 0, StashField: "", StashRule: `(povr|wankzvr).com\/[^0-9]*(-\d*)`, StashMatchResultPosition: 2})
-					StashConfig.Sites[site.ID] = siteConfig
-					jsonData, _ := json.MarshalIndent(StashConfig, "", "  ")
-					kvs := models.KV{Key: "stashdb", Value: string(jsonData)}
-					kvs.Save()
-				}
-			}
+			siteConfig := Config.StashSceneMatching[site.ID]
 			var ext models.ExternalReference
 			ext.FindExternalId("stashdb studio", studio.Data.Studio.ID)
 			if ext.ID == 0 || studio.Data.Studio.Updated.UTC().Sub(ext.ExternalDate.UTC()).Seconds() > 1 {
 				jsonData, _ := json.MarshalIndent(studio.Data.Studio, "", "  ")
 				ext := models.ExternalReference{ExternalSource: "stashdb studio", ExternalURL: "https://stashdb.org/studios/" + studio.Data.Studio.ID,
 					ExternalId: studio.Data.Studio.ID, ExternalDate: studio.Data.Studio.Updated, ExternalData: string(jsonData),
-					XbvrLinks: []models.ExternalReferenceLink{{InternalTable: "sites", InternalNameId: site.ID, ExternalSource: "stashdb studio", ExternalId: "https://stashdb.org/studios/" + studio.Data.Studio.ID}}}
+					XbvrLinks: []models.ExternalReferenceLink{{InternalTable: "sites", InternalNameId: site.ID, ExternalSource: "stashdb studio", ExternalId: studio.Data.Studio.ID}}}
 				ext.AddUpdateWithId()
 			}
 			processStudioPerformers(studio.Data.Studio.ID)

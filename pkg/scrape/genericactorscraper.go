@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/markphelps/optional"
 	"github.com/tidwall/gjson"
 	"github.com/xbapps/xbvr/pkg/externalreference"
 	"github.com/xbapps/xbvr/pkg/models"
@@ -36,8 +35,7 @@ func GenericActorScrapers() {
 	db, _ := models.GetDB()
 	defer db.Close()
 
-	siteRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
-	siteRules.BuildRules()
+	scraperConfig := models.BuildActorScraperRules()
 
 	var actors []models.Actor
 	db.Preload("Scenes").
@@ -102,7 +100,7 @@ func GenericActorScrapers() {
 			actorSem <- struct{}{} // Acquire the semaphore
 			semaphore <- struct{}{}
 
-			processAuthorLink(row, siteRules, &wg)
+			processAuthorLink(row, scraperConfig.GenericActorScrapingConfig, &wg)
 			processed += 1
 			<-actorSem
 
@@ -117,11 +115,11 @@ func GenericActorScrapers() {
 	tlog.Infof("Scraping Actors Completed")
 }
 
-func processAuthorLink(row outputList, siteRules ActorScraperRules, wg *sync.WaitGroup) {
+func processAuthorLink(row outputList, siteRules map[string]models.GenericScraperRuleSet, wg *sync.WaitGroup) {
 	defer wg.Done()
 	var actor models.Actor
 	actor.GetIfExistByPK(row.Id)
-	for source, rule := range siteRules.Rules {
+	for source, rule := range siteRules {
 		// this handles examples like 'vrphub-vrhush scrape' needing to match 'vrphub scrape'
 		if strings.HasPrefix(row.Linktype, strings.TrimSuffix(source, " scrape")) {
 			applyRules(row.Url, row.Linktype, rule, &actor, false)
@@ -139,15 +137,14 @@ func GenericSingleActorScraper(actorId uint, actorPage string) {
 	var actor models.Actor
 	actor.ID = actorId
 	db.Find(&actor)
-	siteRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
-	siteRules.BuildRules()
+	scraperConfig := models.BuildActorScraperRules()
 
 	var extRefLink models.ExternalReferenceLink
 	db.Preload("ExternalReference").
 		Where(&models.ExternalReferenceLink{ExternalId: actorPage, InternalDbId: actor.ID}).
 		First(&extRefLink)
 
-	for source, rule := range siteRules.Rules {
+	for source, rule := range scraperConfig.GenericActorScrapingConfig {
 		if extRefLink.ExternalSource == source {
 			applyRules(actorPage, source, rule, &actor, true)
 		}
@@ -164,8 +161,7 @@ func GenericActorScrapersBySite(site string) {
 	db, _ := models.GetDB()
 	defer db.Close()
 
-	siteRules := ActorScraperRules{Rules: ActorScraperRulesMap{}}
-	siteRules.BuildRules()
+	scraperConfig := models.BuildActorScraperRules()
 
 	type outputList struct {
 		Id       uint
@@ -193,7 +189,7 @@ func GenericActorScrapersBySite(site string) {
 		// find the url for the actor for this site
 		var extreflink models.ExternalReferenceLink
 		db.Where(`internal_table = 'actors' and internal_db_id = ? and external_source = ?`, actor.ID, scrapeId).First(&extreflink)
-		for source, rule := range siteRules.Rules {
+		for source, rule := range scraperConfig.GenericActorScrapingConfig {
 			if source == scrapeId {
 				applyRules(extreflink.ExternalId, scrapeId, rule, &actor, true)
 			}
@@ -202,12 +198,12 @@ func GenericActorScrapersBySite(site string) {
 	tlog.Infof("Scraping Actor Details Completed")
 }
 
-func applyRules(actorPage string, source string, rules GenericScraperRuleSet, actor *models.Actor, overwrite bool) {
+func applyRules(actorPage string, source string, rules models.GenericScraperRuleSet, actor *models.Actor, overwrite bool) {
 	actorCollector := CreateCollector(rules.Domain)
 
 	data := make(map[string]string)
 	actorChanged := false
-	if rules.isJson {
+	if rules.IsJson {
 		actorCollector.OnResponse(func(r *colly.Response) {
 			if r.StatusCode != 200 {
 				return
@@ -264,7 +260,7 @@ func applyRules(actorPage string, source string, rules GenericScraperRuleSet, ac
 			}
 		})
 	}
-	if rules.isJson {
+	if rules.IsJson {
 		actorCollector.Request("GET", actorPage, nil, nil, nil)
 	} else {
 		actorCollector.Visit(actorPage)
@@ -291,7 +287,7 @@ func applyRules(actorPage string, source string, rules GenericScraperRuleSet, ac
 		extref.AddUpdateWithId()
 	}
 }
-func getSubRuleResult(rule GenericActorScraperRule, e *colly.HTMLElement) string {
+func getSubRuleResult(rule models.GenericActorScraperRule, e *colly.HTMLElement) string {
 	recordCnt := 1
 	var result string
 	e.ForEach(rule.Selector, func(id int, e *colly.HTMLElement) {
@@ -484,7 +480,7 @@ func getRegexResult(value string, pattern string, pos int) string {
 
 }
 
-func postProcessing(rule GenericActorScraperRule, value string, htmlElement *colly.HTMLElement) string {
+func postProcessing(rule models.GenericActorScraperRule, value string, htmlElement *colly.HTMLElement) string {
 	for _, postprocessing := range rule.PostProcessing {
 		switch postprocessing.Function {
 		case "Lookup Country":
@@ -535,31 +531,6 @@ func postProcessing(rule GenericActorScraperRule, value string, htmlElement *col
 		}
 	}
 	return value
-}
-
-type GenericActorScraperRule struct {
-	XbvrField      string           `json:"xbvr_field"`
-	Selector       string           `json:"selector`        // css selector to identify data
-	PostProcessing []PostProcessing `json:"post_processing` // call routines for specific handling, eg dates parshing, json extracts, etc, see PostProcessing function
-	First          optional.Int     `json:"first"`          // used to limit how many results you want, the start position you want.  First index pos	 is 0
-	Last           optional.Int     `json:"last"`           // used to limit how many results you want, the end position you want
-	ResultType     string           `json:"result_type"`    // how to treat the result, text, attribute value, json
-	Attribute      string           `json:"attribute`       // name of the atribute you want
-}
-type PostProcessing struct {
-	Function string                  `json:"post_processing` // call routines for specific handling, eg dates, json extracts
-	Params   []string                `json:"params`          // used to pass params to PostProcessing functions, eg date format
-	SubRule  GenericActorScraperRule `json:"sub_rule`        // sub rules allow for a foreach within a foreach, use Function CollyForEach
-}
-
-type ActorScraperRulesMap map[string]GenericScraperRuleSet
-type ActorScraperRules struct {
-	Rules ActorScraperRulesMap
-}
-type GenericScraperRuleSet struct {
-	SiteRules []GenericActorScraperRule `json:"rules"`
-	Domain    string                    `json:"domain"`
-	isJson    bool                      `json:"isJson"`
 }
 
 func getCountryCode(countryName string) string {
