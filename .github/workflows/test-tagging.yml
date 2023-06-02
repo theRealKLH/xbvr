@@ -38,12 +38,11 @@ jobs:
     needs: get-latest-releases
     runs-on: ubuntu-latest
     steps:
-      - env:
-          OUTPUT1: ${{needs.get-latest-releases.outputs.output1}}
       - uses: actions/checkout@v2 # required to clone your code
       - name: pushover-actions
         uses: umahmood/pushover-actions@main
         env:
+          OUTPUT1: ${{needs.get-latest-releases.outputs.output1}}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
         with:
