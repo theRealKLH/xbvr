@@ -4,6 +4,8 @@ on:
 jobs:
   get-latest-releases:
     runs-on: ubuntu-20.04
+    outputs:
+      output1: ${{steps.tagger.outputs.tag}}
     steps:
     - uses: oprypin/find-latest-tag@v1.1.0
       with:
@@ -32,16 +34,3 @@ jobs:
       run: |
         echo 'Output from Find Tag: ${{steps.tagger.outputs.tag}}'
         
-  pushover-actions:
-    needs: get-latest-releases
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2 # required to clone your code
-      - name: pushover-actions
-        uses: umahmood/pushover-actions@main
-        env:
-          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
-          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
-        with:
-          status: ${{ job.status }}
-          title: 'theRealKLH-patch-1 deployment status'
