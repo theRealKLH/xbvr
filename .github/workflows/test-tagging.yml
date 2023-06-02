@@ -35,8 +35,8 @@ jobs:
         echo 'Output from Find Tag: ${{steps.tagger.outputs.tag}}'
         
   pushover-actions:
-    needs: get-latest-releases
     runs-on: ubuntu-latest
+    needs: get-latest-releases
     steps:
       - uses: actions/checkout@v2 # required to clone your code
       - name: pushover-actions
