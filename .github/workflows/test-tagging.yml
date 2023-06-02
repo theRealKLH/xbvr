@@ -2,6 +2,38 @@ name: Testing Tags
 on:
   workflow_dispatch:
 jobs:
+  get-latest-releases:
+    runs-on: ubuntu-20.04
+    outputs:
+      output1: ${{steps.tagger.outputs.tag}}
+    steps:
+    - uses: oprypin/find-latest-tag@v1.1.0
+      with:
+        repository: therealklh/xbvr  # The repository to scan.
+        releases-only: false  # We know that all relevant tags have a GitHub release for them.
+        prefix: '0.3.'
+      id: xbvr  # The step ID to refer to later.
+
+    - run: echo "XBVR is at version ${{ steps.xbvr.outputs.tag }}"
+#  tagit:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
+        ref: master
+    - name: Find Tag
+      id: tagger
+      uses: jimschubert/query-tag-action@v2
+      with:
+        exclude: '*beta*'
+#        include: '0.3.*'
+        commit-ish: 'HEAD~'
+        # if you unshallow in a separate step, use the following option:
+        skip-unshallow: 'true'
+    - name: Show Tag
+      id: display
+      run: |
+        echo 'Output from Find Tag: ${{steps.tagger.outputs.tag}}'
+        
   pushover-actions:
 #    needs: get-latest-releases
     runs-on: ubuntu-latest
