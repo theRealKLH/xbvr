@@ -5,7 +5,7 @@ jobs:
   get-latest-releases:
     runs-on: ubuntu-20.04
     outputs:
-      output1: ${{steps.tagger.outputs.tag}}
+      output1: ${{ steps.tagger.outputs.tag }}
     steps:
     - uses: oprypin/find-latest-tag@v1.1.0
       with:
@@ -32,11 +32,13 @@ jobs:
     - name: Show Tag
       id: display
       run: |
-        echo 'Output from Find Tag: ${{steps.tagger.outputs.tag}}'
+        echo 'Output from Find Tag: ${{ steps.tagger.outputs.tag }}'
         
   pushover-actions:
 #    needs: get-latest-releases
     runs-on: ubuntu-latest
+    env: 
+      OUTPUT1: ${{needs.get-latest-releases.outputs.output1}}
     steps:
       - uses: actions/checkout@v2 # required to clone your code
       - name: pushover-actions
