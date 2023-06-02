@@ -33,8 +33,8 @@ jobs:
         echo 'Output from Find Tag: ${{steps.tagger.outputs.tag}}'
         
   pushover-actions:
-    runs-on: ubuntu-latest
     needs: get-latest-releases
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2 # required to clone your code
       - name: pushover-actions
@@ -45,4 +45,3 @@ jobs:
         with:
           status: ${{ job.status }}
           title: 'theRealKLH-patch-1 deployment status'
-          message: '$OUTPUT1'
