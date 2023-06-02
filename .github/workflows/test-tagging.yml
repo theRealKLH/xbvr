@@ -38,8 +38,8 @@ jobs:
     needs: get-latest-releases
     runs-on: ubuntu-latest
     steps:
-      - env:
-          OUTPUT1: ${{needs.get-latest-releases.outputs.output1}}
+#      - env:
+#          OUTPUT1: ${{needs.get-latest-releases.outputs.output1}}
       - uses: actions/checkout@v2 # required to clone your code
       - name: pushover-actions
         uses: umahmood/pushover-actions@main
@@ -49,4 +49,4 @@ jobs:
         with:
           status: ${{ job.status }}
           title: 'theRealKLH-patch-1 deployment status'
-          message: '$OUTPUT1'
+          message: '${{ steps.tagger.outputs.tag }}'
