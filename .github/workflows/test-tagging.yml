@@ -4,8 +4,6 @@ on:
 jobs:
   get-latest-releases:
     runs-on: ubuntu-20.04
-    outputs:
-      output1: ${{steps.tagger.outputs.tag}}
     steps:
     - uses: oprypin/find-latest-tag@v1.1.0
       with:
