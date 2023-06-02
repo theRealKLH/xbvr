@@ -4,6 +4,8 @@ on:
 jobs:
   get-latest-releases:
     runs-on: ubuntu-20.04
+    outputs:
+      output1: ${{steps.tagger.outputs.tag}}
     steps:
     - uses: oprypin/find-latest-tag@v1.1.0
       with:
@@ -40,7 +42,6 @@ jobs:
       - name: pushover-actions
         uses: umahmood/pushover-actions@main
         env:
-          OUTPUT1: ${{needs.get-latest-releases.outputs.output1}}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
         with:
