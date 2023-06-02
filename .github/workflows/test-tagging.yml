@@ -35,11 +35,11 @@ jobs:
         echo 'Output from Find Tag: ${{ steps.tagger.outputs.tag }}'
         
   pushover-actions:
-#    needs: get-latest-releases
+    needs: get-latest-releases
     runs-on: ubuntu-latest
-    env: 
-      OUTPUT1: ${{needs.get-latest-releases.outputs.output1}}
     steps:
+      - env:
+          OUTPUT1: ${{needs.get-latest-releases.outputs.output1}}
       - uses: actions/checkout@v2 # required to clone your code
       - name: pushover-actions
         uses: umahmood/pushover-actions@main
