@@ -49,4 +49,4 @@ jobs:
         with:
           status: ${{ job.status }}
           title: 'theRealKLH-patch-1 deployment status'
-          message: '${{ steps.xbvr.outputs.tag }}'
+#          message: '${{ steps.xbvr.outputs.tag }}'
