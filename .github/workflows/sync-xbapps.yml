@@ -35,8 +35,6 @@ jobs:
   build-latest:
     needs: sync_with_upstream
     runs-on: ubuntu-latest
-    outputs:
-      output1: ${{steps.tagger.outputs.tag}}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -70,7 +68,7 @@ jobs:
       - name: build the image
         run: |
           git checkout origin/util Dockerfile .yarnrc
-          docker buildx build --build-arg RELVER=${{steps.tagger.outputs.tag}} --build-arg vcs-ref=$(git rev-parse --short HEAD) --push \
+          docker buildx build --build-arg RELVER=${{steps.tagger.outputs.tag}} --push \
           --tag iamklh/xbvr:latest \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
@@ -78,8 +76,6 @@ jobs:
     needs: build-latest
     runs-on: ubuntu-latest
     steps:
-      - env:
-          OUTPUT1: ${{needs.build-latest.outputs.output1}}
       - uses: actions/checkout@v2 # required to clone your code
       - name: pushover-actions
         uses: umahmood/pushover-actions@main
