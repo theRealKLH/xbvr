@@ -87,10 +87,10 @@ func RealityLoversSite(wg *sync.WaitGroup, updateSite bool, knownScenes []string
 	if singleSceneURL == "" {
 		r, err := resty.New().R().
 			SetHeader("User-Agent", UserAgent).
-			Get("https://engine." + domain + "/content/videos?max=3000&page=0&pornstar=&category=&perspective=&sort=NEWEST")
+			Get("https://engine." + domain + "/content/search?max=100000&page=0&pornstar=0&category=0&s=")
 
 		if err != nil {
-			log.Errorf("Error fetching BaberoticaVR feed: %s", err)
+			log.Errorf("Error fetching RealityLovers feed: %s", err)
 			logScrapeFinished(scraperID, siteID)
 			return nil
 		}
