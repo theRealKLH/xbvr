@@ -1,6 +1,6 @@
 module github.com/xbapps/xbvr
 
-go 1.19
+go 1.20
 
 require (
 	github.com/ProtonMail/go-appdir v1.1.0
@@ -48,16 +48,16 @@ require (
 	github.com/putdotio/go-putio v1.7.1
 	github.com/robertkrimen/otto v0.2.1
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rs/cors v1.9.0
+	github.com/rs/cors v1.10.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/thoas/go-funk v0.9.3
-	github.com/tidwall/gjson v1.16.0
+	github.com/tidwall/gjson v1.17.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
-	github.com/xo/dburl v0.16.0
+	github.com/xo/dburl v0.17.0
 	golang.org/x/crypto v0.14.0
 	golang.org/x/net v0.17.0
-	golang.org/x/oauth2 v0.11.0
+	golang.org/x/oauth2 v0.13.0
 	golang.org/x/sys v0.13.0
 	golang.org/x/text v0.13.0
 	gopkg.in/gormigrate.v1 v1.6.0
