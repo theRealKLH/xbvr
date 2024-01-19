@@ -13,7 +13,7 @@ import (
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
-func TwoWebMediaSite(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, scraperID string, siteID string, URL string) error {
+func TwoWebMediaSite(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, scraperID string, siteID string, URL string, limitScraping bool) error {
 	defer wg.Done()
 	logScrapeStart(scraperID, siteID)
 
@@ -41,20 +41,19 @@ func TwoWebMediaSite(wg *sync.WaitGroup, updateSite bool, knownScenes []string, 
 
 		// Cover / ID
 		e.ForEach(`deo-video`, func(id int, e *colly.HTMLElement) {
-			sc.Covers = append(sc.Covers, strings.Split(e.Attr("cover-image"), "?")[0]+"?h=900")
+			sc.Covers = append(sc.Covers, e.Attr("cover-image"))
 		})
 		// Note: not all scenes have a deo-video element, only a regular img cover instead
 		if len(sc.Covers) == 0 {
 			e.ForEach(`div.container.pt-5 > div > div > img`, func(id int, e *colly.HTMLElement) {
-				sc.Covers = append(sc.Covers, strings.Split(e.Attr("src"), "?")[0]+"?h=900")
+				sc.Covers = append(sc.Covers, e.Attr("src"))
 			})
 		}
 
 		// Gallery
-		// Note: Limiting gallery to 900px in height as some are huge by default
 		e.ForEach(`div.gallery > div`, func(id int, e *colly.HTMLElement) {
 			if id > 0 {
-				sc.Gallery = append(sc.Gallery, strings.Split(e.ChildAttr("div.view > a", "href"), "?")[0]+"?h=900")
+				sc.Gallery = append(sc.Gallery, e.ChildAttr("div.view > a > img", "src"))
 			}
 		})
 
@@ -162,8 +161,10 @@ func TwoWebMediaSite(wg *sync.WaitGroup, updateSite bool, knownScenes []string, 
 	})
 
 	siteCollector.OnHTML(`ul.pagination a.page-link`, func(e *colly.HTMLElement) {
-		pageURL := e.Request.AbsoluteURL(e.Attr("href"))
-		siteCollector.Visit(pageURL)
+		if !limitScraping {
+			pageURL := e.Request.AbsoluteURL(e.Attr("href"))
+			siteCollector.Visit(pageURL)
+		}
 	})
 
 	siteCollector.OnHTML(`div.container div.card > a`, func(e *colly.HTMLElement) {
@@ -178,7 +179,7 @@ func TwoWebMediaSite(wg *sync.WaitGroup, updateSite bool, knownScenes []string, 
 	if singleSceneURL != "" {
 		sceneCollector.Visit(singleSceneURL)
 	} else {
-		siteCollector.Visit(URL)
+		siteCollector.Visit(URL + "?order=newest")
 	}
 
 	if updateSite {
@@ -188,12 +189,12 @@ func TwoWebMediaSite(wg *sync.WaitGroup, updateSite bool, knownScenes []string, 
 	return nil
 }
 
-func WankitNowVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string) error {
-	return TwoWebMediaSite(wg, updateSite, knownScenes, out, singleSceneURL, "wankitnowvr", "WankitNowVR", "https://wankitnowvr.com/videos/")
+func WankitNowVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string, limitScraping bool) error {
+	return TwoWebMediaSite(wg, updateSite, knownScenes, out, singleSceneURL, "wankitnowvr", "WankitNowVR", "https://wankitnowvr.com/videos/", limitScraping)
 }
 
-func ZexyVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string) error {
-	return TwoWebMediaSite(wg, updateSite, knownScenes, out, singleSceneURL, "zexyvr", "ZexyVR", "https://zexyvr.com/videos/")
+func ZexyVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string, limitScraping bool) error {
+	return TwoWebMediaSite(wg, updateSite, knownScenes, out, singleSceneURL, "zexyvr", "ZexyVR", "https://zexyvr.com/videos/", limitScraping)
 }
 
 func init() {
