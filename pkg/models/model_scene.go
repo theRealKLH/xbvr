@@ -34,12 +34,11 @@ type SceneCuepoint struct {
 }
 
 func (o *SceneCuepoint) Save() error {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
 	var err error = retry.Do(
 		func() error {
-			err := db.Save(&o).Error
+			err := commonDb.Save(&o).Error
 			if err != nil {
 				return err
 			}
@@ -61,7 +60,7 @@ type Scene struct {
 	UpdatedAt time.Time  `json:"updated_at" xbvrbackup:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"-" xbvrbackup:"-"`
 
-	SceneID         string    `json:"scene_id" xbvrbackup:"scene_id"`
+	SceneID         string    `gorm:"index" json:"scene_id" xbvrbackup:"scene_id"`
 	Title           string    `json:"title" sql:"type:varchar(1024);" xbvrbackup:"title"`
 	SceneType       string    `json:"scene_type" xbvrbackup:"scene_type"`
 	ScraperId       string    `json:"scraper_id" xbvrbackup:"scraper_id"`
@@ -76,8 +75,8 @@ type Scene struct {
 	Synopsis        string    `json:"synopsis" sql:"type:text;" xbvrbackup:"synopsis"`
 	ReleaseDate     time.Time `json:"release_date" xbvrbackup:"release_date"`
 	ReleaseDateText string    `json:"release_date_text" xbvrbackup:"release_date_text"`
-	CoverURL        string    `json:"cover_url" xbvrbackup:"cover_url"`
-	SceneURL        string    `json:"scene_url" xbvrbackup:"scene_url"`
+	CoverURL        string    `gorm:"size:500" json:"cover_url" xbvrbackup:"cover_url"`
+	SceneURL        string    `gorm:"size:500" json:"scene_url" xbvrbackup:"scene_url"`
 	MemberURL       string    `json:"members_url" xbvrbackup:"members_url"`
 	IsMultipart     bool      `json:"is_multipart" xbvrbackup:"is_multipart"`
 
@@ -133,12 +132,11 @@ type VideoSource struct {
 }
 
 func (i *Scene) Save() error {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
 	var err error = retry.Do(
 		func() error {
-			err := db.Save(&i).Error
+			err := commonDb.Save(&i).Error
 			if err != nil {
 				return err
 			}
@@ -162,10 +160,9 @@ func (i *Scene) FromJSON(data []byte) error {
 }
 
 func (o *Scene) GetIfExist(id string) error {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
-	return db.
+	return commonDb.
 		Preload("Tags").
 		Preload("Cast").
 		Preload("Files").
@@ -175,10 +172,9 @@ func (o *Scene) GetIfExist(id string) error {
 }
 
 func (o *Scene) GetIfExistByPK(id uint) error {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
-	return db.
+	return commonDb.
 		Preload("Tags").
 		Preload("Cast").
 		Preload("Files").
@@ -188,10 +184,9 @@ func (o *Scene) GetIfExistByPK(id uint) error {
 }
 
 func (o *Scene) GetIfExistURL(u string) error {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
-	return db.
+	return commonDb.
 		Preload("Tags").
 		Preload("Cast").
 		Preload("Files").
@@ -215,21 +210,19 @@ func (o *Scene) GetFunscriptTitle() string {
 }
 
 func (o *Scene) GetFiles() ([]File, error) {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
 	var files []File
-	db.Preload("Volume").Where(&File{SceneID: o.ID}).Find(&files)
+	commonDb.Preload("Volume").Where(&File{SceneID: o.ID}).Find(&files)
 
 	return files, nil
 }
 
 func (o *Scene) GetTotalWatchTime() int {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
 	totalResult := struct{ Total float64 }{}
-	db.Raw(`select sum(duration) as total from histories where scene_id = ?`, o.ID).Scan(&totalResult)
+	commonDb.Raw(`select sum(duration) as total from histories where scene_id = ?`, o.ID).Scan(&totalResult)
 
 	return int(totalResult.Total)
 }
@@ -240,14 +233,13 @@ func (o *Scene) GetVideoFiles() ([]File, error) {
 }
 
 func (o *Scene) GetVideoFilesSorted(sort string) ([]File, error) {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
 	var files []File
 	if sort == "" {
-		db.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "video").Find(&files)
+		commonDb.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "video").Find(&files)
 	} else {
-		db.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "video").Order(sort).Find(&files)
+		commonDb.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "video").Order(sort).Find(&files)
 	}
 
 	return files, nil
@@ -259,35 +251,32 @@ func (o *Scene) GetScriptFiles() ([]File, error) {
 }
 
 func (o *Scene) GetScriptFilesSorted(sort string) ([]File, error) {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
 	var files []File
 	if sort == "" {
-		db.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "script").Find(&files)
+		commonDb.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "script").Find(&files)
 	} else {
-		db.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "script").Order(sort).Find(&files)
+		commonDb.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "script").Order(sort).Find(&files)
 	}
 
 	return files, nil
 }
 
 func (o *Scene) GetHSPFiles() ([]File, error) {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
 	var files []File
-	db.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "hsp").Find(&files)
+	commonDb.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "hsp").Find(&files)
 
 	return files, nil
 }
 
 func (o *Scene) GetSubtitlesFiles() ([]File, error) {
-	db, _ := GetDB()
-	defer db.Close()
+	commonDb, _ := GetCommonDB()
 
 	var files []File
-	db.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "subtitles").Find(&files)
+	commonDb.Preload("Volume").Where("scene_id = ? AND type = ?", o.ID, "subtitles").Find(&files)
 
 	return files, nil
 }
