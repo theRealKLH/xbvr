@@ -1,10 +1,10 @@
-FROM node:16 as build-env
+FROM node:18 as build-env
 
 ### Install Go ###
 ARG TARGETPLATFORM
 ARG RELVER
 ARG vcs-ref
-ENV GO_VERSION=1.19.6 \
+ENV GO_VERSION=1.21.4 \
     GOPATH=$HOME/go-packages \
     GOROOT=$HOME/go
 ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
