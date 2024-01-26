@@ -1,4 +1,4 @@
-FROM node:21-bullseye as build-env
+FROM ubuntu:22.04 as build-env
 
 ### Install Go ###
 ARG TARGETPLATFORM
