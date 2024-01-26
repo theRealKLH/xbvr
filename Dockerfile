@@ -1,4 +1,4 @@
-FROM node:21 as build-env
+FROM node:21-bullseye as build-env
 
 ### Install Go ###
 ARG TARGETPLATFORM
