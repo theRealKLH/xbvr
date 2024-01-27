@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as build-env
+FROM node:18 as build-env
 
 ### Install Go ###
 ARG TARGETPLATFORM
