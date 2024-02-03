@@ -22,7 +22,7 @@ jobs:
         ref: master
     - name: Find Tag
       id: tagger
-      uses: jimschubert/query-tag-action@v2
+      uses: jimschubert/query-tag-action@v2.1
       with:
         exclude: '*beta*'
 #        include: '0.3.*'
