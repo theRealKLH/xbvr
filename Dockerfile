@@ -1,4 +1,4 @@
-FROM node:bookworm-slim as build-env
+FROM node:bullseye as build-env
 
 ### Install Go ###
 ARG TARGETPLATFORM
