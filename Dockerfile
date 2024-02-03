@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM node
 
 ### Install Go ###
 ARG TARGETPLATFORM
