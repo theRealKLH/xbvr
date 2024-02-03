@@ -28,3 +28,11 @@ EXPOSE 9998-9999
 VOLUME /root/.config/
 
 ENTRYPOINT ["/xbvr"]
+
+FROM gcr.io/distroless/base-debian12:debug as debug
+COPY --from=build-env /app/xbvr /
+
+EXPOSE 9998-9999
+VOLUME /root/.config/
+
+ENTRYPOINT ["/xbvr"]
