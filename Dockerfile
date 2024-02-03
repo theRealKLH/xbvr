@@ -1,4 +1,4 @@
-FROM node:21 as build-env
+FROM node:bookworm-slim as build-env
 
 ### Install Go ###
 ARG TARGETPLATFORM
@@ -21,7 +21,7 @@ RUN cd /app && \
     go generate && \
     go build -tags='json1' -ldflags "-w -X main.version=$RELVER -X main.commit=$vcs-ref" -o xbvr main.go
 
-FROM gcr.io/distroless/base
+FROM gcr.io/distroless/nodejs20-debian11
 COPY --from=build-env /app/xbvr /
 
 EXPOSE 9998-9999
