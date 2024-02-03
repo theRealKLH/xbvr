@@ -48,7 +48,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Grab Dockerfile
         run: |
-          git checkout origin/util -- Dockerfile .yarnrc
+          git checkout origin/util -- Dockerfile .yarnrc package.json
       - name: Build and push
         uses: docker/build-push-action@v5.1.0
         with:
