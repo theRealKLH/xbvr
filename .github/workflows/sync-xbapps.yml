@@ -73,6 +73,9 @@ jobs:
           docker buildx build --build-arg RELVER=${{steps.tagger.outputs.tag}} --build-arg vcs-ref=$(git rev-parse --short HEAD) --push \
           --tag iamklh/xbvr:latest \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
+          docker buildx build --build-arg RELVER='DEBUG' --build-arg vcs-ref=$(git rev-parse --short HEAD) --push \
+          --tag iamklh/xbvr:debug \
+          --platform linux/amd64,linux/arm/v7,linux/arm64 .
 
   pushover-actions:
     needs: build-latest
