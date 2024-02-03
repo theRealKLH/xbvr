@@ -35,4 +35,4 @@ COPY --from=build-env /app/xbvr /
 EXPOSE 9998-9999
 VOLUME /root/.config/
 
-ENTRYPOINT ["/xbvr"]
+CMD ["/xbvr"]
