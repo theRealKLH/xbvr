@@ -21,7 +21,7 @@ RUN cd /app && \
     go generate && \
     go build -tags='json1' -ldflags "-w -X main.version=$RELVER -X main.commit=$vcs-ref" -o xbvr main.go
 
-FROM gcr.io/distroless/base-debian12
+FROM gcr.io/distroless/base-debian12:debug as debug
 COPY --from=build-env /app/xbvr /
 
 EXPOSE 9998-9999
@@ -29,10 +29,10 @@ VOLUME /root/.config/
 
 ENTRYPOINT ["/xbvr"]
 
-FROM gcr.io/distroless/base-debian12:debug as debug
+FROM gcr.io/distroless/base-debian12
 COPY --from=build-env /app/xbvr /
 
 EXPOSE 9998-9999
 VOLUME /root/.config/
 
-CMD ["/xbvr"]
+ENTRYPOINT ["/xbvr"]
