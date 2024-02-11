@@ -79,9 +79,6 @@
       "autoprefixer": {}
     }
   },
-  "resolutions": {
-    "@achrinza/node-ipc": "9.2.8"
-    },
   "browserslist": [
     "> 1%",
     "last 2 versions"
