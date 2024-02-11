@@ -1,4 +1,4 @@
-FROM node:21 as build-env
+FROM node:18 as build-env
 
 ### Install Go ###
 ARG TARGETPLATFORM
