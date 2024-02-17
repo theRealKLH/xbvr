@@ -26,7 +26,7 @@ jobs:
         run: |
           git checkout origin/util -- Dockerfile .yarnrc
           docker buildx build --push \
-          --tag iamklh/xbvr:notofficial \
+          --tag iamklh/xbvr:nightly \
           --platform linux/amd64,linux/arm/v7,linux/arm64 .
   GHCR:
     runs-on: ubuntu-latest
@@ -56,7 +56,7 @@ jobs:
 #          file: refs/remotes/origin/util/Dockerfile
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          tags: ghcr.io/therealklh/xbvr:almostofficial          
+          tags: ghcr.io/therealklh/xbvr:nightly        
   PUSH:
     needs: [DH, GHCR]
     runs-on: ubuntu-latest
