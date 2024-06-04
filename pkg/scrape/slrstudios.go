@@ -3,6 +3,7 @@ package scrape
 import (
 	"encoding/json"
 	"html"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -148,14 +149,25 @@ func SexLikeReal(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 
 		// Cover
 		if !isTransScene {
-			coverURL := strings.Replace(gjson.Get(JsonMetadataA, "thumbnailUrl").String(), "app", "desktop", -1)
-			if len(coverURL) > 0 {
+			appCover := gjson.Get(JsonMetadataA, "thumbnailUrl").String()
+			desktopCover := strings.Replace(gjson.Get(JsonMetadataA, "thumbnailUrl").String(), "app", "desktop", -1)
+			desktopCresp, _ := http.Head(desktopCover)
+			if desktopCresp.StatusCode == 200 {
+				coverURL := desktopCover
 				sc.Covers = append(sc.Covers, coverURL)
 			} else {
-				e.ForEach(`link[as="image"]`, func(id int, e *colly.HTMLElement) {
-					sc.Covers = append(sc.Covers, e.Request.AbsoluteURL(e.Attr("href")))
-				})
+				appCresp, _ := http.Head(appCover)
+				if appCresp.StatusCode == 200 {
+					coverURL := appCover
+					sc.Covers = append(sc.Covers, coverURL)
+					defer appCresp.Body.Close()
+				} else {
+					e.ForEach(`link[as="image"]`, func(id int, e *colly.HTMLElement) {
+						sc.Covers = append(sc.Covers, e.Request.AbsoluteURL(e.Attr("href")))
+					})
+				}
 			}
+			defer desktopCresp.Body.Close()
 		} else {
 			posterURLFound := false
 			e.ForEach(`script[type="text/javascript"]`, func(id int, e *colly.HTMLElement) {
@@ -415,6 +427,10 @@ func appendFilenames(sc *models.ScrapedScene, siteID string, filenameRegEx *rege
 	// Only shown for logged in users so need to generate them
 	// Format: SLR_siteID_Title_<Resolutions>_SceneID_<LR/TB>_<180/360>.mp4
 	if !isTransScene {
+		// Force siteID when scraping individual scenes without a custom site
+		if siteID == "" {
+			siteID = gjson.Get(JsonMetadataA, "paysite.name").String()
+		}
 		viewAngle := gjson.Get(JsonMetadataA, "viewAngle").String()
 		projSuffix := "_LR_180.mp4"
 		if viewAngle == "190" || viewAngle == "200" || viewAngle == "220" {
