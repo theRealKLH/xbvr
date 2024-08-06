@@ -433,16 +433,17 @@ func SceneCreateUpdateFromExternal(db *gorm.DB, ext ScrapedScene) error {
 	var site Site
 	db.Where("id = ?", o.ScraperId).FirstOrInit(&site)
 	o.IsSubscribed = site.Subscribed
-	SaveWithRetry(db, &o)
 
 	// Clean & Associate Tags
 	var tags = o.Tags
 	db.Model(&o).Association("Tags").Clear()
-	for _, tag := range tags {
+	for idx, tag := range tags {
 		tmpTag := Tag{}
 		db.Where(&Tag{Name: tag.Name}).FirstOrCreate(&tmpTag)
-		db.Model(&o).Association("Tags").Append(tmpTag)
+		tags[idx] = tmpTag
 	}
+	o.Tags = tags
+	SaveWithRetry(db, &o)
 
 	// Clean & Associate Actors
 	db.Model(&o).Association("Cast").Clear()
@@ -886,6 +887,8 @@ func queryScenes(db *gorm.DB, r RequestSceneList) (*gorm.DB, *gorm.DB) {
 			where = `scenes.scene_id like "povr-%"`
 		case "SLR Scraper":
 			where = `scenes.scene_id like "slr-%"`
+		case "Has Image":
+			where = "cover_url not in ('','http://localhost/dont_cause_errors')"
 		case "VRPHub Scraper":
 			where = `scenes.scene_id like "vrphub-%"`
 		case "VRPorn Scraper":
@@ -1149,6 +1152,8 @@ func queryScenes(db *gorm.DB, r RequestSceneList) (*gorm.DB, *gorm.DB) {
 		}
 	case "scene_id_desc":
 		tx = tx.Order("scene_id desc")
+	case "site_asc":
+		tx = tx.Order("scenes.site")
 	case "random":
 		if dbConn.Driver == "mysql" {
 			tx = tx.Order("rand()")

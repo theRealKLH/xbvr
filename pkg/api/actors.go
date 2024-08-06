@@ -11,6 +11,7 @@ import (
 	restfulspec "github.com/emicklei/go-restful-openapi/v2"
 	"github.com/emicklei/go-restful/v3"
 	"github.com/xbapps/xbvr/pkg/models"
+	"github.com/xbapps/xbvr/pkg/scrape"
 )
 
 type ResponseGetActors struct {
@@ -192,6 +193,15 @@ func (i ActorResource) getFilters(req *restful.Request, resp *restful.Response) 
 		Find(&results)
 	for _, r := range results {
 		outAttributes = append(outAttributes, "Breast Type "+r.Result)
+	}
+
+	db.Table("actors").
+		Where("IFNULL(gender,'') <> ''").
+		Select("distinct gender as result").
+		Order("gender").
+		Find(&results)
+	for _, r := range results {
+		outAttributes = append(outAttributes, "Gender "+r.Result)
 	}
 
 	resp.WriteHeaderAndEntity(http.StatusOK, ResponseGetActorFilters{
@@ -731,7 +741,7 @@ func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Resp
 	// add new links
 	for _, url := range urls {
 		var extref models.ExternalReference
-		extref.FindExternalUrl(extref.DetermineActorScraperByUrl(url), url)
+		commonDb.Preload("XbvrLinks").Where(&models.ExternalReference{ExternalURL: url}).First(&extref)
 		if extref.ID == 0 {
 			// create new extref + link
 			extref.ExternalSource = extref.DetermineActorScraperByUrl(url)
@@ -746,6 +756,9 @@ func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Resp
 				ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId, MatchType: 0})
 			extref.Save()
 			models.AddActionActor(actor.ID, "edit_actor", "add", "external_reference_link", url)
+			if extref.ExternalSource == "stashdb performer" {
+				scrape.RefreshPerformer(extref.ExternalId)
+			}
 		} else {
 			// external reference exists, but check it is linked to this actor
 			found := false
@@ -761,6 +774,9 @@ func (i ActorResource) editActorExtRefs(req *restful.Request, resp *restful.Resp
 					ExternalReferenceID: extref.ID, ExternalSource: extref.ExternalSource, ExternalId: extref.ExternalId, MatchType: 0}
 				newLink.Save()
 				models.AddActionActor(actor.ID, "edit_actor", "add", "external_reference_link", url)
+				if extref.ExternalSource == "stashdb performer" {
+					scrape.RefreshPerformer(extref.ExternalId)
+				}
 			}
 		}
 	}
