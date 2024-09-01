@@ -87,7 +87,7 @@ func SexLikeReal(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 		// Note: known issue with SLR, they use a lot of combined tags like "cheerleader / college / school"
 		// ...a lot of these are shared with RealJamVR which uses the same tags though.
 		// Could split by / but would run into issues with "f/f/m" and "shorts / skirts"
-
+		var videotype string
 		var FB360 string
 		alphA := "false"
 		e.ForEach(`ul.c-meta--scene-tags li a`, func(id int, e *colly.HTMLElement) {
@@ -95,6 +95,10 @@ func SexLikeReal(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 				sc.Tags = append(sc.Tags, e.Attr("title"))
 			}
 
+			// To determine filenames
+			if e.Attr("title") == "Fisheye" || e.Attr("title") == "360°" {
+				videotype = e.Attr("title")
+			}
 			if e.Attr("title") == "Spatial audio" {
 				FB360 = "_FB360.MKV"
 			}
@@ -104,17 +108,6 @@ func SexLikeReal(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 				alphA = "PT"
 			}
 
-		})
-
-		// To determine filenames
-		var videotype string
-		e.ForEach(`ul.c-meta--scene-specs li a`, func(id int, e *colly.HTMLElement) {
-			if e.Attr("title") == "190°" || e.Attr("title") == "200°" || e.Attr("title") == "220°" || e.Attr("title") == "360°" || e.Attr("title") == "Fisheye" {
-				videotype = e.Attr("title")
-				if !skiptags[e.Attr("title")] {
-					sc.Tags = append(sc.Tags, e.Attr("title"))
-				}
-			}
 		})
 
 		// Duration
@@ -161,14 +154,14 @@ func SexLikeReal(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out 
 			desktopCresp, err := http.Head(desktopCover)
 			if err != nil {
 				log.Errorf("Method Head Failed on desktopCover %s with error %s", desktopCover, err)
-			}else if desktopCresp.StatusCode == 200 {
+			} else if desktopCresp.StatusCode == 200 {
 				coverURL := desktopCover
 				sc.Covers = append(sc.Covers, coverURL)
 			} else {
 				appCresp, err := http.Head(appCover)
 				if err != nil {
 					log.Errorf("Method Head Failed on appCover %s with error %s", appCover, err)
-				}else if appCresp.StatusCode == 200 {
+				} else if appCresp.StatusCode == 200 {
 					coverURL := appCover
 					sc.Covers = append(sc.Covers, coverURL)
 				} else {
@@ -473,7 +466,7 @@ func appendFilenames(sc *models.ScrapedScene, siteID string, filenameRegEx *rege
 			for i := range resolutions {
 				sc.Filenames = append(sc.Filenames, baseName+resolutions[i]+sc.SiteID+projSuffix)
 			}
-		case "190°", "200°", "220°", "Fisheye": // 200° videos named with MKX200
+		case "Fisheye": // 200° videos named with MKX200
 			for i := range resolutions {
 				sc.Filenames = append(sc.Filenames, baseName+resolutions[i]+sc.SiteID+projSuffix)
 			}
@@ -486,7 +479,7 @@ func appendFilenames(sc *models.ScrapedScene, siteID string, filenameRegEx *rege
 			sc.Filenames = append(sc.Filenames, baseName+"_original_"+sc.SiteID+FB360)
 		}
 	} else {
-		resolutions := []string{"_6400p_", "_4096p_", "_4000p_", "_3840p_", "_3360p_", "_3160p_", "_3072p_", "_3000p_", "_2900p_", "_2880p_", "_2700p_", "_2650p_", "_2622p_", "_2160p_", "_1920p_", "_1620p_", "_1440p_", "_1080p_", "_original_"}
+		resolutions := []string{"_6400p_", "_4096p_", "_4000p_", "_3840p_", "_3360p_", "_3160p_", "_3072p_", "_3000p_", "_2900p_", "_2880p_", "_2700p_", "_2650p_", "_2160p_", "_1920p_", "_1440p_", "_1080p_", "_original_"}
 		baseName := "SLR_" + strings.TrimSuffix(siteID, " (SLR)") + "_" + filenameRegEx.ReplaceAllString(sc.Title, "_")
 		switch videotype {
 		case "360°": // Sadly can't determine if TB or MONO so have to add both
@@ -494,7 +487,7 @@ func appendFilenames(sc *models.ScrapedScene, siteID string, filenameRegEx *rege
 				sc.Filenames = append(sc.Filenames, baseName+resolutions[i]+sc.SiteID+"_MONO_360.mp4")
 				sc.Filenames = append(sc.Filenames, baseName+resolutions[i]+sc.SiteID+"_TB_360.mp4")
 			}
-		case "190°", "200°", "220°", "Fisheye": // 200° videos named with MKX200
+		case "Fisheye": // 200° videos named with MKX200
 			for i := range resolutions {
 				if AlphA == "true" {
 					sc.Filenames = append(sc.Filenames, baseName+resolutions[i]+sc.SiteID+"_MKX200_alpha.mp4")
