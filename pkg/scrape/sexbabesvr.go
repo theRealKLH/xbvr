@@ -32,11 +32,19 @@ func SexBabesVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out c
 		sc.HomepageURL = strings.Split(e.Request.URL.String(), "?")[0]
 
 		// Scene ID -
-		e.ForEach(`dl8-video`, func(id int, e *colly.HTMLElement) {
-			sc.SiteID = e.Attr("data-scene")
-			sc.SceneID = slugify.Slugify(sc.Site) + "-" + sc.SiteID
-			sc.Covers = append(sc.Covers, strings.Replace(e.Attr("poster"), "/videoDetail2x", "", -1))
+		e.ForEach(`div.video-detail__description--information a`, func(id int, e *colly.HTMLElement) {
+			if id == 0 {
+				tmp := strings.Split(e.Attr("href"), "=")
+				sc.SiteID = tmp[len(tmp)-1]
+				sc.SceneID = slugify.Slugify(sc.Site) + "-" + sc.SiteID
+			}
 		})
+
+		// Covers
+		coverurl := e.ChildAttr(`meta[property="og:image"]`, "content")
+		if coverurl != "" {
+			sc.Covers = append(sc.Covers, coverurl)
+		}
 
 		// Title
 		e.ForEach(`div.video-detail__description--container h1`, func(id int, e *colly.HTMLElement) {
@@ -49,11 +57,9 @@ func SexBabesVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out c
 		})
 
 		// Synopsis
-		e.ForEach(`div.video-detail>div.container>p`, func(id int, e *colly.HTMLElement) {
+		e.ForEach(`div.list-of-categories__p`, func(id int, e *colly.HTMLElement) {
 			// Handle blank <p></p> surrounding the synopsis
-			if strings.TrimSpace(e.Text) != "" {
-				sc.Synopsis = strings.TrimSpace(e.Text)
-			}
+			sc.Synopsis = strings.TrimSpace(e.Text)
 		})
 
 		// Tags
