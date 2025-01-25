@@ -382,6 +382,7 @@ func (i SceneResource) getFilters(req *restful.Request, resp *restful.Response) 
 	outAttributes = append(outAttributes, "Has Image")
 	outAttributes = append(outAttributes, "VRPHub Scraper")
 	outAttributes = append(outAttributes, "VRPorn Scraper")
+	outAttributes = append(outAttributes, "RealVR Scraper")
 	outAttributes = append(outAttributes, "Stashdb Linked")
 	outAttributes = append(outAttributes, "Has Script Download")
 	outAttributes = append(outAttributes, "Has AI Generated Script")
@@ -391,6 +392,7 @@ func (i SceneResource) getFilters(req *restful.Request, resp *restful.Response) 
 	outAttributes = append(outAttributes, "Available from Alternate Sites")
 	outAttributes = append(outAttributes, "Available from POVR")
 	outAttributes = append(outAttributes, "Available from VRPorn")
+	outAttributes = append(outAttributes, "Available from RealVR")
 	outAttributes = append(outAttributes, "Available from SLR")
 	outAttributes = append(outAttributes, "Multiple Scenes Available at an Alternate Site")
 	type Results struct {
@@ -1027,7 +1029,7 @@ func (i SceneResource) getSceneAlternateSources(req *restful.Request, resp *rest
 		var site models.Site
 
 		if ref.ExternalSource == "stashdb scene" {
-			ressults = append(ressults, ResponseGetAlternateSources{Url: ref.ExternalReference.ExternalURL, Icon: "https://docs.stashapp.cc/favicon.ico", ExternalSource: ref.ExternalReference.ExternalSource, ExternalId: ref.ExternalReference.ExternalId, ExternalData: ref.ExternalReference.ExternalData})
+			ressults = append(ressults, ResponseGetAlternateSources{Url: ref.ExternalReference.ExternalURL, Icon: "https://guidelines.stashdb.org/favicon.ico", ExternalSource: ref.ExternalReference.ExternalSource, ExternalId: ref.ExternalReference.ExternalId, ExternalData: ref.ExternalReference.ExternalData})
 		} else {
 			json.Unmarshal([]byte(ref.ExternalReference.ExternalData), &altscene)
 			site.GetIfExist(altscene.Scene.ScraperId)
