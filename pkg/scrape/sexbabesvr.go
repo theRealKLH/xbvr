@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gocolly/colly/v2"
@@ -14,7 +13,7 @@ import (
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
-func SexBabesVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string, limitScraping bool) error {
+func SexBabesVR(wg *models.ScrapeWG, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string, limitScraping bool) error {
 	defer wg.Done()
 	scraperID := "sexbabesvr"
 	siteID := "SexBabesVR"
@@ -31,20 +30,15 @@ func SexBabesVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out c
 		sc.Site = siteID
 		sc.HomepageURL = strings.Split(e.Request.URL.String(), "?")[0]
 
-		// Scene ID -
-		e.ForEach(`div.video-detail__description--information a`, func(id int, e *colly.HTMLElement) {
-			if id == 0 {
-				tmp := strings.Split(e.Attr("href"), "=")
-				sc.SiteID = tmp[len(tmp)-1]
-				sc.SceneID = slugify.Slugify(sc.Site) + "-" + sc.SiteID
-			}
+		// Scene ID
+		e.ForEach(`dl8-video`, func(id int, e *colly.HTMLElement) {
+			posterURL := e.Request.AbsoluteURL(e.Attr("poster"))
+			tmp := strings.Split(posterURL, "/")
+			sc.SiteID = tmp[len(tmp)-2]
+			sc.SceneID = slugify.Slugify(sc.Site) + "-" + sc.SiteID
+			// Cover Url
+			sc.Covers = append(sc.Covers, strings.Replace(e.Attr("poster"), "/videoDetail2x", "", -1))
 		})
-
-		// Covers
-		coverurl := e.ChildAttr(`meta[property="og:image"]`, "content")
-		if coverurl != "" {
-			sc.Covers = append(sc.Covers, coverurl)
-		}
 
 		// Title
 		e.ForEach(`div.video-detail__description--container h1`, func(id int, e *colly.HTMLElement) {
@@ -58,8 +52,22 @@ func SexBabesVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out c
 
 		// Synopsis
 		e.ForEach(`div.list-of-categories__p`, func(id int, e *colly.HTMLElement) {
-			// Handle blank <p></p> surrounding the synopsis
-			sc.Synopsis = strings.TrimSpace(e.Text)
+			synopsis := e.Text
+
+			if synopsis == "" {
+				synopsis = e.ChildText(`p.ql-align-justify`)
+
+				if synopsis == "" {
+					e.ForEach(`div`, func(id int, e *colly.HTMLElement) {
+						synopsis = synopsis + " " + strings.TrimSpace(e.Text)
+					})
+
+				}
+			}
+
+			if strings.TrimSpace(synopsis) != "" {
+				sc.Synopsis = strings.TrimSpace(synopsis)
+			}
 		})
 
 		// Tags
@@ -111,7 +119,7 @@ func SexBabesVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out c
 	})
 
 	siteCollector.OnHTML(`div.videos__content`, func(e *colly.HTMLElement) {
-		e.ForEach(`a.video-container__description--title`, func(cnt int, e *colly.HTMLElement) {
+		e.ForEach(`a.video-container__image`, func(cnt int, e *colly.HTMLElement) {
 			sceneURL := e.Request.AbsoluteURL(e.Attr("href"))
 			if !funk.ContainsString(knownScenes, sceneURL) {
 				sceneCollector.Visit(sceneURL)
@@ -133,5 +141,5 @@ func SexBabesVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out c
 }
 
 func init() {
-	registerScraper("sexbabesvr", "SexBabesVR", "https://sexbabesvr.com/assets/front/assets/logo.png", "sexbabesvr.com", SexBabesVR)
+	registerScraper("sexbabesvr", "SexBabesVR", "https://sexbabesvr.com/static/images/favicons/favicon-32x32.png", "sexbabesvr.com", SexBabesVR)
 }

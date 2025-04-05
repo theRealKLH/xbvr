@@ -2,9 +2,9 @@ package scrape
 
 import (
 	"html"
+	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/mozillazg/go-slugify"
@@ -14,7 +14,7 @@ import (
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
-func NaughtyAmericaVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string, limitScraping bool) error {
+func NaughtyAmericaVR(wg *models.ScrapeWG, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string, limitScraping bool) error {
 	defer wg.Done()
 	scraperID := "naughtyamericavr"
 	siteID := "NaughtyAmerica VR"
@@ -134,12 +134,13 @@ func NaughtyAmericaVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string,
 		})
 
 		// Cast (extract from JavaScript)
+		re := regexp.MustCompile(`nanalytics.trackExperiment.*\);`)
 		e.ForEach(`script`, func(id int, e *colly.HTMLElement) {
 			if strings.Contains(e.Text, "femaleStar") {
 				vm := otto.New()
 
 				script := e.Text
-				script = strings.ReplaceAll(script, "nanalytics.trackExperiment('scene_page_viewed', 'streaming_option_join_button');", "")
+				script = re.ReplaceAllString(script, "")
 				script = strings.Replace(script, "window.dataLayer", "dataLayer", -1)
 				script = strings.Replace(script, "dataLayer = dataLayer || []", "dataLayer = []", -1)
 				script = script + "\nout = []; dataLayer.forEach(function(v) { if (v.femaleStar) { out.push(v.femaleStar); } });"
