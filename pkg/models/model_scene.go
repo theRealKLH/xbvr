@@ -314,6 +314,8 @@ func (o *Scene) UpdateStatus() {
 	if len(files) > 0 {
 		var newestFileDate time.Time
 		var totalFileSize int64
+		anyVideoAccessible := false
+
 		for j := range files {
 			totalFileSize = totalFileSize + files[j].Size
 
@@ -329,17 +331,10 @@ func (o *Scene) UpdateStatus() {
 				videos = videos + 1
 
 				if files[j].Exists() {
+					anyVideoAccessible = true
+
 					if files[j].CreatedTime.After(newestFileDate) || newestFileDate.IsZero() {
 						newestFileDate = files[j].CreatedTime
-					}
-					if !o.IsAccessible {
-						o.IsAccessible = true
-						changed = true
-					}
-				} else {
-					if o.IsAccessible {
-						o.IsAccessible = false
-						changed = true
 					}
 				}
 			}
@@ -357,6 +352,11 @@ func (o *Scene) UpdateStatus() {
 
 		if scripts == 0 && o.IsScripted {
 			o.IsScripted = false
+			changed = true
+		}
+
+		if anyVideoAccessible != o.IsAccessible {
+			o.IsAccessible = anyVideoAccessible
 			changed = true
 		}
 
@@ -462,8 +462,12 @@ func SceneCreateUpdateFromExternal(db *gorm.DB, ext ScrapedScene) error {
 			}
 		}
 		if ext.ActorDetails[name].ProfileUrl != "" {
-			if tmpActor.AddToActorUrlArray(ActorLink{Url: ext.ActorDetails[name].ProfileUrl, Type: ext.ActorDetails[name].Source}) {
-				saveActor = true
+			if strings.HasPrefix(ext.ActorDetails[name].ProfileUrl, "https://stashdb.org/performers/") {
+
+			} else {
+				if tmpActor.AddToActorUrlArray(ActorLink{Url: ext.ActorDetails[name].ProfileUrl, Type: ext.ActorDetails[name].Source}) {
+					saveActor = true
+				}
 			}
 		}
 		if saveActor {
@@ -876,9 +880,9 @@ func queryScenes(db *gorm.DB, r RequestSceneList) (*gorm.DB, *gorm.DB) {
 		case "Is Favourite":
 			where = "scenes.favourite = 1"
 		case "Is Passthrough":
-			where = "chroma_key <> ''"
+			where = "(chroma_key <> '' or exists (select 1 from files where files.scene_id = scenes.id and files.`type` = 'video' and files.has_alpha = true))"
 		case "Is Alpha Passthrough":
-			where = `chroma_key <> '' and chroma_key like '%"hasAlpha":true%'`
+			where = `((chroma_key <> '' and chroma_key like '%"hasAlpha":true%') or ` + "exists (select 1 from files where files.scene_id = scenes.id and files.`type` = 'video' and files.has_alpha = true))"
 		case "In Wishlist":
 			where = "wishlist = 1"
 		case "Stashdb Linked":
@@ -893,6 +897,8 @@ func queryScenes(db *gorm.DB, r RequestSceneList) (*gorm.DB, *gorm.DB) {
 			where = `scenes.scene_id like "vrphub-%"`
 		case "VRPorn Scraper":
 			where = `scenes.scene_id like "vrporn-%"`
+		case "RealVR Scraper":
+			where = `scenes.scene_id like "realvr-%"`
 		case "Has Script Download":
 			// querying the scenes in from alternate sources (stored in external_reference) has a performance impact, so it's user choice
 			if config.Advanced.UseAltSrcInFileMatching {
@@ -922,6 +928,8 @@ func queryScenes(db *gorm.DB, r RequestSceneList) (*gorm.DB, *gorm.DB) {
 			where = "exists (select 1 from external_reference_links where external_source like 'alternate scene %' and external_id like 'povr-%' and internal_db_id = scenes.id)"
 		case "Available from VRPorn":
 			where = "exists (select 1 from external_reference_links where external_source like 'alternate scene %' and external_id like 'vrporn-%' and internal_db_id = scenes.id)"
+		case "Available from RealVR":
+			where = "exists (select 1 from external_reference_links where external_source like 'alternate scene %' and external_id like 'realvr-%' and internal_db_id = scenes.id)"
 		case "Available from SLR":
 			where = "exists (select 1 from external_reference_links where external_source like 'alternate scene %' and external_id like 'slr-%' and internal_db_id = scenes.id)"
 		case "Available from Alternate Sites":

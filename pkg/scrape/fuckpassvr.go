@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/gocolly/colly/v2"
@@ -14,7 +13,7 @@ import (
 	"github.com/xbapps/xbvr/pkg/models"
 )
 
-func FuckPassVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string, limitScraping bool) error {
+func FuckPassVR(wg *models.ScrapeWG, updateSite bool, knownScenes []string, out chan<- models.ScrapedScene, singleSceneURL string, singeScrapeAdditionalInfo string, limitScraping bool) error {
 	defer wg.Done()
 	scraperID := "fuckpassvr-native"
 	siteID := "FuckPassVR"
@@ -52,8 +51,8 @@ func FuckPassVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out c
 			}
 		})
 
-		e.ForEach(`web-vr-video-player`, func(id int, e *colly.HTMLElement) {
-			sc.Covers = append(sc.Covers, strings.Trim(e.Attr("coverimage"), " '"))
+		e.ForEach(`div.video__videoWrapper pornhall-player`, func(id int, e *colly.HTMLElement) {
+			sc.Covers = append(sc.Covers, strings.Trim(e.Attr("poster"), " '"))
 		})
 
 		e.ForEach(`div.profile__gallery a.profile__galleryElement`, func(id int, e *colly.HTMLElement) {
@@ -131,5 +130,5 @@ func FuckPassVR(wg *sync.WaitGroup, updateSite bool, knownScenes []string, out c
 }
 
 func init() {
-	registerScraper("fuckpassvr-native", "FuckPassVR", "https://www.fuckpassvr.com/_nuxt/img/logo_bw.1fac7d1.png", "fuckpassvr.com", FuckPassVR)
+	registerScraper("fuckpassvr-native", "FuckPassVR", "https://www.fuckpassvr.com/favicon.png", "fuckpassvr.com", FuckPassVR)
 }

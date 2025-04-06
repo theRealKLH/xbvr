@@ -238,6 +238,9 @@ func (i ConfigResource) WebService() *restful.WebService {
 	ws.Route(ws.PUT("/sites/limit_scraping/{site}").To(i.toggleLimitScraping).
 		Metadata(restfulspec.KeyOpenAPITags, tags))
 
+	ws.Route(ws.PUT("/sites/scrape_stash/{site}").To(i.toggleScrapeStash).
+		Metadata(restfulspec.KeyOpenAPITags, tags))
+
 	ws.Route(ws.POST("/scraper/force-site-update").To(i.forceSiteUpdate).
 		Metadata(restfulspec.KeyOpenAPITags, tags))
 
@@ -355,6 +358,9 @@ func (i ConfigResource) toggleLimitScraping(req *restful.Request, resp *restful.
 	i.toggleSiteField(req, resp, "LimitScraping")
 }
 
+func (i ConfigResource) toggleScrapeStash(req *restful.Request, resp *restful.Response) {
+	i.toggleSiteField(req, resp, "ScrapeStash")
+}
 func (i ConfigResource) toggleSiteField(req *restful.Request, resp *restful.Response, field string) {
 	db, _ := models.GetDB()
 	defer db.Close()
@@ -380,6 +386,9 @@ func (i ConfigResource) toggleSiteField(req *restful.Request, resp *restful.Resp
 	case "LimitScraping":
 		site.LimitScraping = !site.LimitScraping
 		db.Model(&models.Scene{}).Where("scraper_id = ?", site.ID).Update("limit_scraping", site.LimitScraping)
+	case "ScrapeStash":
+		site.ScrapeStash = !site.ScrapeStash
+		db.Model(&models.Scene{}).Where("scrape_stash = ?", site.ID).Update("scrape_stash", site.LimitScraping)
 	}
 	site.Save()
 
@@ -1008,8 +1017,10 @@ func (i ConfigResource) createCustomSite(req *restful.Request, resp *restful.Res
 	scrapers := make(map[string][]config.ScraperConfig)
 	scrapers["povr"] = scraperConfig.CustomScrapers.PovrScrapers
 	scrapers["slr"] = scraperConfig.CustomScrapers.SlrScrapers
+	scrapers["stashdb"] = scraperConfig.CustomScrapers.StashDbScrapers
 	scrapers["vrphub"] = scraperConfig.CustomScrapers.VrphubScrapers
 	scrapers["vrporn"] = scraperConfig.CustomScrapers.VrpornScrapers
+	scrapers["realvr"] = scraperConfig.CustomScrapers.RealVRScrapers
 
 	exists := false
 	for key, group := range scrapers {
@@ -1031,16 +1042,22 @@ func (i ConfigResource) createCustomSite(req *restful.Request, resp *restful.Res
 			scrapers["povr"] = append(scrapers["povr"], scraper)
 		case "sexlikereal":
 			scrapers["slr"] = append(scrapers["slr"], scraper)
+		case "stashdb":
+			scrapers["stashdb"] = append(scrapers["stashdb"], scraper)
 		case "vrphub":
 			scrapers["vrphub"] = append(scrapers["vrphub"], scraper)
 		case "vrporn":
 			scrapers["vrporn"] = append(scrapers["vrporn"], scraper)
+		case "realvr":
+			scrapers["realvr"] = append(scrapers["realvr"], scraper)
 		}
 	}
 	scraperConfig.CustomScrapers.PovrScrapers = scrapers["povr"]
 	scraperConfig.CustomScrapers.SlrScrapers = scrapers["slr"]
+	scraperConfig.CustomScrapers.StashDbScrapers = scrapers["stashdb"]
 	scraperConfig.CustomScrapers.VrphubScrapers = scrapers["vrphub"]
 	scraperConfig.CustomScrapers.VrpornScrapers = scrapers["vrporn"]
+	scraperConfig.CustomScrapers.RealVRScrapers = scrapers["realvr"]
 	fName := filepath.Join(common.AppDir, "scrapers.json")
 	list, _ := json.MarshalIndent(scraperConfig, "", "  ")
 	os.WriteFile(fName, list, 0644)

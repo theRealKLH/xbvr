@@ -9,10 +9,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/gocolly/colly/v2"
 	"github.com/jinzhu/gorm"
 	"github.com/markphelps/optional"
 	"github.com/mozillazg/go-slugify"
@@ -816,6 +818,28 @@ func Migrate() {
 					return tx.Model(&models.ExternalReference{}).ModifyColumn("external_data", "longtext").Error
 				}
 				return nil
+			},
+		},
+		{
+			ID: "0082-scrape-stash-flag",
+			Migrate: func(tx *gorm.DB) error {
+				type Site struct {
+					ScrapeStash bool `json:"scrape_stash" xbvrbackup:"scrape_stash"`
+				}
+				err := tx.AutoMigrate(Site{}).Error
+				if err != nil {
+					return err
+				}
+				return tx.Exec("update sites set scrape_stash = is_enabled").Error
+			},
+		},
+		{
+			ID: "0083-file-has-alpha",
+			Migrate: func(tx *gorm.DB) error {
+				type File struct {
+					HasAlpha bool `json:"has_alpha" gorm:"default:false"`
+				}
+				return tx.AutoMigrate(File{}).Error
 			},
 		},
 
@@ -1984,6 +2008,155 @@ func Migrate() {
 					return nil
 				}
 				return tx.Model(&models.Tag{}).Exec("delete from tags where `count` = 0").Error
+			},
+		},
+		{
+			// Had to switch to a differnt sceneID source causing a shift in sceneIDs
+			ID: "0080-fix-SexBabesVR-ids",
+			Migrate: func(tx *gorm.DB) error {
+				newSceneId := func(site string, url string) (string, int) {
+					sceneID := ""
+					statusCode := 200
+
+					sceneCollector := colly.NewCollector(
+						colly.AllowedDomains("sexbabesvr.com"),
+					)
+
+					sceneCollector.OnError(func(r *colly.Response, err error) {
+						common.Log.Errorf("Error visiting %s %s", r.Request.URL, err)
+						statusCode = r.StatusCode
+					})
+
+					sceneCollector.OnHTML(`html`, func(e *colly.HTMLElement) {
+
+						// Scene ID
+						e.ForEach(`dl8-video`, func(id int, e *colly.HTMLElement) {
+							posterURL := e.Request.AbsoluteURL(e.Attr("poster"))
+							tmp := strings.Split(posterURL, "/")
+							sceneID = slugify.Slugify(site) + "-" + tmp[len(tmp)-2]
+						})
+					})
+
+					sceneCollector.Visit(url)
+
+					return sceneID, statusCode
+				}
+
+				var scenes []models.Scene
+				err := tx.Where("studio = ?", "SexBabesVR").Find(&scenes).Error
+				if err != nil {
+					return err
+				}
+				for _, scene := range scenes {
+
+					// Need both the siteID string and the sceneID has interger for logic
+					tmp := strings.Split(scene.SceneID, "-")
+					sceneIDint, _ := strconv.Atoi(tmp[1])
+
+					// Check to make we only are updating scenes orginating on SexbabsVR and only starting at scene 600, sc.SiteID is is not accurate in terms of alt sites
+					// Scene 600 is where the scene IDs start to merge when changing our scene ID source for SexBabesVR
+					if tmp[0] == "sexbabesvr" && sceneIDint >= 600 {
+
+						common.Log.Infoln("Checking sceneid:", scene.SceneID)
+						sceneID, statusCode := newSceneId(scene.Site, scene.SceneURL)
+
+						if statusCode != 200 {
+							return err
+						}
+
+						if sceneID == "" {
+							common.Log.Warnf("Could not update scene %s", scene.SceneID)
+							continue
+						}
+
+						if scene.SceneID != sceneID {
+							// update all actions referring to this scene by its scene_id
+							err = tx.Model(&models.Action{}).Where("scene_id = ?", scene.SceneID).Update("scene_id", sceneID).Error
+							if err != nil {
+								return err
+							}
+
+							// update the scene itself
+							common.Log.Infoln("Updating sceneid:", scene.SceneID, "to", sceneID)
+							scene.SceneID = sceneID
+							err = tx.Save(&scene).Error
+							if err != nil {
+								return err
+							}
+						}
+
+					}
+				}
+
+				// since scenes have new IDs, we need to re-index them
+				tasks.SearchIndex()
+
+				return nil
+			},
+		},
+		{
+			ID: "0081-Offical-Site-Removals-With-Main-Site-Aviable",
+			Migrate: func(tx *gorm.DB) error {
+
+				err := config.MigrateFromOfficalToCustom("ps-porn", "https://www.sexlikereal.com/studios/ps-porn-vr", "PS-Porn", "Paula Shy", "https://mcdn.vrporn.com/files/20201221090642/PS-Porn-400x400.jpg", "slr", "(SLR)")
+				err = config.MigrateFromOfficalToCustom("fuckpassvr", "https://www.sexlikereal.com/studios/fuckpassvr", "FuckPassVR", "FuckPassVR", "https://cdn-vr.sexlikereal.com/images/studio_creatives/logotypes/1/352/logo_crop_1635153994.png", "slr", "(SLR)")
+				err = config.MigrateFromOfficalToCustom("vrphub-vrhush", "https://vrphub.com/category/vr-hush", "VRHush", "VRHush", "https://cdn-nexpectation.secure.yourpornpartner.com/sites/vrh/favicon/apple-touch-icon-180x180.png", "vrphub", "(VRP Hub)")
+				err = config.MigrateFromOfficalToCustom("vrphub-stripzvr", "https://vrphub.com/category/stripzvr/", "StripzVR - VRP Hub", "StripzVR", "https://www.stripzvr.com/wp-content/uploads/2018/09/cropped-favicon-192x192.jpg", "vrphub", "(VRP Hub)")
+				return err
+			},
+		},
+		{
+			ID: "0082-upgrade_actor_scraper_config",
+			Migrate: func(tx *gorm.DB) error {
+				type actorScraperConfig struct {
+					StashSceneMatching         map[string]models.StashSiteConfig
+					GenericActorScrapingConfig map[string]models.GenericScraperRuleSet
+				}
+
+				fName := filepath.Join(common.AppDir, "actor_scraper_custom_config.json")
+				if _, err := os.Stat(fName); os.IsNotExist(err) {
+					return nil
+				}
+
+				var newCustomScrapeRules models.ActorScraperConfig
+				b, err := os.ReadFile(fName)
+				if err != nil {
+					return err
+				}
+				// make a backup, just in case, but don't fail the upgrade if a copy cannot be made
+				bakName := filepath.Join(common.AppDir, "actor_scraper_custom_config.pre_0433.json")
+				if _, err := os.Stat(bakName); os.IsNotExist(err) {
+					err := os.WriteFile(bakName, b, 0644)
+					if err != nil {
+						common.Log.Warnf("Warning: unable to create backup copy of actor_scraper_custom_config.json %s, proceeding", err)
+					}
+				}
+
+				e := json.Unmarshal(b, &newCustomScrapeRules)
+				if e == nil {
+					// if we can read the file with the new model, it has already been converted
+					common.Log.Info("Ignoring migration of actor_scraper_custom_config.json, already appears to have been done")
+					return nil
+				}
+
+				var oldCustomScrapeRules actorScraperConfig
+				e = json.Unmarshal(b, &oldCustomScrapeRules)
+				if e != nil {
+					// can't read the old layout either ?
+					return e
+				}
+
+				newCustomScrapeRules = models.ActorScraperConfig{}
+				newCustomScrapeRules.GenericActorScrapingConfig = oldCustomScrapeRules.GenericActorScrapingConfig
+				newCustomScrapeRules.StashSceneMatching = map[string][]models.StashSiteConfig{}
+				for key, _ := range oldCustomScrapeRules.StashSceneMatching {
+					newScraperCofig := oldCustomScrapeRules.StashSceneMatching[key]
+					newCustomScrapeRules.StashSceneMatching[key] = []models.StashSiteConfig{}
+					newCustomScrapeRules.StashSceneMatching[key] = append(newCustomScrapeRules.StashSceneMatching[key], newScraperCofig)
+				}
+				out, _ := json.MarshalIndent(newCustomScrapeRules, "", "  ")
+				e = os.WriteFile(fName, out, 0644)
+				return e
 			},
 		},
 	})
