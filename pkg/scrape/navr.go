@@ -141,7 +141,7 @@ func NaughtyAmericaVR(wg *models.ScrapeWG, updateSite bool, knownScenes []string
 
 				script := e.Text
 				script = re.ReplaceAllString(script, "")
-				script = strings.Replace(script, "window.dataLayer", "dataLayer", -1)
+				script = strings.Replace(script, "window.dataLayer.push", "dataLayer", -1)
 				script = strings.Replace(script, "dataLayer = dataLayer || []", "dataLayer = []", -1)
 				script = script + "\nout = []; dataLayer.forEach(function(v) { if (v.femaleStar) { out.push(v.femaleStar); } });"
 				vm.Run(script)
