@@ -1,6 +1,8 @@
 module github.com/xbapps/xbvr
 
-go 1.22
+go 1.23.0
+
+toolchain go1.24.2
 
 require (
 	github.com/ProtonMail/go-appdir v1.1.0
@@ -8,7 +10,7 @@ require (
 	github.com/abbot/go-http-auth v0.4.0
 	github.com/anacrolix/ffprobe v1.1.0
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
-	github.com/avast/retry-go/v4 v4.6.0
+	github.com/avast/retry-go/v4 v4.6.1
 	github.com/blevesearch/bleve/v2 v2.4.4
 	github.com/bregydoc/gtranslate v0.0.0-20200913051839-1bd07f6c1fc5
 	github.com/creasty/defaults v1.8.0
@@ -17,11 +19,11 @@ require (
 	github.com/djherbis/times v1.6.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/emicklei/go-restful-openapi/v2 v2.11.0
-	github.com/emicklei/go-restful/v3 v3.12.1
+	github.com/emicklei/go-restful/v3 v3.12.2
 	github.com/gammazero/nexus/v3 v3.2.2
 	github.com/getlantern/systray v1.2.2
 	github.com/go-openapi/spec v0.21.0
-	github.com/go-resty/resty/v2 v2.16.3
+	github.com/go-resty/resty/v2 v2.16.5
 	github.com/go-test/deep v1.1.1
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/gorilla/mux v1.8.1
@@ -37,7 +39,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/marcsauter/single v0.0.0-20201009143647-9f8d81240be2
 	github.com/markphelps/optional v0.11.0
-	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mozillazg/go-slugify v0.2.0
@@ -55,11 +57,11 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xo/dburl v0.23.2
-	golang.org/x/crypto v0.32.0
-	golang.org/x/net v0.34.0
+	golang.org/x/crypto v0.36.0
+	golang.org/x/net v0.38.0
 	golang.org/x/oauth2 v0.25.0
-	golang.org/x/sys v0.29.0
-	golang.org/x/text v0.21.0
+	golang.org/x/sys v0.31.0
+	golang.org/x/text v0.23.0
 	gopkg.in/gormigrate.v1 v1.6.0
 	willnorris.com/go/imageproxy v0.11.3-0.20240601234520-572ad2db78ed
 )
@@ -148,7 +150,7 @@ require (
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	golang.org/x/image v0.18.0 // indirect
-	golang.org/x/term v0.28.0 // indirect
+	golang.org/x/term v0.30.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
