@@ -2312,7 +2312,6 @@ func Migrate() {
 							}
 
 							// rename preview if it exists
-
 							if scene.HasVideoPreview {
 								err := os.Rename(filepath.Join(common.VideoPreviewDir, scene.SceneID+".mp4"), filepath.Join(common.VideoPreviewDir, sceneID+".mp4"))
 								if err != nil {
