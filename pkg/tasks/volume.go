@@ -25,7 +25,8 @@ import (
 	"github.com/xbapps/xbvr/pkg/scrape"
 )
 
-var allowedVideoExt = []string{".mp4", ".avi", ".wmv", ".mpeg4", ".mov", ".mkv"}
+// List of video extension has been moved to config.go as it is now used in multiple places, and user configurable (with fallback list)
+var allowedVideoExt = config.Config.Storage.VideoExt
 
 func RescanVolumes(id int) {
 	if !models.CheckLock("rescan") {
@@ -218,6 +219,7 @@ func scanLocalVolume(vol models.Volume, db *gorm.DB, tlog *logrus.Entry) {
 			}
 			if !f.Mode().IsDir() {
 				// Make sure the filename should be considered
+				// Video file extensions are defined in the config.Storage.VideoExt array with error correction and fallback list
 				if !strings.HasPrefix(filepath.Base(path), ".") && funk.Contains(allowedVideoExt, strings.ToLower(filepath.Ext(path))) {
 					var fl models.File
 					err = db.Where(&models.File{Path: filepath.Dir(path), Filename: filepath.Base(path)}).First(&fl).Error
