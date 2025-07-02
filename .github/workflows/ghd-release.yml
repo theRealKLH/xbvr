@@ -75,7 +75,7 @@ jobs:
             # If no previous tag for this month, or previous_tag was empty (first tag for date_prefix),
             # get all recent commits up to the current tag.
             echo "No specific previous tag found or this is the first tag. Getting recent commits up to current tag."
-            COMMIT_MESSAGES=$(git log "$CURRENT_TAG" --pretty=format:"- %s (by %an)" | head -n 50) # Limit for first runs
+            COMMIT_MESSAGES=$(git log "$PREVIOUS_TAG" --pretty=format:"- %s (by %an)" | head -n 5) # Limit for first runs
           fi
 
           # Handle empty commit messages gracefully
