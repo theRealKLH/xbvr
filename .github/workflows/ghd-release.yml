@@ -55,8 +55,7 @@ jobs:
           if [ "$HIGHEST_COUNT" -ge 0 ]; then
              echo "previous_tag=${DATE_PREFIX}.${HIGHEST_COUNT}" >> "$GITHUB_OUTPUT"
           else
-             echo "previous_tag=" >> "$GITHUB_OUTPUT" # Indicate no specific previous tag
-             previous_tag=$(git describe --tags --abbrev=0)
+             echo "previous_tag="$(git describe --tags --abbrev=0) >> "$GITHUB_OUTPUT" # Indicate no specific previous tag
           fi
         shell: bash
 
