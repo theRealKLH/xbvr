@@ -4,7 +4,7 @@ FROM node:18 as build-env
 ARG TARGETPLATFORM
 ARG RELVER
 ARG vcs-ref
-ENV GO_VERSION=1.22.7 \
+ENV GO_VERSION=1.24.4 \
     GOPATH=$HOME/go-packages \
     GOROOT=$HOME/go
 ENV PATH=$GOROOT/bin:$GOPATH/bin:$PATH
