@@ -15,7 +15,7 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm/v6" ]; then curl -fsSL https://dl.google
 WORKDIR /app
 ADD . /app
 RUN cd /app && \
-    yarn install && \
+    yarn install --ignore-engines && \
     yarn build && \
     go mod download && \
     go generate && \
