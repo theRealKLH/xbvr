@@ -19,7 +19,7 @@
     "bulma-extensions": "6.2.7",
     "date-fns": "4.1.0",
     "ky": "0.30.0",
-    "pretty-bytes": "6.1.1",
+    "pretty-bytes": "7.0.0",
     "videojs-hotkeys": "0.2.30",
     "videojs-vr": "1.8.0",
     "vue": "2.7.16",
@@ -31,6 +31,7 @@
     "vue-router": "3.6.5",
     "vue-slider-component": "3.2.24",
     "vue-star-rating": "1.7.0",
+    "vuedraggable": "^2.24.3",
     "vuex": "3.6.2",
     "wampy": "6.4.2"
   },
@@ -42,13 +43,13 @@
     "@vue/cli-service": "5.0.8",
     "@vue/eslint-config-standard": "9.0.1",
     "buffer": "6.0.3",
-    "concurrently": "7.6.0",
+    "concurrently": "9.2.0",
     "eslint": "9.28.0",
     "eslint-plugin-import": "2.31.0",
-    "eslint-plugin-n": "17.19.0",
+    "eslint-plugin-n": "17.21.3",
     "eslint-plugin-promise": "7.2.1",
     "eslint-plugin-standard": "5.0.0",
-    "eslint-plugin-vue": "9.33.0",
+    "eslint-plugin-vue": "10.4.0",
     "less": "4.3.0",
     "less-loader": "12.3.0",
     "sass": "1.89.2",
@@ -58,6 +59,9 @@
     "vue-i18n-extract": "2.0.7",
     "vue-template-compiler": "2.7.16",
     "webpack": "5.99.9"
+  },
+  "resolutions": {
+    "@achrinza/node-ipc": "9.2.9"
   },
   "eslintConfig": {
     "root": true,

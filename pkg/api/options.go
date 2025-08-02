@@ -67,6 +67,7 @@ type RequestSaveOptionsAdvanced struct {
 	ShowInternalSceneId          bool      `json:"showInternalSceneId"`
 	ShowHSPApiLink               bool      `json:"showHSPApiLink"`
 	ShowSceneSearchField         bool      `json:"showSceneSearchField"`
+	ScraperProxy                 string    `json:"scraperProxy"`
 	StashApiKey                  string    `json:"stashApiKey"`
 	ScrapeActorAfterScene        bool      `json:"scrapeActorAfterScene"`
 	UseImperialEntry             bool      `json:"useImperialEntry"`
@@ -199,11 +200,15 @@ type RequestSCustomSiteCreate struct {
 }
 
 type GetStorageResponse struct {
-	Volumes    []models.Volume `json:"volumes"`
-	MatchOhash bool            `json:"match_ohash"`
+	Volumes           []models.Volume `json:"volumes"`
+	MatchOhash        bool            `json:"match_ohash"`
+	VideoExt          []string        `json:"video_ext"`
+	ForbiddenVideoExt []string        `json:"forbidden_video_ext"`
+	DefaultVideoExt   []string        `json:"default_video_ext"`
 }
 type RequestSaveOptionsStorage struct {
-	MatchOhash bool `json:"match_ohash"`
+	MatchOhash bool     `json:"match_ohash"`
+	VideoExt   []string `json:"video_ext"`
 }
 
 type RequestSaveCollectorConfig struct {
@@ -514,6 +519,7 @@ func (i ConfigResource) saveOptionsAdvanced(req *restful.Request, resp *restful.
 	config.Config.Advanced.ShowHSPApiLink = r.ShowHSPApiLink
 	config.Config.Advanced.ShowSceneSearchField = r.ShowSceneSearchField
 	config.Config.Advanced.StashApiKey = r.StashApiKey
+	config.Config.Advanced.ScraperProxy = r.ScraperProxy
 	config.Config.Advanced.ScrapeActorAfterScene = r.ScrapeActorAfterScene
 	config.Config.Advanced.UseImperialEntry = r.UseImperialEntry
 	config.Config.Advanced.LinkScenesAfterSceneScraping = r.LinkScenesAfterSceneScraping
@@ -588,6 +594,15 @@ func (i ConfigResource) listStorage(req *restful.Request, resp *restful.Response
 	var out GetStorageResponse
 	out.Volumes = vol
 	out.MatchOhash = config.Config.Storage.MatchOhash
+
+	// Fallback to default video extensions if none are set
+	if len(config.Config.Storage.VideoExt) == 0 {
+		out.VideoExt = config.DefaultVideoExtensions
+	} else {
+		out.VideoExt = config.Config.Storage.VideoExt
+	}
+	out.ForbiddenVideoExt = config.ForbiddenVideoExtensions
+	out.DefaultVideoExt = config.DefaultVideoExtensions
 	resp.WriteHeaderAndEntity(http.StatusOK, out)
 }
 
@@ -1087,6 +1102,42 @@ func (i ConfigResource) saveOptionsStorage(req *restful.Request, resp *restful.R
 	}
 
 	config.Config.Storage.MatchOhash = r.MatchOhash
+
+	// Filter, normalize, and deduplicate extensions
+	var allowedExt []string
+	extSet := make(map[string]struct{})
+	for _, ext := range r.VideoExt {
+		cleanExt := strings.TrimSpace(strings.ToLower(ext))
+		if cleanExt == "" || cleanExt == "." || strings.Contains(cleanExt, " ") {
+			continue
+		}
+		if !strings.HasPrefix(cleanExt, ".") {
+			cleanExt = "." + cleanExt
+		}
+		// Only allow extensions that are a dot followed by alphanumeric characters
+		matched, _ := regexp.MatchString(`^\.[a-z0-9]+$`, cleanExt)
+		if !matched {
+			continue
+		}
+		forbidden := false
+		for _, f := range config.ForbiddenVideoExtensions {
+			if cleanExt == f {
+				forbidden = true
+				break
+			}
+		}
+		if forbidden {
+			continue
+		}
+		if _, exists := extSet[cleanExt]; !exists {
+			extSet[cleanExt] = struct{}{}
+			allowedExt = append(allowedExt, cleanExt)
+		}
+	}
+	if len(allowedExt) == 0 {
+		allowedExt = config.DefaultVideoExtensions
+	}
+	config.Config.Storage.VideoExt = allowedExt
 	config.SaveConfig()
 
 	resp.WriteHeaderAndEntity(http.StatusOK, r)
