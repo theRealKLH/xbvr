@@ -128,7 +128,7 @@ jobs:
           network_id: ${{ secrets.ZEROTIER_NETWORK_ID }}
           auth_token: ${{ secrets.ZEROTIER_CENTRAL_TOKEN }}
 
-      - name: Setup release environment
+      - name: Setup release environment 
         run: |-
           echo 'GITHUB_TOKEN=${{secrets.GITHUB_TOKEN}}' > .release-env
           echo 'GITHUB_USER=${{github.event.repository.owner.login}}' >> .release-env
