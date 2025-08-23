@@ -150,5 +150,5 @@ jobs:
         with:
           status: ${{ job.status }}
           title: 'RELEASE deployment COMPLETE'
-      - name: Output Release URL
-        run: echo "Release URL: ${{ steps.create_release.outputs.html_url }}"
+#      - name: Output Release URL
+#        run: echo "Release URL: ${{ steps.create_release.outputs.html_url }}"
