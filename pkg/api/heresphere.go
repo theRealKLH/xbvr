@@ -113,6 +113,17 @@ type HereSphereAuthRequest struct {
 	NeedsMediaSource optional.Bool    `json:"needsMediaSource"`
 }
 
+type HereSphereScan struct {
+	Link         string  `json:"url"`
+	Title        string  `json:"title"`
+	DateReleased string  `json:"dateReleased"`
+	DateAdded    string  `json:"dateAdded"`
+	Duration     int     `json:"duration"`
+	Rating       float64 `json:"rating"`
+	IsFavorite   bool    `json:"isFavorite"`
+	// Tags                 []HeresphereTag `json:"tags"`
+}
+
 var RequestBody []byte
 
 func HeresphereAuthFilter(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
@@ -172,6 +183,9 @@ func (i HeresphereResource) WebService() *restful.WebService {
 	ws.Route(ws.POST("/").Filter(HeresphereAuthFilter).To(i.getHeresphereLibrary).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes(DeoLibrary{}))
+
+	ws.Route(ws.GET("/scan").Filter(HeresphereAuthFilter).To(i.getHeresphereScan))
+	ws.Route(ws.POST("/scan").Filter(HeresphereAuthFilter).To(i.getHeresphereScan))
 
 	ws.Route(ws.GET("/{scene-id}").Filter(HeresphereAuthFilter).To(i.getHeresphereScene).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
@@ -963,6 +977,44 @@ func findEndPos(requestData HereSphereAuthRequest) float64 {
 		}
 	}
 	return endpos
+}
+
+func (i HeresphereResource) getHeresphereScan(req *restful.Request, resp *restful.Response) {
+	log.Infof("getHeresphereScan called, enabled %v", config.Config.Interfaces.DeoVR.Enabled)
+	if !config.Config.Interfaces.DeoVR.Enabled {
+		return
+	}
+
+	db, _ := models.GetDB()
+	defer db.Close()
+
+	var scenes []models.Scene
+	var files []models.File
+	var sceneScan []HereSphereScan
+
+	db.Model(&files).
+		Preload("Volume").
+		Where("files.scene_id = 0").
+		Where("files.type = 'video'").
+		Order("created_time desc").
+		Find(&files)
+
+	db.Model(&scenes).Find(&scenes)
+
+	for i := range scenes {
+		sceneScan = append(sceneScan, HereSphereScan{
+			Link:         fmt.Sprintf("%v://%v/heresphere/%v", getProto(req), req.Request.Host, scenes[i].ID),
+			Title:        scenes[i].Title,
+			DateReleased: scenes[i].ReleaseDate.Format("2006-01-02"),
+			DateAdded:    scenes[i].AddedDate.Format("2006-01-02"),
+			Duration:     scenes[i].Duration,
+			Rating:       scenes[i].StarRating,
+			IsFavorite:   scenes[i].Favourite,
+			//		sceneScan.Tags = scenes.Tags[i].Name
+		})
+	}
+
+	resp.WriteHeaderAndEntity(http.StatusOK, sceneScan)
 }
 
 func (i HeresphereResource) getHeresphereLibrary(req *restful.Request, resp *restful.Response) {
