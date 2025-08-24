@@ -100,13 +100,13 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-amd64
     build_flag_templates:
       - --platform=linux/amd64
       - --no-cache
       - --label=org.opencontainers.image.source=https://github.com/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}
       - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.version={{ .Tag }}
       - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
       - --label=org.opencontainers.image.revision={{ .FullCommit }}
   -
@@ -115,13 +115,13 @@ dockers:
     goos: linux
     goarch: arm64
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-arm64
     build_flag_templates:
       - --platform=linux/arm64
       - --no-cache
       - --label=org.opencontainers.image.source=https://github.com/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}
       - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.version={{ .Tag }}
       - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
       - --label=org.opencontainers.image.revision={{ .FullCommit }}
   -
@@ -131,27 +131,27 @@ dockers:
     goarch: arm
     goarm: 7
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-armv7
     build_flag_templates:
       - --platform=linux/arm/v7
       - --no-cache
       - --label=org.opencontainers.image.source=https://github.com/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}
       - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.version={{ .Tag }}
       - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
       - --label=org.opencontainers.image.revision={{ .FullCommit }}      
 
 docker_manifests:
-  - name_template: ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}
+  - name_template: ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-amd64
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-arm64
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-armv7
   - name_template: ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:latest
     image_templates:
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-amd64
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-arm64
-      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Version }}-armv7
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-amd64
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-arm64
+      - ghcr.io/{{.Env.GITHUB_USER}}/{{.Env.GITHUB_PROJECT}}:{{ .Tag }}-armv7
 
 archives:
 - id: archive-linux
@@ -160,7 +160,7 @@ archives:
     - xbvr-linux-arm64
     - xbvr-linux-armv7
   name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_Linux_
+      {{ .ProjectName }}_{{ .Tag }}_Linux_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
 - id: archive-win
@@ -168,14 +168,14 @@ archives:
     - xbvr-windows
   format: zip
   name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_Windows_{{ .Arch }}
+      {{ .ProjectName }}_{{ .Tag }}_Windows_{{ .Arch }}
 - id: archive-mac
   builds:
     - xbvr-mac-intel
     - xbvr-mac-m1
   format: zip
   name_template: >-
-      {{ .ProjectName }}_{{ .Version }}_macOS_
+      {{ .ProjectName }}_{{ .Tag }}_macOS_
       {{- if eq .Arch "amd64" }}intel
       {{- else if eq .Arch "arm64" }}m1
       {{- else }}{{ .Arch }}{{ end }}
