@@ -113,15 +113,19 @@ type HereSphereAuthRequest struct {
 	NeedsMediaSource optional.Bool    `json:"needsMediaSource"`
 }
 
+type HereSphereScanData struct {
+	Link         string          `json:"url"`
+	Title        string          `json:"title"`
+	DateReleased string          `json:"dateReleased"`
+	DateAdded    string          `json:"dateAdded"`
+	Duration     int             `json:"duration"`
+	Rating       float64         `json:"rating"`
+	IsFavorite   bool            `json:"isFavorite"`
+	Tags         []HeresphereTag `json:"tags"`
+}
+
 type HereSphereScan struct {
-	Link         string  `json:"url"`
-	Title        string  `json:"title"`
-	DateReleased string  `json:"dateReleased"`
-	DateAdded    string  `json:"dateAdded"`
-	Duration     int     `json:"duration"`
-	Rating       float64 `json:"rating"`
-	IsFavorite   bool    `json:"isFavorite"`
-	// Tags                 []HeresphereTag `json:"tags"`
+	ScanData []HereSphereScanData `json:"scanData"`
 }
 
 var RequestBody []byte
@@ -989,20 +993,29 @@ func (i HeresphereResource) getHeresphereScan(req *restful.Request, resp *restfu
 	defer db.Close()
 
 	var scenes []models.Scene
-	var files []models.File
-	var sceneScan []HereSphereScan
+	var xbvrTags []HeresphereTag
+	var sceneScan []HereSphereScanData
 
-	db.Model(&files).
+	/*	db.Model(&files).
 		Preload("Volume").
 		Where("files.scene_id = 0").
 		Where("files.type = 'video'").
 		Order("created_time desc").
 		Find(&files)
+	*/
 
-	db.Model(&scenes).Find(&scenes)
+	db.Preload("Cast").
+		Preload("Tags").
+		Preload("Cuepoints").
+		Find(&scenes)
 
 	for i := range scenes {
-		sceneScan = append(sceneScan, HereSphereScan{
+		for _, tag := range scenes[i].Tags {
+			xbvrTags = append(xbvrTags, HeresphereTag{
+				Name: tag.Name})
+		}
+
+		sceneScan = append(sceneScan, HereSphereScanData{
 			Link:         fmt.Sprintf("%v://%v/heresphere/%v", getProto(req), req.Request.Host, scenes[i].ID),
 			Title:        scenes[i].Title,
 			DateReleased: scenes[i].ReleaseDate.Format("2006-01-02"),
@@ -1010,11 +1023,13 @@ func (i HeresphereResource) getHeresphereScan(req *restful.Request, resp *restfu
 			Duration:     scenes[i].Duration,
 			Rating:       scenes[i].StarRating,
 			IsFavorite:   scenes[i].Favourite,
-			//		sceneScan.Tags = scenes.Tags[i].Name
+			Tags:         xbvrTags,
 		})
 	}
 
-	resp.WriteHeaderAndEntity(http.StatusOK, sceneScan)
+	resp.WriteHeaderAndEntity(http.StatusOK, HereSphereScan{
+		ScanData: sceneScan,
+	})
 }
 
 func (i HeresphereResource) getHeresphereLibrary(req *restful.Request, resp *restful.Response) {
